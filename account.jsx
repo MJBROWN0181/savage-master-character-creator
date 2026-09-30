@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ConvexReactClient, useConvexAuth, useMutation, useQuery, useConvex } from 'convex/react';
 import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { makeFunctionReference } from 'convex/server';
+import { needsEmailVerification } from './account-auth.mjs';
 
 const url = import.meta.env.VITE_CONVEX_URL;
 const listRef = makeFunctionReference('characters:list');
@@ -47,12 +48,12 @@ function CharacterAccount() {
     const form = new FormData(event.currentTarget);
     form.set('flow', mode);
     try {
-      const signedIn = await signIn('password', form);
+      const result = await signIn('password', form);
       if (mode === 'reset') {
         setResetEmail(String(form.get('email')));
         setMode('reset-verification');
         setStatus('Check your email for the reset code.');
-      } else if (!signedIn && (mode === 'signUp' || mode === 'signIn')) {
+      } else if (needsEmailVerification(mode, result)) {
         setResetEmail(String(form.get('email')));
         setMode('email-verification');
         setStatus('Check your email for the verification code.');

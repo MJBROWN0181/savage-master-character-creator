@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@auth/core": "^0.41.1",
+    "@auth/core": "^0.41.3",
     "@convex-dev/auth": "^0.0.95",
     "convex": "^1.46.0",
     "react": "^19.3.0",
@@ -22,6 +22,6 @@
     "build": "vite build && node scripts/copy-static.mjs",
     "dev": "vite --host 0.0.0.0",
     "check": "tsc -p convex/tsconfig.json --noEmit",
-    "test": "vitest run convex/characters.test.ts && node --test tests/character-backup.test.mjs"
+    "test": "vitest run convex/characters.test.ts && node --test tests/*.test.mjs"
   }
 }
