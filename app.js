@@ -169,6 +169,12 @@ const app = {
   // INIT
   // ----------------------------------------------------------
   init() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('savage-master-character-v1'));
+      if (saved && saved.version === 1) this.character = this.parseCharacterBackup(saved);
+    } catch (error) {
+      console.warn('Could not restore character:', error);
+    }
     this.renderNav();
     this.goToStep(0);
   },
@@ -961,7 +967,7 @@ const app = {
       </div>
       <div class="form-group">
         <label>Notes</label>
-        <textarea oninput="app.character.notes = this.value;"
+        <textarea oninput="app.character.notes = this.value; app.saveCharacter();"
                   placeholder="Any additional notes about your character...">${this.escHtml(this.character.notes)}</textarea>
       </div>
       ${this.navButtons()}
@@ -1910,6 +1916,7 @@ const app = {
   // SIDEBAR SUMMARY PANEL
   // ----------------------------------------------------------
   renderSummary() {
+    this.saveCharacter();
     const panel = document.getElementById('summaryPanel');
     const c = this.character;
     // Update mobile header title
@@ -2233,6 +2240,63 @@ const app = {
   // ----------------------------------------------------------
   // EXPORT / RESET
   // ----------------------------------------------------------
+  saveCharacter() {
+    try {
+      localStorage.setItem('savage-master-character-v1', JSON.stringify({ version: 1, character: this.character }));
+    } catch (error) {
+      console.warn('Could not save character:', error);
+    }
+  },
+
+  parseCharacterBackup(backup) {
+    if (!backup || backup.version !== 1 || !backup.character || typeof backup.character !== 'object' || Array.isArray(backup.character)) {
+      throw new Error('This is not a Savage Master character backup.');
+    }
+    const c = backup.character;
+    const defaults = createDefaultCharacter();
+    if (typeof c.name !== 'string' || typeof c.concept !== 'string' ||
+        !c.attributes || typeof c.attributes !== 'object' || !c.skills || typeof c.skills !== 'object' ||
+        !Array.isArray(c.hindrances) || !Array.isArray(c.edges) || !Array.isArray(c.gear) ||
+        !Array.isArray(c.bonusRules) || !Array.isArray(c.languages) || !Array.isArray(c.powers) ||
+        !c.hindrancePointsSpent || typeof c.hindrancePointsSpent !== 'object') {
+      throw new Error('Character backup is missing required data.');
+    }
+    if (c.setting !== null && !Object.hasOwn(SETTINGS, c.setting)) throw new Error('Unknown campaign setting.');
+    if (c.race !== null && typeof c.race !== 'string') throw new Error('Invalid ancestry.');
+    for (const a of SWADE.ATTRIBUTES) {
+      if (!Number.isInteger(c.attributes[a.id]) || c.attributes[a.id] < 4 || c.attributes[a.id] > 12) throw new Error('Invalid attributes.');
+    }
+    for (const s of SWADE.SKILLS) {
+      if (!Number.isInteger(c.skills[s.id]) || c.skills[s.id] < 0 || c.skills[s.id] > 12) throw new Error('Invalid skills.');
+    }
+    if (c.gear.some(g => !g || typeof g.id !== 'string' || !Number.isInteger(g.qty) || g.qty < 1)) throw new Error('Invalid equipment.');
+    return { ...defaults, ...c, attributes: { ...defaults.attributes, ...c.attributes }, skills: { ...defaults.skills, ...c.skills } };
+  },
+
+  exportBackup() {
+    this._downloadJSON({ version: 1, character: this.character },
+      (this.character.name || 'character').replace(/[^a-z0-9]/gi, '_') + '_savage_master_backup.json');
+  },
+
+  async importBackup(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 1024 * 1024) throw new Error('Backup file is too large.');
+      const restored = this.parseCharacterBackup(JSON.parse(await file.text()));
+      if (!confirm('Load this backup and replace the current character?')) return;
+      this.character = restored;
+      this.currentStep = 0;
+      this.renderNav();
+      this.renderContent();
+      this.renderSummary();
+    } catch (error) {
+      alert('Could not load character: ' + error.message);
+    } finally {
+      input.value = '';
+    }
+  },
+
   exportJSON() {
     const c = this.character;
     const race = this.getSelectedRace();
@@ -2710,9 +2774,13 @@ const app = {
   },
 
   resetCharacter() {
-    if (!confirm('Start a new character? All current progress will be lost.')) return;
+    if (!confirm('Start a new character? All current progress will be lost.')) return false;
     this.character = createDefaultCharacter();
+    window.characterCloud?.clearSelection();
+    this.currentStep = 0;
     this.goToStep(0);
+    this.saveCharacter();
+    return true;
   },
 
   // ----------------------------------------------------------
@@ -4160,6 +4228,18 @@ ${data.languages.length > 0 ? `
     div.textContent = str || '';
     return div.innerHTML;
   },
+};
+
+window.savageMasterBridge = {
+  getCharacter: () => app.character,
+  loadBackup: backup => {
+    app.character = app.parseCharacterBackup(backup);
+    app.currentStep = 0;
+    app.renderNav();
+    app.renderContent();
+    app.renderSummary();
+  },
+  newCharacter: () => app.resetCharacter(),
 };
 
 // Boot

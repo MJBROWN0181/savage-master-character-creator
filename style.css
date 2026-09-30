@@ -2592,3 +2592,18 @@ select:focus {
     font-size: 1.2rem;
   }
 }
+/* Account panel */
+.account-panel { border-bottom: 1px solid var(--border); padding-bottom: .8rem; margin-bottom: .8rem; color: var(--text); font-size: .8rem; }
+.account-panel h3 { margin: 0 0 .5rem; font-size: .95rem; }
+.account-panel p { margin: .35rem 0; }
+.account-panel .btn { width: 100%; margin: .2rem 0; }
+.account-panel input { box-sizing: border-box; width: 100%; padding: .5rem; margin: .2rem 0; border: 1px solid var(--border); border-radius: 4px; }
+.account-switch { display: block; background: none; border: 0; padding: .4rem 0; color: inherit; text-decoration: underline; cursor: pointer; text-align: left; }
+.account-list { max-height: 8rem; overflow-y: auto; margin: .5rem 0; }
+.account-item { display: block; width: 100%; background: transparent; border: 1px solid var(--border); color: inherit; padding: .35rem; text-align: left; cursor: pointer; }
+.account-status { overflow-wrap: anywhere; }
+.account-close { display: none; }
+@media (max-width: 768px) {
+  .sidebar.account-open { display: flex !important; position: fixed; z-index: 210; top: 0; left: 0; bottom: 0; width: min(300px, 90vw); max-height: 100vh; }
+  .sidebar.account-open .account-close { display: block; margin: 0 1rem; }
+}

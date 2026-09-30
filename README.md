@@ -1,6 +1,6 @@
 # Savage Master - Character Creator
 
-A feature-rich **Savage Worlds** character creator built with vanilla JavaScript. Create characters for multiple campaign settings with a beautiful parchment-themed UI, complete with dice icons, setting banners, and full export support.
+A **Savage Worlds** character creator with four campaign settings, dice icons, character exports, and account saving through Convex.
 
 ![Savage Master](logo.png)
 
@@ -24,18 +24,28 @@ A feature-rich **Savage Worlds** character creator built with vanilla JavaScript
 
 ## Getting Started
 
-1. Clone this repo
-2. Open `index.html` in your browser, or serve it locally:
+1. Clone this repo and install dependencies:
    ```bash
-   python -m http.server 8765
+   npm install
    ```
-3. Navigate to `http://localhost:8765`
+2. Configure Convex using the steps below, then run `npm run dev`.
+3. Open the local URL printed by Vite.
 
-No build tools, no dependencies - just pure HTML, CSS, and JavaScript.
+The character creator is plain JavaScript. The account panel uses React, Convex Auth, and a Vite build.
+
+## Account saving setup
+
+1. Run `npm install` and `npx convex login`, then `npx convex dev --configure new --team mikebrown81` to create a Convex project for Savage Master in the intended team. Choose a development deployment. This generates `.env.local` and `convex/_generated`.
+2. In the Convex deployment settings, set `JWT_PRIVATE_KEY` and `JWKS` using the [Convex Auth setup](https://labs.convex.dev/auth/setup) command (`npx @convex-dev/auth`). Set `AUTH_RESEND_KEY` and `AUTH_EMAIL_FROM` for sign-up verification and password reset email; the sender must be allowed by your email provider.
+3. Run `npm run dev` to develop and `npm run check && npm run build` to verify. Local drafts stay on the device; **Save Character** writes to the signed-in player's account in Convex. **Load** replaces the current draft after confirmation.
+4. Create a production Convex deployment and production deploy key. Add `CONVEX_DEPLOY_KEY` in Vercel's Production environment. The Vercel build runs `npx convex deploy --cmd-url-env-var-name VITE_CONVEX_URL --cmd 'npm run build'`, which publishes the backend and builds the site into `dist`. Configure the production deployment's JWT and account email variables separately.
+
+Do not publish account sign-up until verification and password reset email and a production sign-in test are working. ChatGPT sign-in and generated character art are future integrations and are not included in this build.
 
 ## Tech Stack
 
-- **Vanilla JavaScript** - zero frameworks, zero dependencies
+- **Vanilla JavaScript** - character builder
+- **React and Convex Auth** - account and cloud character library
 - **CSS Custom Properties** - full theming support
 - **Google Fonts** - Cinzel (headings) + Crimson Text (body)
 - **SVG Dice Icons** - inline SVGs for d4, d6, d8, d10, d12
