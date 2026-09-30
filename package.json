@@ -8,16 +8,20 @@
     "resend": "^6.31.0"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "convex-test": "^0.0.60",
     "typescript": "^7.0.2",
-    "vite": "^8.3.1"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "scripts": {
     "build": "vite build && node scripts/copy-static.mjs",
     "dev": "vite --host 0.0.0.0",
-    "check": "tsc -p convex/tsconfig.json --noEmit"
+    "check": "tsc -p convex/tsconfig.json --noEmit",
+    "test": "vitest run convex/characters.test.ts && node --test tests/character-backup.test.mjs"
   }
 }
