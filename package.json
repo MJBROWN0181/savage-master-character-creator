@@ -19,6 +19,7 @@
     "vitest": "^5.0.3"
   },
   "scripts": {
+    "test:vtt": "node scripts/verify-vtt.mjs",
     "build": "vite build && node scripts/copy-static.mjs",
     "dev": "vite --host 0.0.0.0",
     "check": "tsc -p convex/tsconfig.json --noEmit",

@@ -2097,7 +2097,7 @@ const app = {
       <h3>New to Savage Worlds?</h3>
       <p><a href="https://shop.peginc.com/pages/new-to-savage-worlds" target="_blank" rel="noopener noreferrer">Pinnacle's getting started guide &nearr;</a> includes free Test Drive rules and introductions to online play.</p>
       <h3>Save, share, and play</h3>
-      <ul class="help-list"><li><strong>On this device:</strong> your current draft saves automatically. Download an editable backup before clearing browser data.</li><li><strong>Across devices:</strong> sign in, select Save Character, then open it from My Characters on your other device. Cloud saves are manual.</li><li><strong>With your GM:</strong> send an editable backup or a sheet from Review. Sharing this site's link does not share your private characters.</li><li><strong>Online:</strong> Foundry and Roll20 exports are separate formats. Use the matching sheet/system and check imported values against your GM's rules.</li><li><strong>Offline:</strong> after one online visit, the builder can reopen offline. Account sign-in and cloud saving require internet access.</li></ul>
+      <ul class="help-list"><li><strong>On this device:</strong> your current draft saves automatically. Download an editable backup before clearing browser data.</li><li><strong>Across devices:</strong> sign in, select Save Character, then open it from My Characters on your other device. Cloud saves are manual.</li><li><strong>With your GM:</strong> send an editable backup or a sheet from Review. Sharing this site's link does not share your private characters.</li><li><strong>Roll20:</strong> use the Official Savage Worlds sheet. Open the exported JSON as text and paste it into the sheet's JSON Importer in Settings. Use a new empty character to avoid duplicate entries.</li><li><strong>Foundry:</strong> import the Foundry JSON into a character Actor in a SWADE world. Parry and Toughness are imported as manual values to preserve your build; review them with your GM before enabling automatic calculation.</li><li><strong>Offline:</strong> after one online visit, the builder can reopen offline. Account sign-in and cloud saving require internet access.</li></ul>
       <button class="btn btn-primary" onclick="app.copySiteLink()">Copy site link for your group</button><p id="shareStatus" role="status"></p>
       <p class="community-note">Independent fan-made tool. Community links are external services. Savage Worlds and setting names belong to their respective owners.</p>
     </div>`;
@@ -2431,13 +2431,15 @@ const app = {
       img: 'icons/svg/mystery-man.svg',
       system: {
         attributes: {},
+        pace: { base: 'ground', ground: stats.pace, running: { die: stats.runDie, mod: 0 } },
         stats: {
-          speed: { value: stats.pace, runningDie: stats.runDie, runningMod: 0, adjusted: stats.pace },
-          toughness: { value: stats.toughness, armor: stats.armorBonus, mod: 0 },
-          parry: { value: stats.parry, mod: 0 },
+          toughness: { value: stats.toughness + stats.armorBonus, armor: stats.armorBonus },
+          parry: { value: stats.parry, shield: Math.max(0, ...c.gear.map(g => g.parryBonus || 0)) },
           size: stats.size,
         },
         details: {
+          autoCalcToughness: false,
+          autoCalcParry: false,
           biography: { value: c.notes ? '<p>' + this.escHtml(c.notes) + '</p>' : '' },
           species: { name: race ? race.name : '' },
           archetype: c.concept || '',
@@ -2447,7 +2449,7 @@ const app = {
         fatigue: { value: 0, max: 2 },
         wildcard: true,
         advances: { value: 0 },
-        powerPoints: { value: this.getPowerBudget().powerPoints, max: this.getPowerBudget().powerPoints },
+        powerPoints: { general: { value: this.getPowerBudget().powerPoints, max: this.getPowerBudget().powerPoints } },
         additionalStats: {},
       },
       items: [],
@@ -2493,7 +2495,7 @@ const app = {
           img: 'systems/swade/assets/icons/edge.svg',
           system: {
             isArcaneBackground: edge.id.startsWith('ab'),
-            requirements: { value: edge.rank || 'Novice' },
+            requirements: [],
             description: edge.description || '',
           },
         });
@@ -2532,7 +2534,7 @@ const app = {
             ap: parseInt((g.notes || '').match(/AP\s*(\d+)/i)?.[1]) || 0,
             actions: { skill: isRanged ? 'Shooting' : 'Fighting' },
             notes: g.notes || '',
-            equipped: true,
+            equipStatus: 3,
             quantity: qty,
             weight: g.weight || 0,
             price: g.cost || 0,
@@ -2546,9 +2548,9 @@ const app = {
           img: 'systems/swade/assets/icons/armor.svg',
           system: {
             armor: g.armor,
-            equipped: true,
+            equipStatus: 3,
             notes: g.notes || '',
-            locations: { torso: true },
+            locations: { head: /head/i.test(g.coverage || ''), torso: /torso/i.test(g.coverage || ''), arms: /arms/i.test(g.coverage || ''), legs: /legs/i.test(g.coverage || '') },
             quantity: qty,
             weight: g.weight || 0,
             price: g.cost || 0,
@@ -2563,7 +2565,7 @@ const app = {
           system: {
             parry: g.parryBonus,
             cover: 0,
-            equipped: true,
+            equipStatus: 3,
             notes: g.notes || '',
             quantity: qty,
             weight: g.weight || 0,
@@ -2578,7 +2580,7 @@ const app = {
           img: 'systems/swade/assets/icons/gear.svg',
           system: {
             notes: g.notes || '',
-            equipped: true,
+            equipStatus: 3,
             quantity: qty,
             weight: g.weight || 0,
             price: g.cost || 0,
@@ -2802,27 +2804,42 @@ const app = {
       set('arcane_background', abEdge.name);
     }
 
+    // The Official Savage Worlds sheet imports a top-level character object.
+    // See Roll20/roll20-character-sheets, Official Savage Worlds JSON importer.
     const roll20Data = {
-      schema_version: 3,
-      type: 'character',
-      character: {
-        name: c.name || 'Unnamed',
-        bio: (settingData ? '<p><b>Setting:</b> ' + settingData.name + '</p>' : '') +
-             (c.notes ? '<p>' + this.escHtml(c.notes) + '</p>' : ''),
-        attribs: attribs,
-        abilities: [],
-      },
-      repeating: {
-        skills: skills,
-        edges: edges,
-        hindrances: hindrances,
-        weapons: weapons,
-        armor: armor,
-        gear: gear,
-        specials: specials,
-        powers: powers,
-      },
+      name: c.name || 'Unnamed', age: '', gender: '', professionOrTitle: c.concept || '',
+      iconicFramework: '', description: '', background: c.notes || '',
+      race: race ? race.name : '', wildcard: true,
+      fatigue: 0, fatigueMax: 2, wounds: 0, woundsMax: 3,
+      paceBase: stats.pace, paceMod: 0, runningDie: 'd' + stats.runDie,
+      parryMod: stats.parry - (2 + Math.floor(c.skills.fighting / 2)),
+      toughnessMod: stats.toughness - (2 + Math.floor(c.attributes.vigor / 2)),
+      size: stats.size, wealth: this.getRemainingFunds(),
+      attributes: SWADE.ATTRIBUTES.map(a => ({ name: a.id, dieValue: c.attributes[a.id], mod: 0 })),
+      skills: SWADE.SKILLS.filter(sk => c.skills[sk.id] > 0).map(sk => ({ name: sk.name, dieValue: c.skills[sk.id], mod: 0, attribute: sk.attribute })),
+      edges: edges.map(e => ({ ...e, note: 'Creation' })),
+      hindrances: hindrances.map(h => ({ ...h, name: h.name.replace(/ \(Major\)| \(Minor\)/g, '') + ' (' + h.type + ')', major: h.type === 'Major' })),
+      abilities: specials,
+      advances: [], cyberware: [],
+      gear,
+      weapons: weapons.map(w => ({ ...w, minStr: 'd4', shots: 0 })),
+      armor: c.gear.filter(g => g.armor !== undefined).map(g => ({
+        name: g.name, armor: g.armor, quantity: g.qty || 1, weight: g.weight || 0,
+        minStr: 'd4', equipped: true, notes: g.notes || '',
+        coversHead: /head/i.test(g.coverage || ''), coversTorso: /torso/i.test(g.coverage || ''),
+        coversArms: /arms/i.test(g.coverage || ''), coversLegs: /legs/i.test(g.coverage || ''),
+      })),
+      // The sheet's shield importer does not import Parry bonuses. Keep the
+      // strongest bonus in parryMod above and carry shields as inventory.
+      shields: [],
+      abs: abEdge ? [{
+        name: abEdge.name, arcaneSkill: ({ magic: 'Spellcasting', miracles: 'Faith', psionics: 'Psionics', weirdScience: 'Weird Science', gifted: 'Focus' })[abEdge.grantsArcane] || 'Spellcasting',
+        powerPointsName: 'Power Points', powerPointsCurrent: this.getPowerBudget().powerPoints,
+        powerPointsMax: this.getPowerBudget().powerPoints,
+        powers: powers.map(pw => ({ ...pw, powerPoints: pw.pp, summary: pw.trapping, damage: '' })),
+      }] : [],
     };
+    c.gear.filter(g => g.parryBonus).forEach(g => roll20Data.gear.push({ name: g.name, quantity: g.qty || 1, weight: g.weight || 0 }));
 
     this._downloadJSON(roll20Data, (c.name || 'character').replace(/[^a-z0-9]/gi, '_') + '_roll20.json');
   },

@@ -28,9 +28,32 @@ and the missing-heritage prompt. This is not certification of every game rule.
 
 ## Remaining checks
 
-1. Complete an owner-driven live cloud save/load and password-reset test.
-   Successful production sign-in appeared in backend logs during earlier setup,
-   but cloud round-trip and reset are not yet confirmed.
+### Export follow-up
+
+Testing found that the previous Roll20 export was incompatible with the Official
+Savage Worlds sheet's JSON Importer. Replaced its nested format with the importer's
+top-level fields and ran the actual upstream importer in an isolated JavaScript
+context against five builds (core plus all four settings). All passed, including
+attributes, skills, hindrances, weapons, shield inventory, and powers/Power Points.
+Run `npm run test:vtt` to repeat this check against the current official importer.
+
+Updated Foundry movement, Power Points, equipment state, armor locations, and Edge
+requirements against the SWADE v6.0.4 release source. Field assertions pass for the
+same five builds. Parry and Toughness use manual values on import to preserve builder
+results, including modifiers not represented as Active Effects. This is source-level
+validation, not execution inside a Foundry world or Roll20 game.
+
+Sources:
+- https://github.com/Roll20/roll20-character-sheets/tree/master/Official%20Savage%20Worlds
+- https://gitlab.com/peginc/swade/-/tree/v6.0.4/src/module/data
+
+1. Live cloud save/load is now verified: saved `TEST - Cloud save round-trip`,
+   refreshed the site with the session and cloud record intact, imported a different
+   local draft, and loaded the cloud copy. Name, Agility d8, Vigor d6, Fighting d6,
+   and derived stats returned correctly. Sign-out also returned to the sign-in form.
+   A clearly named test record remains in the account. Password reset is prepared
+   for the owner to complete, since browser credential rules require user entry of
+   the new password. Reset completion and sign-in with it remain pending.
 2. Import exports into actual current Foundry SWADE and Roll20 sheets. Existing
    export formats have not been certified against those running products.
 3. Replace the Resend key supplied in chat; keep replacement secrets out of chat
