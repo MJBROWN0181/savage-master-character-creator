@@ -70,6 +70,11 @@ JWT_PRIVATE_KEY and JWKS without displaying values, SITE_URL as
 `https://smsheets.com`, and AUTH_EMAIL_FROM as
 `Savage Master <noreply@smsheets.com>`. Successfully deployed the feature
 backend and its schema to production. AUTH_RESEND_KEY is now configured.
-Public frontend is still the existing `main` branch. Before publishing the
-account-saving frontend, configure Vercel's production Convex deploy key and
-test live email authentication and account persistence.
+Owner confirmed receiving the setup email. Created and securely stored a
+production-only Convex deploy key in Vercel. Published the account-saving
+frontend successfully to `smsheets.com` (deployment
+`dpl_8nNimDd4fftBuRJpewJLzRjHoK6e`); its My Characters sign-up panel loads.
+Updated Vercel production branch tracking to `feat/convex-character-accounts`.
+Live sign-up, verification, cloud save/load, and password reset are still
+awaiting user account creation and testing. The email key pasted in chat still
+needs replacement. Setup screenshots and DNS notes are excluded from uploads.
