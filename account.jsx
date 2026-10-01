@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ConvexReactClient, useConvexAuth, useMutation, useQuery, useConvex } from 'convex/react';
 import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { makeFunctionReference } from 'convex/server';
-import { needsEmailVerification } from './account-auth.mjs';
+import { needsEmailVerification, normalizeEmailCode, accountErrorMessage } from './account-auth.mjs';
 
 const url = import.meta.env.VITE_CONVEX_URL;
 const listRef = makeFunctionReference('characters:list');
@@ -47,6 +47,7 @@ function CharacterAccount() {
     setStatus('');
     const form = new FormData(event.currentTarget);
     form.set('flow', mode);
+    if (form.has('code')) form.set('code', normalizeEmailCode(form.get('code')));
     try {
       const result = await signIn('password', form);
       if (mode === 'reset') {
@@ -60,7 +61,7 @@ function CharacterAccount() {
       } else {
         setStatus(mode === 'signUp' ? 'Account created. You can save your character now.' : 'Signed in.');
       }
-    } catch (error) { setStatus(error.message || 'Could not sign in.'); }
+    } catch (error) { setStatus(accountErrorMessage(mode, error)); }
     finally { setBusy(false); }
   }
 
@@ -92,7 +93,7 @@ function CharacterAccount() {
       <form onSubmit={submit}>
         {mode === 'reset-verification' || mode === 'email-verification' ? <>
           <input name="email" type="hidden" value={resetEmail} />
-          <input name="code" placeholder="Email code" aria-label="Email code" required />
+          <input name="code" placeholder="8-digit email code" aria-label="Email code" required inputMode="numeric" autoComplete="one-time-code" />
           {mode === 'reset-verification' && <input name="newPassword" type="password" placeholder="New password" aria-label="New password" required minLength={8} autoComplete="new-password" />}
         </> : <>
           <input name="email" type="email" placeholder="Email" aria-label="Email" required autoComplete="email" />
