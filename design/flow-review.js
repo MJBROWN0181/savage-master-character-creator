@@ -21,3 +21,9 @@ document.getElementById('epicCancel').onclick=()=>{epicPanel.classList.add('hidd
 const turnHelp=document.createElement('p');turnHelp.className='small';turnHelp.textContent='Optional GM controls · Choose a player, then Next. Expand below to arrange turn order.';sharedTurnPanel.prepend(turnHelp);
 const flowStyle=document.createElement('style');flowStyle.textContent='aside{max-height:100vh;overflow:auto;position:sticky;top:0;align-self:start}body.light .assistant-result{background:var(--bg)}#table > .panel,#mat > .panel{margin-bottom:16px}@media(max-width:600px){aside{position:relative;max-height:none}}';document.head.append(flowStyle);
 reconcileFlow();
+// Recover floating windows when the available mat width shrinks.
+function fitMatWindows(){if(document.getElementById('mat').classList.contains('hidden')||innerWidth<=700)return;const available=mat.clientWidth;if(!available)return;mat.querySelectorAll('.mat-window').forEach(win=>{const width=Math.min(parseFloat(win.style.width)||310,Math.max(240,available));win.style.width=width+'px';win.style.left=Math.max(0,Math.min(parseFloat(win.style.left)||0,Math.max(0,available-width)))+'px';win.style.top=Math.max(0,Math.min(parseFloat(win.style.top)||0,Math.max(0,mat.clientHeight-win.offsetHeight)))+'px'})}
+sideMenu.addEventListener('click',()=>requestAnimationFrame(fitMatWindows));
+document.getElementById('matAdd').addEventListener('click',()=>requestAnimationFrame(fitMatWindows));
+document.getElementById('matReset').addEventListener('click',()=>requestAnimationFrame(fitMatWindows));
+window.addEventListener('resize',()=>requestAnimationFrame(fitMatWindows));
