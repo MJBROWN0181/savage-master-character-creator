@@ -10,7 +10,7 @@ const listRef = makeFunctionReference('characters:list');
 const loadRef = makeFunctionReference('characters:load');
 const saveRef = makeFunctionReference('characters:save');
 
-function CharacterAccount() {
+export function CharacterAccount({accountOnly = false}) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
   const convex = useConvex();
@@ -23,6 +23,7 @@ function CharacterAccount() {
   const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
+    if (accountOnly) return;
     window.characterCloud = {
       clearSelection: () => setSelectedId(null),
       save: async () => {
@@ -39,7 +40,7 @@ function CharacterAccount() {
       },
     };
     return () => { delete window.characterCloud; };
-  }, [isAuthenticated, save, selectedId]);
+  }, [isAuthenticated, save, selectedId, accountOnly]);
 
   async function submit(event) {
     event.preventDefault();
@@ -78,8 +79,9 @@ function CharacterAccount() {
   }
 
   return <section className="account-panel" aria-label="Character account">
-    <h3>My Characters</h3>
+    <h3>{accountOnly ? 'Your Account' : 'My Characters'}</h3>
     {isLoading ? <p>Checking account…</p> : isAuthenticated ? <>
+      {!accountOnly && <>
       <button className="btn btn-sm" disabled={busy} onClick={() => window.characterCloud.save()}>Save Character</button>
       <button className="btn btn-sm" onClick={() => { if (window.savageMasterBridge.newCharacter()) setSelectedId(null); }}>New Character</button>
       <div className="account-list">
@@ -87,6 +89,7 @@ function CharacterAccount() {
           {c.name}{c._id === selectedId ? ' (open)' : ''}
         </button>) : <p>No saved characters yet.</p>}
       </div>
+      </>}
       <button className="btn btn-sm" onClick={() => { setSelectedId(null); signOut(); }}>Sign Out</button>
     </> : <>
       <p>Sign in to save and load characters across devices.</p>
@@ -112,11 +115,11 @@ function CharacterAccount() {
   </section>;
 }
 
-if (url) {
+if (url && document.getElementById('accountRoot')) {
   const convex = new ConvexReactClient(url);
   createRoot(document.getElementById('accountRoot')).render(
     <ConvexAuthProvider client={convex}><CharacterAccount /></ConvexAuthProvider>
   );
-} else {
+} else if (document.getElementById('accountRoot')) {
   document.getElementById('accountRoot').textContent = 'Cloud saving needs a Convex deployment.';
 }

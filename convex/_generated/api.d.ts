@@ -9,9 +9,12 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as campaigns from "../campaigns.js";
+import type * as characterValidation from "../characterValidation.js";
 import type * as characters from "../characters.js";
 import type * as http from "../http.js";
 import type * as passwordReset from "../passwordReset.js";
+import type * as privateWorkspaces from "../privateWorkspaces.js";
 
 import type {
   ApiFromModules,
@@ -21,9 +24,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  campaigns: typeof campaigns;
+  characterValidation: typeof characterValidation;
   characters: typeof characters;
   http: typeof http;
   passwordReset: typeof passwordReset;
+  privateWorkspaces: typeof privateWorkspaces;
 }>;
 
 /**
