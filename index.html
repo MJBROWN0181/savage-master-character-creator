@@ -41,7 +41,7 @@
     <header class="mobile-header" id="mobileHeader">
       <img src="logo.png" alt="" class="mobile-logo">
       <span class="mobile-title" id="mobileTitle">Savage Master</span>
-      <button class="mobile-summary-btn" onclick="document.querySelector('.sidebar').classList.toggle('account-open')">Characters</button>
+      <button class="mobile-summary-btn" aria-label="Open workspace and character menu" onclick="document.querySelector('.sidebar').classList.toggle('account-open')">Menu</button>
       <button class="mobile-summary-btn" id="summaryToggle" onclick="app.toggleMobileSummary()">Summary</button>
     </header>
 
@@ -53,10 +53,9 @@
           <img src="logo.png" alt="Savage Master Character Creation" class="logo-img">
         </div>
       </div>
+<nav class="workspace-nav sidebar-workspace-nav" aria-label="Workspace"><a href="/" aria-current="page">Characters</a><a href="/campaigns">Campaigns</a><a href="/profile">My Profile</a></nav>
       <ul class="steps" id="stepNav"></ul>
       <div style="margin-top:auto; padding:1rem; border-top:1px solid var(--border);">
-        <a class="btn btn-sm" href="/campaigns.html">Campaigns &amp; Journals</a>
-        <a class="btn btn-sm" href="/profile.html">My Profile</a>
         <div id="accountRoot"></div>
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportFoundryVTT()">Export Foundry VTT</button>
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportRoll20()">Export Roll20</button>
@@ -64,7 +63,7 @@
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportBackup()">Download editable backup</button>
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="document.getElementById('characterBackupInput').click()">Load character backup</button>
         <input id="characterBackupInput" type="file" accept=".json,application/json" hidden onchange="app.importBackup(this)">
-        <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.resetCharacter()">New Character</button>
+        <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.resetCharacter()">Reset current draft</button>
         <button class="btn btn-sm" id="installAppBtn" style="width:100%; margin-bottom:0.4rem; display:none;" onclick="openInstallModal()">Get the App</button>
         <button class="btn btn-sm btn-store" style="width:100%;" onclick="app.showStorePage()">Official Content</button>
         <button class="btn btn-sm" style="width:100%; margin-top:0.4rem;" onclick="app.showCommunityPage()">Find Players &amp; Help</button>

@@ -879,11 +879,7 @@ function App() {
     report = useMutation(ref("profiles:report"));
   return (
     <main>
-      <nav className="profile-nav">
-        <a href="/">Character creator</a>
-        <a href="/campaigns">Campaigns & journals</a>
-        <a href="/profile">My profile</a>
-      </nav>
+<nav className="workspace-nav" aria-label="Workspace"><a href="/">Characters</a><a href="/campaigns">Campaigns</a><a href="/profile" aria-current="page">My Profile</a></nav>
       {handle ? (
         <>
           {publicProfile === undefined ? (
@@ -968,7 +964,7 @@ function App() {
           )}
         </>
       )}
-      <p role="status">{status}</p>
+      <p className="workspace-status" role="status">{status}{status && <button type="button" aria-label="Dismiss message" onClick={()=>setStatus('')}>×</button>}</p>
     </main>
   );
 }
