@@ -71,3 +71,4 @@ summary { cursor: pointer; color: var(--gold); font-size: 13px; padding-top: 4px
   form > button { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+h1,h2,h3{overflow-wrap:anywhere}section,article,.columns>*{min-width:0}section a{overflow-wrap:anywhere}
