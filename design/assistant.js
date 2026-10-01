@@ -1,0 +1,30 @@
+// Small local generators for the design preview; no AI service or account data sent.
+const assistantStyle = document.createElement('style');
+assistantStyle.textContent = `.assistant-launch{position:fixed;right:22px;bottom:20px;z-index:5;background:var(--accent);color:#172026;font-weight:700}.assistant-window{position:fixed;right:22px;bottom:76px;width:min(360px,calc(100vw - 32px));max-height:75vh;overflow:auto;z-index:6;box-shadow:0 12px 45px #0009}.assistant-head{display:flex;justify-content:space-between;align-items:center}.assistant-head h3{margin:0}.assistant-options{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}.assistant-result{padding:16px;background:var(--bg);border-radius:7px;margin:14px 0;min-height:90px}.assistant-actions{display:flex;gap:8px;flex-wrap:wrap}`;
+document.head.append(assistantStyle);
+const assistantLaunch = document.createElement('button');
+assistantLaunch.className = 'assistant-launch';
+assistantLaunch.textContent = 'Need a spark?';
+assistantLaunch.setAttribute('aria-expanded', 'false');
+assistantLaunch.setAttribute('aria-controls', 'sparkPanel');
+const assistantPanel = document.createElement('section');
+assistantPanel.id = 'sparkPanel';
+assistantPanel.className = 'panel assistant-window hidden';
+assistantPanel.setAttribute('aria-label', 'Story assistant');
+assistantPanel.innerHTML = `<div class="assistant-head"><h3>A little inspiration</h3><button id="sparkClose" aria-label="Close assistant">Close</button></div><p class="small">Quick local generators. AI research can come later.</p><div class="assistant-options" role="group" aria-label="Suggestion type"><button data-spark="name" aria-pressed="true">Name</button><button data-spark="item" aria-pressed="false">Item</button><button data-spark="idea" aria-pressed="false">Story idea</button></div><label for="sparkMood">Style</label><select id="sparkMood"><option value="fantasy">Fantasy</option><option value="western">Western</option><option value="scifi">Sci-fi</option></select><div id="sparkResult" class="assistant-result" role="status" aria-live="polite"></div><div class="assistant-actions"><button id="sparkAgain">Try another</button><button id="sparkKeep">Keep in notes</button></div><p id="sparkFeedback" class="small" role="status">Nothing is added until you keep it.</p>`;
+document.body.append(assistantPanel, assistantLaunch);
+const sparkBanks = {
+ fantasy: {name:['Mira Thornvale','Oren Ashbrook','Tessa Moonfall','Bram Copperleaf','Nell Starling'],item:['A brass compass that points toward the last promise its owner broke.','A rainproof notebook with a map tucked into its cover.','A silver whistle that attracts curious moths.','A worn lantern bearing the seal of a forgotten guild.'],idea:['A village hires the party to find its missing bell. The bell has been ringing from the forest every midnight.','Two rival merchants ask the party to guard the same mysterious parcel.','A familiar innkeeper has vanished, leaving a meal laid out for someone who died years ago.','A bridge keeper accepts stories instead of coins, but recognizes one hero’s story.']},
+ western: {name:['Ada Mercer','Silas Pike','June Hollis','Ruth Calder','Elias Boone'],item:['A pocket watch engraved with tomorrow’s date.','A dented sheriff’s badge from a town missing from every map.','A saddlebag holding an unsigned letter and half a train ticket.','A tarnished harmonica with a name scratched inside.'],idea:['A stagecoach arrives without a driver. Every passenger tells a different story.','A rancher offers a reward for returning a stolen horse that keeps coming home by itself.','Two towns claim the same water spring, and a missing surveyor holds the answer.','A stranger buys every room at the inn and asks that one door stay unlocked.']},
+ scifi: {name:['Iona Vex','Dax Arlen','Nia Sol','Rook Vale','Tarin Kest'],item:['A cracked navigation chip with one unexplored destination.','A repair drone that refuses to leave an empty cargo bay.','A translator that occasionally recognizes an unknown language.','A station access card carrying an expired identity.'],idea:['A distress beacon broadcasts the party’s own voices from an abandoned station.','A cargo delivery contains a robot that insists it is the rightful recipient.','The station’s clocks lose one minute whenever a certain ship docks.','An explorer offers a map to a planet that official records say never existed.']}
+};
+let sparkType = 'name', sparkCurrent = '';
+function generateSpark(){const bank=sparkBanks[document.getElementById('sparkMood').value][sparkType];const choices=bank.filter(x=>x!==sparkCurrent);sparkCurrent=choices[Math.floor(Math.random()*choices.length)];document.getElementById('sparkResult').textContent=sparkCurrent;document.getElementById('sparkKeep').disabled=false;document.getElementById('sparkFeedback').textContent='Nothing is added until you keep it.';}
+assistantLaunch.onclick=()=>{const opening=assistantPanel.classList.contains('hidden');assistantPanel.classList.toggle('hidden',!opening);assistantLaunch.setAttribute('aria-expanded',String(opening));if(opening){if(!sparkCurrent)generateSpark();document.getElementById('sparkClose').focus()} };
+function closeSpark(){assistantPanel.classList.add('hidden');assistantLaunch.setAttribute('aria-expanded','false');assistantLaunch.focus()}
+document.getElementById('sparkClose').onclick=closeSpark;
+assistantPanel.addEventListener('keydown',e=>{if(e.key==='Escape')closeSpark()});
+assistantPanel.querySelectorAll('[data-spark]').forEach(b=>b.onclick=()=>{sparkType=b.dataset.spark;assistantPanel.querySelectorAll('[data-spark]').forEach(n=>n.setAttribute('aria-pressed',String(n===b)));generateSpark()});
+document.getElementById('sparkMood').onchange=generateSpark;
+document.getElementById('sparkAgain').onclick=generateSpark;
+document.getElementById('sparkKeep').onclick=()=>{try{state.notes.push(`[${sparkType}] ${sparkCurrent}`);save();refresh();document.getElementById('sparkKeep').disabled=true;document.getElementById('sparkFeedback').textContent='Kept in your private demo session notes.'}catch{document.getElementById('sparkFeedback').textContent='Could not save. Your suggestion is still here.'}};
