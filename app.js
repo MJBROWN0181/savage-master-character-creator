@@ -334,35 +334,17 @@ const app = {
   },
 
   showValidationErrors(errors) {
-    // Remove any existing toast
-    const existing = document.getElementById('validationToast');
-    if (existing) existing.remove();
-
-    const toast = document.createElement('div');
-    toast.id = 'validationToast';
-    toast.className = 'validation-toast';
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML = `
-      <div class="validation-toast-icon">⚠</div>
-      <div class="validation-toast-body">
-        <strong>Complete this step first</strong>
-        <ul>${errors.map(e => `<li>${e}</li>`).join('')}</ul>
-      </div>
-      <button class="validation-toast-close" onclick="this.parentElement.remove()">✕</button>
-    `;
-    document.body.appendChild(toast);
-
-    // Force reflow then trigger slide-in animation
-    toast.offsetHeight;
-    toast.classList.add('show');
-
-    // Auto-dismiss after 8 seconds
-    setTimeout(() => {
-      if (toast.parentElement) {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 350);
-      }
-    }, 8000);
+    document.getElementById('stepValidation')?.remove();
+    const message = document.createElement('div');
+    message.id = 'stepValidation';
+    message.className = 'step-validation';
+    message.setAttribute('role', 'alert');
+    message.setAttribute('tabindex', '-1');
+    message.innerHTML = `<strong>Complete this step to continue</strong><ul>${errors.map(error => `<li>${this.escHtml(error)}</li>`).join('')}</ul>`;
+    const main = document.getElementById('mainContent');
+    main.querySelector('.step-content').prepend(message);
+    main.scrollTop = 0;
+    message.focus({ preventScroll: true });
   },
 
   goToStep(i) {
@@ -705,7 +687,7 @@ const app = {
     const summary = document.getElementById('summaryPanel');
     if (summary) summary.style.display = '';
     const step = STEPS[this.currentStep].id;
-    main.innerHTML = `<div class="step-content">${this.getTipHtml()}${this['render_' + step]()}</div>`;
+    main.innerHTML = `<div class="step-content"><p class="step-progress">Step ${this.currentStep + 1} of ${STEPS.length} &middot; ${STEPS[this.currentStep].label}</p>${this.getTipHtml()}${this['render_' + step]()}</div>`;
     main.querySelectorAll('.card[onclick]:not(.race-locked), .heritage-choice[onclick]').forEach(card => {
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
@@ -814,6 +796,7 @@ const app = {
     const settingKeys = Object.keys(SETTINGS);
     return `
       <h2>Choose Your Setting</h2>
+      <div class="form-group"><label for="startingName">Character name <span class="field-hint">(you can change it later)</span></label><input id="startingName" type="text" value="${this.escHtml(this.character.name)}" placeholder="Name your hero to save a draft" oninput="app.character.name = this.value; app.renderSummary();"></div>
       <div class="getting-started"><strong>Build a hero. Bring them to your table.</strong><p>Choose a setting, follow the steps, then review and export your sheet. Your draft saves on this device as you work. Sign in and select Save Character to keep a copy across devices.</p><button class="btn btn-sm" onclick="app.showCommunityPage()">Find Players &amp; Help</button></div>
       <p class="step-desc">Select the world your character inhabits. Each setting provides unique ancestries, edges, hindrances, and gear alongside the core Savage Worlds options.</p>
       <div class="setting-grid">
@@ -977,19 +960,19 @@ const app = {
       <h2>Character Concept</h2>
       <p class="step-desc">Define who your character is. Give them a name and a brief concept that captures their essence.</p>
       <div class="form-group">
-        <label>Character Name</label>
-        <input type="text" value="${this.escHtml(this.character.name)}"
+        <label for="characterName">Character Name</label>
+        <input id="characterName" type="text" value="${this.escHtml(this.character.name)}"
                oninput="app.character.name = this.value; app.renderSummary();"
                placeholder="Enter your character's name...">
       </div>
       <div class="form-group">
-        <label>Concept / Background</label>
-        <textarea oninput="app.character.concept = this.value; app.renderSummary();"
+        <label for="characterConcept">Concept / Background</label>
+        <textarea id="characterConcept" oninput="app.character.concept = this.value; app.renderSummary();"
                   placeholder="Grizzled bounty hunter, wandering healer, cunning thief...">${this.escHtml(this.character.concept)}</textarea>
       </div>
       <div class="form-group">
-        <label>Notes</label>
-        <textarea oninput="app.character.notes = this.value; app.saveCharacter();"
+        <label for="characterNotes">Notes</label>
+        <textarea id="characterNotes" oninput="app.character.notes = this.value; app.saveCharacter();"
                   placeholder="Any additional notes about your character...">${this.escHtml(this.character.notes)}</textarea>
       </div>
       ${this.navButtons()}
@@ -2071,8 +2054,8 @@ const app = {
   navButtons(isLast = false) {
     return `
       <div class="nav-buttons">
-        ${this.currentStep > 0 ? `<button class="btn" onclick="app.prevStep()">&#9664; Back</button>` : '<span></span>'}
-        ${!isLast ? `<button class="btn btn-primary" onclick="app.nextStep()">Next &#9654;</button>` : '<span></span>'}
+        ${this.currentStep > 0 ? `<button class="btn" onclick="app.prevStep()">&#9664; ${STEPS[this.currentStep - 1].label}</button>` : '<span></span>'}
+        ${!isLast ? `<button class="btn btn-primary" onclick="app.nextStep()">Next: ${STEPS[this.currentStep + 1].label} &#9654;</button>` : '<span></span>'}
       </div>
     `;
   },

@@ -97,3 +97,10 @@ Suggested beta invitation, for review only:
 > gets confusing or the results need correcting. Which settings do you play?
 
 No announcements, invitations, or community posts were sent by this review.
+
+## October 1 usability follow-up
+
+Added an 11-step progress indicator, destination names on Next/Back buttons, and a character-name field on the first screen. Validation now stays in the current step and receives keyboard focus instead of disappearing after eight seconds. Concept fields have associated labels.
+
+Browser checks confirmed an unnamed Half-Elf cannot advance without heritage, the message remains visible, choosing heritage permits advancement, and the early name survives reload. At a 390 x 844 phone viewport, the page has no horizontal overflow and the validation message remains readable. Existing automated tests, TypeScript checks, and production build pass.
+

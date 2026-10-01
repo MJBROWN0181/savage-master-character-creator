@@ -184,6 +184,11 @@ body {
 
 /* Main Content */
 .getting-started { padding: 1rem; margin-bottom: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); }
+.step-progress { color: var(--accent); font-size: .85rem; margin-bottom: .8rem; }
+.field-hint { color: var(--text-dim); font-size: .85rem; font-weight: normal; }
+.step-validation { padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--accent); border-radius: 8px; background: var(--bg-input); line-height: 1.5; }
+.step-validation ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+@media (max-width: 600px) { .nav-buttons .btn { font-size: .75rem; padding: .7rem .6rem; } }
 .getting-started p { margin: .5rem 0 .8rem; line-height: 1.5; }
 .community-page { max-width: 950px; margin: auto; }
 .community-page a { color: var(--accent); }
