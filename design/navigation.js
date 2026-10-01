@@ -8,6 +8,15 @@ plansLink.href='#plans';plansLink.textContent='Account plans';plansLink.classNam
 plansLink.onclick=event=>{event.preventDefault();plansButton.click();sideMenu.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed','false'));plansLink.setAttribute('aria-current','page')};
 menuButtons.forEach(button=>button.addEventListener('click',()=>plansLink.removeAttribute('aria-current')));
 plansButton.hidden=true;plansButton.style.display='none';workspaceHeading.after(plansLink);
+const profileLink=document.createElement('a');
+profileLink.href='https://smsheets.com/profile';profileLink.className='sidebar-profile-link';
+const profilePicture=document.createElement('img');
+profilePicture.src='./profile-avatar.svg';profilePicture.alt='';profilePicture.width=28;profilePicture.height=28;
+profileLink.append(profilePicture,document.createTextNode('My Profile'));
+plansLink.before(profileLink);
+const profileStyle=document.createElement('style');
+profileStyle.textContent='.sidebar-profile-link{display:flex;align-items:center;gap:9px;margin:0 0 8px;color:var(--text);font-size:13px;text-decoration:none}.sidebar-profile-link img{border-radius:50%;border:1px solid var(--accent);object-fit:cover;flex-shrink:0}.sidebar-profile-link:hover{color:var(--accent)}.sidebar-profile-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}';
+document.head.append(profileStyle);
 const groups=[['Play',['GM Storyboard','Game Mat','Table View','My Journal','GM Private Journal']],['Library',['Campaign Tome','Personal Vault','Books & Resources']],['Create & discover',['Marketplace','Keepsake Studio']],['Preferences',['Settings']]];
 const accountBlock=sideMenu.querySelector('.account');
 groups.forEach(([name,labels])=>{const section=document.createElement('nav');section.setAttribute('aria-label',name);const heading=document.createElement('p');heading.className='menu-group-label';heading.textContent=name;section.append(heading);labels.forEach(label=>{const button=menuButtons.get(label);if(button)section.append(button)});sideMenu.insertBefore(section,accountBlock)});
