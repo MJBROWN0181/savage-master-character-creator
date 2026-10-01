@@ -797,7 +797,7 @@ const app = {
     return `
       <h2>Choose Your Setting</h2>
       <div class="form-group"><label for="startingName">Character name <span class="field-hint">(you can change it later)</span></label><input id="startingName" type="text" value="${this.escHtml(this.character.name)}" placeholder="Name your hero to save a draft" oninput="app.character.name = this.value; app.renderSummary();"></div>
-      <div class="getting-started"><strong>Build a hero. Bring them to your table.</strong><p>Choose a setting, follow the steps, then review and export your sheet. Your draft saves on this device as you work. Sign in and select Save Character to keep a copy across devices.</p><button class="btn btn-sm" onclick="app.showCommunityPage()">Find Players &amp; Help</button></div>
+      <div class="getting-started art-intro"><img class="hero-kit-art" src="images/art/hero-kit.webp" alt="" width="720" height="480" decoding="async"><div><strong>Build a hero. Bring them to your table.</strong><p>Choose a setting, follow the steps, then review and export your sheet. Your draft saves on this device as you work. Sign in and select Save Character to keep a copy across devices.</p><button class="btn btn-sm" onclick="app.showCommunityPage()">Find Players &amp; Help</button></div></div>
       <p class="step-desc">Select the world your character inhabits. Each setting provides unique ancestries, edges, hindrances, and gear alongside the core Savage Worlds options.</p>
       <div class="setting-grid">
         <div class="card setting-card ${selected === null ? 'selected' : ''}" onclick="app.selectSetting(null)">

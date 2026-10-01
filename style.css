@@ -2626,3 +2626,4 @@ select:focus {
   .sidebar.account-open { display: flex !important; position: fixed; z-index: 210; top: 0; left: 0; bottom: 0; width: min(300px, 90vw); max-height: 100vh; }
   .sidebar.account-open .account-close { display: block; margin: 0 1rem; }
 }
+.getting-started.art-intro{display:grid;grid-template-columns:170px minmax(0,1fr);gap:20px;align-items:center}.hero-kit-art{width:100%;height:auto;object-fit:contain;filter:drop-shadow(0 6px 10px #0003)}.getting-started.art-intro>div{min-width:0}@media(max-width:600px){.getting-started.art-intro{grid-template-columns:1fr;gap:10px}.hero-kit-art{width:180px;justify-self:center}}

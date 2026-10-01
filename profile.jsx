@@ -935,11 +935,11 @@ function App() {
         </>
       ) : (
         <>
-          <header>
-            <h1>Your place at the table</h1>
+          <header className="workspace-hero">
+            <div><span className="art-eyebrow">Keep the stories worth telling</span><h1>Your place at the table</h1>
             <p>
               One identity. Every adventure. Make your profile feel like you.
-            </p>
+            </p></div><img className="workspace-art" src="/images/art/memory-journal.webp" alt="" width="720" height="480" decoding="async"/>
           </header>
           <CharacterAccount accountOnly />
           {isLoading ? (
