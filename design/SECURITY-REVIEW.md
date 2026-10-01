@@ -21,3 +21,9 @@ Vault/background file input now checks PNG/JPEG/WebP/PDF signatures and disallow
 - Community/marketplace require moderation, anti-spam/rate limits, safe media, account permissions and payment-provider onboarding/webhook validation before real posting or money movement.
 
 No claim that the app is fully secure. Retest production response headers after deployment; these files are not cloud permissions or a substitute for backend implementation.
+
+## Follow-up hardening
+
+Added full server-side character shape/bounds/identifier validation; imported gear text is escaped before HTML rendering and imported identifiers are constrained. Added private campaign/journal backend foundation: only journal authors can list/edit their private entries, and campaign-linked GM entries require campaign GM access. Even the campaign owner cannot overwrite a player's private entry. Tests exercise these denials. These APIs are not yet connected to the local storyboard UI; no claim of secure prototype account storage.
+
+Configured an initial CSP limiting resources/connections to self, required font services and Convex, and disabling objects/framing. Inline scripts remain allowed for current legacy handlers, so this is defense in depth, not complete XSS prevention. Key rotation remains pending user creation of a restricted replacement; the temporary key file is ignored by Git. Production multiplayer turns, cloud assets and marketplace payments are still disabled until their corresponding authorization flows are implemented.

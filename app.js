@@ -1677,8 +1677,8 @@ const app = {
           <tbody>`;
       this.character.gear.forEach((g, i) => {
         html += `<tr>
-          <td>${g.name}</td>
-          <td class="cost">\$${g.cost}</td>
+          <td>${this.escHtml(g.name)}</td>
+          <td class="cost">\$${this.escHtml(g.cost)}</td>
           <td>
             <div class="qty-controls">
               <button onclick="app.changeGearQty(${i}, -1)">-</button>
@@ -1881,7 +1881,7 @@ const app = {
         ${c.gear.length > 0 ? `
           <h3 style="color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:0.3rem; margin:1rem 0 0.5rem; text-transform:uppercase; font-size:0.85rem; letter-spacing:1px;">Gear</h3>
           <ul class="summary-list">
-            ${c.gear.map(g => `<li>${g.name}${(g.qty || 1) > 1 ? ' x' + g.qty : ''} ${g.damage ? '(' + g.damage + ')' : ''}</li>`).join('')}
+            ${c.gear.map(g => `<li>${this.escHtml(g.name)}${(g.qty || 1) > 1 ? ' x' + g.qty : ''} ${g.damage ? '(' + g.damage + ')' : ''}</li>`).join('')}
           </ul>
           <div class="summary-row" style="margin-top:0.5rem;"><span class="s-label">Remaining Funds</span><span class="s-value">\$${this.getRemainingFunds()}</span></div>
         ` : ''}
@@ -2040,7 +2040,7 @@ const app = {
         <div class="summary-section">
           <h3>Gear</h3>
           <ul class="summary-list">
-            ${c.gear.map(g => `<li>${g.name}${(g.qty||1) > 1 ? ' x' + g.qty : ''}</li>`).join('')}
+            ${c.gear.map(g => `<li>${this.escHtml(g.name)}${(g.qty||1) > 1 ? ' x' + g.qty : ''}</li>`).join('')}
           </ul>
           <div class="summary-row" style="margin-top:0.3rem;"><span class="s-label">Funds</span><span class="s-value">\$${this.getRemainingFunds()}</span></div>
         </div>
@@ -2313,13 +2313,17 @@ const app = {
     }
     if (c.setting !== null && !Object.hasOwn(SETTINGS, c.setting)) throw new Error('Unknown campaign setting.');
     if (c.race !== null && typeof c.race !== 'string') throw new Error('Invalid ancestry.');
+    const safeId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,100}$/.test(value);
+    if (['edges', 'hindrances', 'bonusRules', 'languages'].some(key => c[key].some(value => !safeId(value))) ||
+        c.powers.some(power => !power || !safeId(power.id) || typeof power.trapping !== 'string') ||
+        (c.race !== null && !safeId(c.race))) throw new Error('Invalid character identifiers.');
     for (const a of SWADE.ATTRIBUTES) {
       if (!Number.isInteger(c.attributes[a.id]) || c.attributes[a.id] < 4 || c.attributes[a.id] > 12) throw new Error('Invalid attributes.');
     }
     for (const s of SWADE.SKILLS) {
       if (!Number.isInteger(c.skills[s.id]) || c.skills[s.id] < 0 || c.skills[s.id] > 12) throw new Error('Invalid skills.');
     }
-    if (c.gear.some(g => !g || typeof g.id !== 'string' || !Number.isInteger(g.qty) || g.qty < 1)) throw new Error('Invalid equipment.');
+    if (c.gear.some(g => !g || typeof g.id !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(g.id) || !Number.isInteger(g.qty) || g.qty < 1)) throw new Error('Invalid equipment.');
     return { ...defaults, ...c, attributes: { ...defaults.attributes, ...c.attributes }, skills: { ...defaults.skills, ...c.skills } };
   },
 

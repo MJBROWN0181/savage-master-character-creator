@@ -23,6 +23,6 @@
     "build": "vite build && node scripts/copy-static.mjs",
     "dev": "vite --host 0.0.0.0",
     "check": "tsc -p convex/tsconfig.json --noEmit",
-    "test": "vitest run convex/characters.test.ts && node --test tests/*.test.mjs"
+    "test": "vitest run convex && node --test tests/*.test.mjs"
   }
 }

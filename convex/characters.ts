@@ -1,6 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutationGeneric as mutation, queryGeneric as query } from "convex/server";
 import { v } from "convex/values";
+import { validateCharacterSnapshot } from "./characterValidation";
 
 export const list = query({
   args: {},
@@ -29,9 +30,7 @@ export const save = mutation({
   handler: async (ctx, { id, snapshot }) => {
     const ownerId = await getAuthUserId(ctx);
     if (!ownerId) throw new Error("Sign in to save a character.");
-    if (!snapshot || snapshot.version !== 1 || !snapshot.character ||
-        typeof snapshot.character.name !== "string" || !snapshot.character.name.trim() ||
-        JSON.stringify(snapshot).length > 200_000) throw new Error("Invalid character or backup too large.");
+    validateCharacterSnapshot(snapshot);
     const data = {
       name: snapshot.character.name.trim().slice(0, 120),
       setting: typeof snapshot.character.setting === "string" ? snapshot.character.setting : undefined,
