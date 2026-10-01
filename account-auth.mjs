@@ -8,7 +8,7 @@ export function normalizeEmailCode(code) {
 
 export function accountErrorMessage(mode, error) {
   if (mode === 'email-verification' || mode === 'reset-verification') {
-    return 'We could not verify that code. Use the code from your latest email and try again.';
+    return 'Incorrect code. Enter the code from your latest email and try again.';
   }
   return error.message || 'Could not sign in. Please try again.';
 }

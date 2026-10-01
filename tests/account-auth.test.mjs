@@ -23,7 +23,7 @@ test('pasted email codes preserve leading zeros and remove formatting', () => {
 test('verification failure explains how to retry without exposing raw server errors', () => {
   const error = new Error('[CONVEX A(auth:signIn)] Server Error Called by client');
   for (const mode of ['email-verification', 'reset-verification']) {
-    assert.match(accountErrorMessage(mode, error), /latest email/);
+    assert.equal(accountErrorMessage(mode, error), 'Incorrect code. Enter the code from your latest email and try again.');
     assert.doesNotMatch(accountErrorMessage(mode, error), /CONVEX/);
   }
   assert.equal(accountErrorMessage('signIn', new Error('Invalid password')), 'Invalid password');
