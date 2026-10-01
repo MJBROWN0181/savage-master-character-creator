@@ -51,9 +51,13 @@ Sources:
    refreshed the site with the session and cloud record intact, imported a different
    local draft, and loaded the cloud copy. Name, Agility d8, Vigor d6, Fighting d6,
    and derived stats returned correctly. Sign-out also returned to the sign-in form.
-   A clearly named test record remains in the account. Password reset is prepared
-   for the owner to complete, since browser credential rules require user entry of
-   the new password. Reset completion and sign-in with it remain pending.
+   A clearly named test record remains in the account. On October 1 the owner
+   confirmed completing the email-code password reset and signing in with the new
+   password. The live account panel showed authenticated controls, and loading the
+   same saved test character succeeded after that sign-in. Password entry and reset
+   submission were completed by the owner; no new credentials were collected.
+   Production app.js/data.js/settings.js match the tested source after normalizing
+   Windows/server line endings.
 2. Import exports into actual current Foundry SWADE and Roll20 sheets. Existing
    export formats have not been certified against those running products.
 3. Replace the Resend key supplied in chat; keep replacement secrets out of chat
