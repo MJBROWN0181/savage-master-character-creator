@@ -1,8 +1,56 @@
 import { convexTest } from "convex-test";
-import { test, expect } from "vitest";
+import { test, expect, vi } from "vitest";
 import { makeFunctionReference as ref } from "convex/server";
 import schema from "./schema";
 const modules = import.meta.glob("./**/*.ts");
+test("profile images reject spoofed files and cannot be claimed by another account", async () => {
+  const t = convexTest(schema, modules);
+  const a = await t.run((c) =>
+    c.db.insert("users", { email: "image@test.example" }),
+  );
+  const b = await t.run((c) =>
+    c.db.insert("users", { email: "other-image@test.example" }),
+  );
+  const owner = t.withIdentity({ subject: a }),
+    other = t.withIdentity({ subject: b });
+  const bad = new Blob(["<html>not a photo</html>"], { type: "image/png" });
+  const badId = await t.run((c) => c.storage.store(bad));
+  // convex-test omits the Content-Type metadata normally set by HTTP uploads.
+  await t.run((c) => (c.db as any).patch(badId, { contentType: "image/png" }));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(bad)),
+  );
+  try {
+    await expect(
+      owner.action(ref<"action">("profileImages:validate"), {
+        storageId: badId,
+      }),
+    ).rejects.toThrow("PNG, JPEG");
+    const bytes = new Uint8Array(24);
+    bytes.set([137, 80, 78, 71, 13, 10, 26, 10]);
+    const image = new Blob([bytes], { type: "image/png" });
+    const storageId = await t.run((c) => c.storage.store(image));
+    await t.run((c) =>
+      (c.db as any).patch(storageId, { contentType: "image/png" }),
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(image)),
+    );
+    await owner.action(ref<"action">("profileImages:validate"), { storageId });
+    await expect(
+      other.action(ref<"action">("profileImages:validate"), { storageId }),
+    ).rejects.toThrow("another account");
+    const id = await owner.mutation(save, { ...draft, avatarId: storageId });
+    expect((await owner.query(mine, {})).avatarId).toBe(storageId);
+    await owner.mutation(save, draft);
+    expect((await owner.query(mine, {})).avatarId).toBeUndefined();
+    expect(id).toBeTruthy();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
 const draft = {
   handle: "table-hero",
   displayName: "Hero",
