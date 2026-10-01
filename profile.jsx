@@ -287,6 +287,14 @@ function Editor({ initial, characters, journals, onStatus }) {
           role="tablist"
           aria-label="Profile settings"
           className="profile-tabs"
+          onKeyDown={(event) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? steps.length - 1 : (step + (event.key === 'ArrowRight' ? 1 : -1) + steps.length) % steps.length;
+            setTab(steps[next][0]);
+            setGuided(false);
+            document.getElementById('tab-' + steps[next][0])?.focus();
+          }}
         >
           {steps.map(([id, label], i) => (
             <button
@@ -295,6 +303,7 @@ function Editor({ initial, characters, journals, onStatus }) {
               type="button"
               role="tab"
               aria-selected={tab === id}
+              tabIndex={tab === id ? 0 : -1}
               aria-controls={"panel-" + id}
               onClick={() => {
                 setTab(id);
