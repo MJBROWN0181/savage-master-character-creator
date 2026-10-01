@@ -255,3 +255,153 @@
     min-width: 0;
   }
 }
+.profile-settings-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.profile-settings-top p {
+  color: var(--muted);
+  max-width: 650px;
+  margin-bottom: 18px;
+}
+.profile-settings-top button {
+  white-space: nowrap;
+}
+.profile-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+.profile-tabs button {
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  border-color: transparent;
+  padding: 8px 14px;
+}
+.profile-tabs button[aria-selected="true"] {
+  color: var(--gold);
+  border-color: #e4b96b60;
+  background: #e4b96b0d;
+}
+.profile-tabs button:hover {
+  border-color: var(--line);
+  color: var(--gold);
+}
+.profile-tab-panel {
+  max-width: 740px;
+  padding: 20px 0 10px;
+}
+.profile-tab-panel label {
+  margin: 14px 0;
+}
+.profile-tab-panel label input,
+.profile-tab-panel label select {
+  width: 100%;
+  min-width: 0;
+}
+.profile-tab-panel fieldset {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.profile-tab-panel legend {
+  color: var(--gold);
+  padding: 0 8px;
+}
+.profile-tab-panel input[type="file"] {
+  font-size: 13px;
+}
+.profile-tab-panel h3 {
+  margin-top: 24px;
+}
+.profile-tab-panel .upload-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 16px;
+}
+.profile-settings-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding-top: 20px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.profile-settings-footer a {
+  font-size: 13px;
+}
+.profile-step-actions {
+  display: flex;
+  gap: 10px;
+}
+.profile-step-actions .secondary {
+  background: transparent;
+  color: var(--muted);
+}
+.profile-step {
+  padding: 16px 18px;
+  margin-top: 20px;
+  border-left: 2px solid var(--gold);
+  background: #e4b96b08;
+  border-radius: 0 6px 6px 0;
+}
+.profile-step span {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.profile-step p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+#panel-style fieldset {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 18px;
+}
+#panel-style fieldset > p,
+#panel-style fieldset > .order-row,
+#panel-style fieldset > button,
+#panel-style fieldset > label:has(input[type="file"]) {
+  grid-column: 1/-1;
+}
+@media (max-width: 600px) {
+  .profile-settings-top {
+    display: block;
+  }
+  .profile-settings-top button {
+    margin-bottom: 16px;
+  }
+  .profile-tabs {
+    gap: 4px;
+  }
+  .profile-tabs button {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+  .profile-settings-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .profile-step-actions {
+    width: 100%;
+  }
+  .profile-step-actions button {
+    flex: 1;
+  }
+  #panel-style fieldset {
+    grid-template-columns: 1fr;
+  }
+  .profile-tab-panel fieldset {
+    padding: 12px;
+  }
+}

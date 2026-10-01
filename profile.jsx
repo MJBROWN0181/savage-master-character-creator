@@ -140,6 +140,16 @@ function ProfileCard({ p, characters = [] }) {
   );
 }
 function Editor({ initial, characters, journals, onStatus }) {
+  const [tab, setTab] = useState("about"),
+    [guided, setGuided] = useState(false);
+  const steps = [
+    ["about", "About you"],
+    ["style", "Appearance"],
+    ["showcase", "Showcase"],
+    ["links", "Links"],
+    ["share", "Review & save"],
+  ];
+  const step = steps.findIndex(([id]) => id === tab);
   const [draft, setDraft] = useState(initial || blank),
     [age, setAge] = useState(false),
     [policy, setPolicy] = useState(false),
@@ -254,23 +264,74 @@ function Editor({ initial, characters, journals, onStatus }) {
   }
   return (
     <>
-      <div className="profile-editor">
-        <section>
-          <h2>Make it yours</h2>
-          <a href="#profile-preview">Jump to your live preview ↓</a>
-          <p>
-            All personal details are optional. One profile follows you as a
-            player and a GM.
-          </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              run(async () => {
-                await persist();
-                onStatus("Private draft saved. Your preview is below.");
-              });
+      <section id="profile-settings" className="profile-settings">
+        <div className="profile-settings-top">
+          <div>
+            <h2>Make it yours</h2>
+            <p>
+              Small steps. Your own gaming home. Everything you enter stays in
+              your draft until you save.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setGuided(true);
+              setTab("about");
             }}
           >
+            Start here
+          </button>
+        </div>
+        <div
+          role="tablist"
+          aria-label="Profile settings"
+          className="profile-tabs"
+        >
+          {steps.map(([id, label], i) => (
+            <button
+              key={id}
+              id={"tab-" + id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              aria-controls={"panel-" + id}
+              onClick={() => {
+                setTab(id);
+                setGuided(false);
+              }}
+            >
+              {guided ? `${i + 1}. ` : ""}
+              {label}
+            </button>
+          ))}
+        </div>
+        {guided && (
+          <div className="profile-step">
+            <span>
+              Step {step + 1} of {steps.length}
+            </span>
+            <p>
+              {
+                [
+                  "Start with a name and picture, or leave them for later. Your Player and GM roles share this profile.",
+                  "Choose your colors, font, and layout. Upload your own background to make this page yours.",
+                  "Choose the characters and player memories you want visitors to see. Private GM notes stay private.",
+                  "Add your social pages, artwork shop, or marketplace listings. These are optional.",
+                  "Preview your page, confirm your age, and save privately. Request sharing only when you are ready.",
+                ][step]
+              }
+            </p>
+          </div>
+        )}
+        {tab === "about" && (
+          <div
+            role="tabpanel"
+            id="panel-about"
+            aria-labelledby="tab-about"
+            className="profile-tab-panel"
+          >
+            {" "}
             <label>
               Profile address
               <input
@@ -363,6 +424,16 @@ function Editor({ initial, characters, journals, onStatus }) {
                 onChange={(e) => field("memory", e.target.value)}
               />
             </label>
+          </div>
+        )}
+        {tab === "style" && (
+          <div
+            role="tabpanel"
+            id="panel-style"
+            aria-labelledby="tab-style"
+            className="profile-tab-panel"
+          >
+            {" "}
             <fieldset>
               <legend>Your page style</legend>
               {Object.entries({
@@ -383,8 +454,13 @@ function Editor({ initial, characters, journals, onStatus }) {
                   </select>
                 </label>
               ))}
+              <p className="upload-hint">
+                Use your own art, a favorite landscape, or a tabletop photo.
+                PNG, JPEG, or WebP · up to 4 MB. Your picture is softened behind
+                the page so your story stays readable.
+              </p>
               <label>
-                Custom background
+                Upload your own background
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -429,6 +505,225 @@ function Editor({ initial, characters, journals, onStatus }) {
                 </div>
               ))}
             </fieldset>
+          </div>
+        )}
+        {tab === "showcase" && (
+          <div
+            role="tabpanel"
+            id="panel-showcase"
+            aria-labelledby="tab-showcase"
+            className="profile-tab-panel"
+          >
+            {" "}
+            <h2>Your showcase</h2>
+            <p>
+              Choose up to six characters and six journal excerpts. Only these
+              selected details will appear on your public profile.
+            </p>
+            <label>
+              Feature a saved character
+              <select
+                value=""
+                onChange={(e) => {
+                  if (
+                    e.target.value &&
+                    draft.favorites.length < 6 &&
+                    !draft.favorites.some(
+                      (f) => f.characterId === e.target.value,
+                    )
+                  )
+                    field("favorites", [
+                      ...draft.favorites,
+                      { characterId: e.target.value },
+                    ]);
+                }}
+              >
+                <option value="">Choose character</option>
+                {characters.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {draft.favorites.map((f, i) => (
+              <article key={f.characterId}>
+                <h3>{characters.find((c) => c._id === f.characterId)?.name}</h3>
+                <label>
+                  Character portrait
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    disabled={busy}
+                    onChange={(e) => upload(e.target.files[0], "character", i)}
+                  />
+                </label>
+                <button
+                  onClick={() =>
+                    field(
+                      "favorites",
+                      draft.favorites.filter((_, j) => i !== j),
+                    )
+                  }
+                >
+                  Remove character
+                </button>
+              </article>
+            ))}
+            <label>
+              Share a player journal excerpt
+              <select
+                value=""
+                onChange={(e) => {
+                  const j = journals.find((j) => j._id === e.target.value);
+                  if (
+                    j &&
+                    draft.highlights.length < 6 &&
+                    !draft.highlights.some((h) => h.journalId === j._id)
+                  )
+                    field("highlights", [
+                      ...draft.highlights,
+                      { journalId: j._id, excerpt: j.text.slice(0, 800) },
+                    ]);
+                }}
+              >
+                <option value="">Choose journal entry</option>
+                {journals.map((j) => (
+                  <option key={j._id} value={j._id}>
+                    {j.text.slice(0, 70)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <small>
+              Private GM journals are never offered for sharing. Select only
+              excerpts you are happy to make public.
+            </small>
+            {draft.highlights.map((h, i) => (
+              <article key={h.journalId}>
+                <label>
+                  Public excerpt · copy an exact passage, up to 800 characters
+                  <textarea
+                    maxLength={800}
+                    value={h.excerpt}
+                    onChange={(e) =>
+                      field(
+                        "highlights",
+                        draft.highlights.map((x, j) =>
+                          j === i ? { ...x, excerpt: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+                <button
+                  onClick={() =>
+                    field(
+                      "highlights",
+                      draft.highlights.filter((_, j) => i !== j),
+                    )
+                  }
+                >
+                  Remove excerpt
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+        {tab === "links" && (
+          <div
+            role="tabpanel"
+            id="panel-links"
+            aria-labelledby="tab-links"
+            className="profile-tab-panel"
+          >
+            {" "}
+            <h3>Social & shop links</h3>
+            <p>
+              Link your social pages and marketplace listings or creator shop.
+            </p>
+            {draft.links.map((l, i) => (
+              <article key={i}>
+                <label>
+                  Link label
+                  <input
+                    maxLength={60}
+                    value={l.label}
+                    onChange={(e) =>
+                      field(
+                        "links",
+                        draft.links.map((x, j) =>
+                          j === i ? { ...x, label: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+                <label>
+                  HTTPS address
+                  <input
+                    type="url"
+                    value={l.url}
+                    onChange={(e) =>
+                      field(
+                        "links",
+                        draft.links.map((x, j) =>
+                          j === i ? { ...x, url: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+                <label>
+                  Link type
+                  <select
+                    value={l.kind}
+                    onChange={(e) =>
+                      field(
+                        "links",
+                        draft.links.map((x, j) =>
+                          j === i ? { ...x, kind: e.target.value } : x,
+                        ),
+                      )
+                    }
+                  >
+                    <option value="social">Social media</option>
+                    <option value="shop">Marketplace / shop</option>
+                  </select>
+                </label>
+                <button
+                  onClick={() =>
+                    field(
+                      "links",
+                      draft.links.filter((_, j) => i !== j),
+                    )
+                  }
+                >
+                  Remove link
+                </button>
+              </article>
+            ))}
+            <button
+              disabled={draft.links.length >= 12}
+              onClick={() =>
+                field("links", [
+                  ...draft.links,
+                  { label: "", url: "https://", kind: "social" },
+                ])
+              }
+            >
+              Add link
+            </button>
+          </div>
+        )}
+        {tab === "share" && (
+          <div
+            role="tabpanel"
+            id="panel-share"
+            aria-labelledby="tab-share"
+            className="profile-tab-panel"
+          >
+            {" "}
             {!initial && (
               <label className="check">
                 <input
@@ -440,261 +735,113 @@ function Editor({ initial, characters, journals, onStatus }) {
                 I confirm I am 18 or older.
               </label>
             )}
-            <button disabled={busy}>
-              {busy ? "Saving…" : "Save private draft"}
+            <h3>Share with confidence</h3>
+            <p>
+              Your account email and age confirmation never appear on your
+              profile. Public profiles need review for explicit imagery, hate,
+              harassment, threats, scams, and exposed personal information. Only
+              upload images you have permission to use.
+            </p>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={policy}
+                onChange={(e) => setPolicy(e.target.checked)}
+              />
+              I have checked my profile and agree to these community rules. My
+              chosen details, images, links and excerpts may be shared publicly
+              after approval.
+            </label>
+            <button
+              disabled={busy || !policy}
+              onClick={() =>
+                run(async () => {
+                  await persist();
+                  await review({});
+                  onStatus(
+                    "Submitted for review. Your profile is private until approved.",
+                  );
+                })
+              }
+            >
+              Save & request public sharing
             </button>
-          </form>
-        </section>
-        <section>
-          <h2>Your showcase</h2>
-          <p>
-            Choose up to six characters and six journal excerpts. Only these
-            selected details will appear on your public profile.
-          </p>
-          <label>
-            Feature a saved character
-            <select
-              value=""
-              onChange={(e) => {
-                if (
-                  e.target.value &&
-                  draft.favorites.length < 6 &&
-                  !draft.favorites.some((f) => f.characterId === e.target.value)
-                )
-                  field("favorites", [
-                    ...draft.favorites,
-                    { characterId: e.target.value },
-                  ]);
-              }}
-            >
-              <option value="">Choose character</option>
-              {characters.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {draft.favorites.map((f, i) => (
-            <article key={f.characterId}>
-              <h3>{characters.find((c) => c._id === f.characterId)?.name}</h3>
-              <label>
-                Character portrait
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
+            {initial && (
+              <>
+                <p>
+                  Sharing status: {initial.reviewStatus}. Editing an approved
+                  profile leaves its previously reviewed version public until
+                  another review.
+                </p>
+                {initial.reviewStatus === "approved" && (
+                  <label>
+                    Share your profile
+                    <input
+                      readOnly
+                      value={
+                        location.origin + "/profile?user=" + initial.handle
+                      }
+                    />
+                  </label>
+                )}
+                <button
                   disabled={busy}
-                  onChange={(e) => upload(e.target.files[0], "character", i)}
-                />
-              </label>
-              <button
-                onClick={() =>
-                  field(
-                    "favorites",
-                    draft.favorites.filter((_, j) => i !== j),
-                  )
-                }
-              >
-                Remove character
-              </button>
-            </article>
-          ))}
-          <label>
-            Share a player journal excerpt
-            <select
-              value=""
-              onChange={(e) => {
-                const j = journals.find((j) => j._id === e.target.value);
-                if (
-                  j &&
-                  draft.highlights.length < 6 &&
-                  !draft.highlights.some((h) => h.journalId === j._id)
-                )
-                  field("highlights", [
-                    ...draft.highlights,
-                    { journalId: j._id, excerpt: j.text.slice(0, 800) },
-                  ]);
-              }}
-            >
-              <option value="">Choose journal entry</option>
-              {journals.map((j) => (
-                <option key={j._id} value={j._id}>
-                  {j.text.slice(0, 70)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <small>
-            Private GM journals are never offered for sharing. Select only
-            excerpts you are happy to make public.
-          </small>
-          {draft.highlights.map((h, i) => (
-            <article key={h.journalId}>
-              <label>
-                Public excerpt · copy an exact passage, up to 800 characters
-                <textarea
-                  maxLength={800}
-                  value={h.excerpt}
-                  onChange={(e) =>
-                    field(
-                      "highlights",
-                      draft.highlights.map((x, j) =>
-                        j === i ? { ...x, excerpt: e.target.value } : x,
-                      ),
-                    )
-                  }
-                />
-              </label>
-              <button
-                onClick={() =>
-                  field(
-                    "highlights",
-                    draft.highlights.filter((_, j) => i !== j),
-                  )
-                }
-              >
-                Remove excerpt
-              </button>
-            </article>
-          ))}
-          <h3>Social & shop links</h3>
-          <p>
-            Link your social pages and marketplace listings or creator shop.
-          </p>
-          {draft.links.map((l, i) => (
-            <article key={i}>
-              <label>
-                Link label
-                <input
-                  maxLength={60}
-                  value={l.label}
-                  onChange={(e) =>
-                    field(
-                      "links",
-                      draft.links.map((x, j) =>
-                        j === i ? { ...x, label: e.target.value } : x,
-                      ),
-                    )
-                  }
-                />
-              </label>
-              <label>
-                HTTPS address
-                <input
-                  type="url"
-                  value={l.url}
-                  onChange={(e) =>
-                    field(
-                      "links",
-                      draft.links.map((x, j) =>
-                        j === i ? { ...x, url: e.target.value } : x,
-                      ),
-                    )
-                  }
-                />
-              </label>
-              <label>
-                Link type
-                <select
-                  value={l.kind}
-                  onChange={(e) =>
-                    field(
-                      "links",
-                      draft.links.map((x, j) =>
-                        j === i ? { ...x, kind: e.target.value } : x,
-                      ),
-                    )
+                  onClick={() =>
+                    run(async () => {
+                      await unpublish({});
+                      onStatus("Your profile is private.");
+                    })
                   }
                 >
-                  <option value="social">Social media</option>
-                  <option value="shop">Marketplace / shop</option>
-                </select>
-              </label>
+                  Make profile private
+                </button>
+              </>
+            )}
+          </div>
+        )}
+        <div className="profile-settings-footer">
+          <a href="#profile-preview">Preview your page ↓</a>
+          <div className="profile-step-actions">
+            {guided && step > 0 && (
               <button
-                onClick={() =>
-                  field(
-                    "links",
-                    draft.links.filter((_, j) => i !== j),
-                  )
-                }
+                type="button"
+                className="secondary"
+                onClick={() => setTab(steps[step - 1][0])}
               >
-                Remove link
+                Back
               </button>
-            </article>
-          ))}
-          <button
-            disabled={draft.links.length >= 12}
-            onClick={() =>
-              field("links", [
-                ...draft.links,
-                { label: "", url: "https://", kind: "social" },
-              ])
-            }
-          >
-            Add link
-          </button>
-          <h3>Share with confidence</h3>
-          <p>
-            Your account email and age confirmation never appear on your
-            profile. Public profiles need review for explicit imagery, hate,
-            harassment, threats, scams, and exposed personal information. Only
-            upload images you have permission to use.
-          </p>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={policy}
-              onChange={(e) => setPolicy(e.target.checked)}
-            />
-            I have checked my profile and agree to these community rules. My
-            chosen details, images, links and excerpts may be shared publicly
-            after approval.
-          </label>
-          <button
-            disabled={busy || !policy}
-            onClick={() =>
-              run(async () => {
-                await persist();
-                await review({});
-                onStatus(
-                  "Submitted for review. Your profile is private until approved.",
-                );
-              })
-            }
-          >
-            Save & request public sharing
-          </button>
-          {initial && (
-            <>
-              <p>
-                Sharing status: {initial.reviewStatus}. Editing an approved
-                profile leaves its previously reviewed version public until
-                another review.
-              </p>
-              {initial.reviewStatus === "approved" && (
-                <label>
-                  Share your profile
-                  <input
-                    readOnly
-                    value={location.origin + "/profile?user=" + initial.handle}
-                  />
-                </label>
-              )}
+            )}
+            {guided && step < steps.length - 1 ? (
+              <button type="button" onClick={() => setTab(steps[step + 1][0])}>
+                Next: {steps[step + 1][1]}
+              </button>
+            ) : (
               <button
+                type="button"
                 disabled={busy}
-                onClick={() =>
+                onClick={() => {
+                  if (!initial && !age) {
+                    setTab("share");
+                    onStatus(
+                      "Confirm you are 18 or older in Review & save before saving.",
+                    );
+                    return;
+                  }
                   run(async () => {
-                    await unpublish({});
-                    onStatus("Your profile is private.");
-                  })
-                }
+                    await persist();
+                    setGuided(false);
+                    onStatus(
+                      "Private draft saved. Your profile is ready to preview.",
+                    );
+                  });
+                }}
               >
-                Make profile private
+                {busy ? "Saving…" : "Save private draft"}
               </button>
-            </>
-          )}
-        </section>
-      </div>
+            )}
+          </div>
+        </div>
+      </section>
       <h2 id="profile-preview">Draft preview · only you can see this</h2>
       <ProfileCard p={draft} characters={characters} />
     </>
