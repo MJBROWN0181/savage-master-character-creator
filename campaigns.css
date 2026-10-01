@@ -18,6 +18,7 @@ header { position: relative; padding: 20px 0 28px 24px; margin-bottom: 24px; bor
 header::after { content: ''; position: absolute; bottom: 0; left: 0; width: 180px; height: 1px; background: linear-gradient(90deg, var(--gold), transparent); }
 a { color: var(--gold); text-underline-offset: 4px; }
 header a { font-size: 13px; text-decoration: none; }
+.profile-shortcut { float: right; margin-right: 12px; }
 h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; line-height: 1.25; }
 h1 { color: var(--gold); font-size: clamp(34px, 5vw, 48px); margin: 16px 0 8px; letter-spacing: -.5px; }
 h2 { font-size: 25px; margin: 0 0 16px; }

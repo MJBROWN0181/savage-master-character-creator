@@ -4,6 +4,9 @@ import { v } from "convex/values";
 
 export default defineSchema({
   ...authTables,
+  profiles: defineTable({ownerId:v.id('users'),handle:v.string(),displayName:v.string(),bio:v.string(),games:v.array(v.string()),memory:v.string(),roles:v.array(v.union(v.literal('player'),v.literal('gm'))),links:v.array(v.object({label:v.string(),url:v.string(),kind:v.union(v.literal('social'),v.literal('shop'))})),favorites:v.array(v.object({characterId:v.id('characters'),imageId:v.optional(v.id('_storage'))})),highlights:v.array(v.object({journalId:v.id('privateJournals'),excerpt:v.string()})),avatarId:v.optional(v.id('_storage')),backgroundId:v.optional(v.id('_storage')),appearance:v.object({background:v.string(),accent:v.string(),font:v.string(),layout:v.string(),sections:v.array(v.string())}),ageConfirmedAt:v.number(),updatedAt:v.number(),reviewStatus:v.union(v.literal('private'),v.literal('pending'),v.literal('approved'),v.literal('rejected')),publicSnapshot:v.optional(v.any())}).index('by_owner',['ownerId']).index('by_handle',['handle']).index('by_review',['reviewStatus']),
+  profileMedia: defineTable({ownerId:v.id('users'),storageId:v.id('_storage'),createdAt:v.number()}).index('by_storage',['storageId']).index('by_owner',['ownerId']),
+  profileReports: defineTable({profileId:v.id('profiles'),reporterId:v.id('users'),reason:v.string(),createdAt:v.number()}).index('by_profile_reporter',['profileId','reporterId']),
   adventures:defineTable({campaignId:v.id('campaigns'),title:v.string(),updatedAt:v.number()}).index('by_campaign',['campaignId']),
   scenes:defineTable({adventureId:v.id('adventures'),title:v.string(),notes:v.string(),updatedAt:v.number()}).index('by_adventure',['adventureId']),
   campaignInvites:defineTable({campaignId:v.id('campaigns'),token:v.string(),expiresAt:v.number()}).index('by_token',['token']),

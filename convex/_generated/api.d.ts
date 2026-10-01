@@ -15,6 +15,8 @@ import type * as characters from "../characters.js";
 import type * as http from "../http.js";
 import type * as passwordReset from "../passwordReset.js";
 import type * as privateWorkspaces from "../privateWorkspaces.js";
+import type * as profileImages from "../profileImages.js";
+import type * as profiles from "../profiles.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +32,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   passwordReset: typeof passwordReset;
   privateWorkspaces: typeof privateWorkspaces;
+  profileImages: typeof profileImages;
+  profiles: typeof profiles;
 }>;
 
 /**
