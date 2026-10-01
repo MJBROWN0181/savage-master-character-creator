@@ -183,12 +183,25 @@ body {
 }
 
 /* Main Content */
+.getting-started { padding: 1rem; margin-bottom: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input); }
+.getting-started p { margin: .5rem 0 .8rem; line-height: 1.5; }
+.community-page { max-width: 950px; margin: auto; }
+.community-page a { color: var(--accent); }
+.community-page h3 { margin-top: 1.2rem; }
+.community-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.community-link { display: block; text-decoration: none; color: var(--text); }
+.community-link h3 { color: var(--accent); margin: 0 0 .5rem; }
+.community-link p, .help-list { line-height: 1.6; }
+.help-list { padding-left: 1.2rem; margin: 1rem 0; }
+.help-list li { margin-bottom: .7rem; }
+.community-note { color: var(--text-dim); font-size: .85rem; margin-top: 1.5rem; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .content {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
   max-height: 100vh;
-  background: url('bg-parchment.jpg') center/cover fixed;
+  background: radial-gradient(ellipse at top, #35281b, var(--bg-dark));
   background-color: var(--bg-dark);
   position: relative;
 }

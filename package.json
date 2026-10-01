@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@auth/core": "^0.41.3",
-    "@convex-dev/auth": "^0.0.95",
+    "@convex-dev/auth": "^0.0.96",
     "convex": "^1.46.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
@@ -16,7 +16,7 @@
     "convex-test": "^0.0.60",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.3"
   },
   "scripts": {
     "build": "vite build && node scripts/copy-static.mjs",

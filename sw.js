@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savage-master-v1';
+const CACHE_NAME = 'savage-master-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -8,11 +8,7 @@ const ASSETS_TO_CACHE = [
   '/settings.js',
   '/manifest.json',
   '/logo.png',
-  '/bg-parchment.jpg',
-  '/banner-deadlands.jpg',
-  '/banner-rifts.jpg',
-  '/banner-pirates.jpg',
-  '/banner-pathfinder.jpg',
+  /* BUILD_ASSETS */
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
 ];
@@ -29,7 +25,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k.startsWith('savage-master-') && k !== CACHE_NAME).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -39,7 +35,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   // Skip non-GET and cross-origin
   if (event.request.method !== 'GET') return;
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  if (new URL(event.request.url).origin !== self.location.origin) return;
 
   event.respondWith(
     fetch(event.request)
@@ -51,6 +47,6 @@ self.addEventListener('fetch', event => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(async () => (await caches.match(event.request)) || Response.error())
   );
 });

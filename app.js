@@ -185,7 +185,7 @@ const app = {
   renderNav() {
     const nav = document.getElementById('stepNav');
     nav.innerHTML = STEPS.map((s, i) => `
-      <li data-step="${i}" onclick="app.goToStep(${i})" class="${i === this.currentStep ? 'active' : ''}">
+      <li data-step="${i}" role="button" tabindex="0" aria-current="${i === this.currentStep ? 'step' : 'false'}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" onclick="app.goToStep(${i})" class="${i === this.currentStep ? 'active' : ''}">
         <span class="step-num">${s.icon}</span>
         <span>${s.label}</span>
       </li>
@@ -234,9 +234,12 @@ const app = {
         if (!c.concept || !c.concept.trim()) errors.push('Enter a character concept');
         break;
 
-      case 'race':
+      case 'race': {
         if (!c.race) errors.push('Select an ancestry');
+        const heritage = this.getSelectedRace()?.abilities.find(a => a.type === 'heritage_choice');
+        if (heritage && !heritage.choices.some(choice => choice.id === c.heritageChoice)) errors.push('Choose your heritage');
         break;
+      }
 
       case 'attributes': {
         const attrPts = this.getAttributePoints();
@@ -294,6 +297,7 @@ const app = {
       case 'hindrances': {
         const hp = this.getHindrancePoints();
         if (hp.remaining > 0) errors.push(`Allocate all hindrance points (${hp.remaining} unspent)`);
+        if (hp.remaining < 0) errors.push(`Over hindrance budget by ${Math.abs(hp.remaining)} point(s)`);
         break;
       }
 
@@ -337,6 +341,7 @@ const app = {
     const toast = document.createElement('div');
     toast.id = 'validationToast';
     toast.className = 'validation-toast';
+    toast.setAttribute('role', 'alert');
     toast.innerHTML = `
       <div class="validation-toast-icon">⚠</div>
       <div class="validation-toast-body">
@@ -361,6 +366,7 @@ const app = {
   },
 
   goToStep(i) {
+    document.querySelector('.sidebar')?.classList.remove('account-open');
     // Allow backward navigation freely; validate on forward moves
     if (i > this.currentStep) {
       // Validate every step from current up to (but not including) target
@@ -600,8 +606,8 @@ const app = {
     if (c.edges.includes('brawler')) toughness += 1;
 
     // Shield parry bonus
+    parry += Math.max(0, ...c.gear.map(g => g.parryBonus || 0));
     c.gear.forEach(g => {
-      if (g.parryBonus) parry += g.parryBonus;
       if (g.armor) armorBonus = Math.max(armorBonus, g.armor);
     });
 
@@ -696,8 +702,19 @@ const app = {
 
   renderContent() {
     const main = document.getElementById('mainContent');
+    const summary = document.getElementById('summaryPanel');
+    if (summary) summary.style.display = '';
     const step = STEPS[this.currentStep].id;
     main.innerHTML = `<div class="step-content">${this.getTipHtml()}${this['render_' + step]()}</div>`;
+    main.querySelectorAll('.card[onclick]:not(.race-locked), .heritage-choice[onclick]').forEach(card => {
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-pressed', String(card.classList.contains('selected')));
+      card.onkeydown = event => {
+        if (event.target !== card) return;
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); card.click(); }
+      };
+    });
   },
 
   // ----------------------------------------------------------
@@ -797,14 +814,17 @@ const app = {
     const settingKeys = Object.keys(SETTINGS);
     return `
       <h2>Choose Your Setting</h2>
+      <div class="getting-started"><strong>Build a hero. Bring them to your table.</strong><p>Choose a setting, follow the steps, then review and export your sheet. Your draft saves on this device as you work. Sign in and select Save Character to keep a copy across devices.</p><button class="btn btn-sm" onclick="app.showCommunityPage()">Find Players &amp; Help</button></div>
       <p class="step-desc">Select the world your character inhabits. Each setting provides unique ancestries, edges, hindrances, and gear alongside the core Savage Worlds options.</p>
       <div class="setting-grid">
+        <div class="card setting-card ${selected === null ? 'selected' : ''}" onclick="app.selectSetting(null)">
+          <div class="setting-card-body"><div class="card-header"><span class="card-title">Core SWADE / Homebrew</span>${selected === null ? '<span class="card-badge">Selected</span>' : ''}</div><p class="card-desc">Use the core Savage Worlds options for your own campaign. Choose a published setting below if your group uses one.</p></div>
+        </div>
         ${settingKeys.map(key => {
           const s = SETTINGS[key];
           const isSel = selected === key;
           return `
             <div class="card setting-card ${isSel ? 'selected' : ''}" onclick="app.selectSetting('${key}')" style="cursor:pointer; border-color: ${isSel ? s.color : 'var(--border)'};">
-              ${s.banner ? `<img class="setting-banner" src="${s.banner}" alt="${s.name}" style="${isSel ? 'filter:brightness(1);' : ''}">` : ''}
               <div class="setting-card-body">
                 <div class="card-header">
                   <span class="card-title" style="font-size:1.15rem;">
@@ -832,6 +852,7 @@ const app = {
 
   selectSetting(key) {
     const prev = this.character.setting;
+    const previousMinimums = Object.fromEntries(SWADE.ATTRIBUTES.map(a => [a.id, this.getRaceAttributeMinimum(a.id)]));
     this.character.setting = key;
     // If setting changed, reset race selection (setting races differ)
     if (prev !== key) {
@@ -843,6 +864,7 @@ const app = {
       this.character.hindrancePointsSpent = { attributes: 0, edges: 0, skills: 0 };
       this.character.languages = [];
       this.character.powers = [];
+      this.applyRace(previousMinimums);
     }
     this.renderContent();
     this.renderSummary();
@@ -1169,7 +1191,7 @@ const app = {
         <div class="heritage-choices">
           ${hc.choices.map(ch => `
             <div class="heritage-choice ${this.character.heritageChoice === ch.id ? 'selected' : ''}"
-                 onclick="event.stopPropagation(); app.character.heritageChoice = '${ch.id}'; app.applyRace(); app.renderContent(); app.renderSummary();">
+                 onclick="event.stopPropagation(); app.selectHeritage('${ch.id}');">
               <div class="hc-name">${ch.name}</div>
             </div>
           `).join('')}
@@ -1179,17 +1201,31 @@ const app = {
   },
 
   selectRace(id) {
+    if (this.character.race === id) return;
+    const previousMinimums = Object.fromEntries(SWADE.ATTRIBUTES.map(a => [a.id, this.getRaceAttributeMinimum(a.id)]));
     this.character.race = id;
     this.character.heritageChoice = null;
-    this.applyRace();
+    this.applyRace(previousMinimums);
     this.renderContent();
     this.renderSummary();
   },
 
-  applyRace() {
-    // Reset attributes to base, then apply race minimums
+  selectHeritage(id) {
+    const previousMinimums = Object.fromEntries(SWADE.ATTRIBUTES.map(a => [a.id, this.getRaceAttributeMinimum(a.id)]));
+    this.character.heritageChoice = id;
+    this.applyRace(previousMinimums);
+    this.renderContent();
+    this.renderSummary();
+  },
+
+  applyRace(previousMinimums = null) {
+    // Preserve purchased raises while replacing the ancestry's free raises.
     SWADE.ATTRIBUTES.forEach(a => {
       const min = this.getRaceAttributeMinimum(a.id);
+      if (previousMinimums) {
+        const purchased = Math.max(0, this.character.attributes[a.id] - previousMinimums[a.id]);
+        this.character.attributes[a.id] = Math.min(12, min + purchased);
+      }
       if (this.character.attributes[a.id] < min) {
         this.character.attributes[a.id] = min;
       }
@@ -2044,7 +2080,44 @@ const app = {
   // ----------------------------------------------------------
   // OFFICIAL CONTENT / STORE PAGE
   // ----------------------------------------------------------
+  showCommunityPage() {
+    document.querySelector('.sidebar')?.classList.remove('account-open');
+    document.getElementById('summaryPanel').style.display = 'none';
+    const main = document.getElementById('mainContent');
+    main.innerHTML = `<div class="step-content community-page">
+      <button class="btn btn-sm" onclick="app.returnFromStore()">&larr; Back to your character</button>
+      <h2>Find Players &amp; Help</h2>
+      <p class="step-desc">Take your hero to a gaming group, learn the rules, or find your next table.</p>
+      <div class="community-grid">
+        <a class="card community-link" href="https://www.pegforum.com/" target="_blank" rel="noopener noreferrer"><h3>Pinnacle Forums &nearr;</h3><p>Discuss rules and campaigns with Savage Worlds players.</p></a>
+        <a class="card community-link" href="https://www.reddit.com/r/savageworlds/" target="_blank" rel="noopener noreferrer"><h3>Savage Worlds on Reddit &nearr;</h3><p>Find character ideas, campaign conversations, and community advice.</p></a>
+        <a class="card community-link" href="https://discord.com/invite/VqT7CJj" target="_blank" rel="noopener noreferrer"><h3>Unofficial Discord &nearr;</h3><p>Meet other fans and look for groups in the community server linked by Pinnacle.</p></a>
+        <a class="card community-link" href="https://app.roll20.net/lfg/search/" target="_blank" rel="noopener noreferrer"><h3>Find a Game on Roll20 &nearr;</h3><p>Filter for Savage Worlds, your schedule, and games welcoming new players.</p></a>
+      </div>
+      <h3>New to Savage Worlds?</h3>
+      <p><a href="https://shop.peginc.com/pages/new-to-savage-worlds" target="_blank" rel="noopener noreferrer">Pinnacle's getting started guide &nearr;</a> includes free Test Drive rules and introductions to online play.</p>
+      <h3>Save, share, and play</h3>
+      <ul class="help-list"><li><strong>On this device:</strong> your current draft saves automatically. Download an editable backup before clearing browser data.</li><li><strong>Across devices:</strong> sign in, select Save Character, then open it from My Characters on your other device. Cloud saves are manual.</li><li><strong>With your GM:</strong> send an editable backup or a sheet from Review. Sharing this site's link does not share your private characters.</li><li><strong>Online:</strong> Foundry and Roll20 exports are separate formats. Use the matching sheet/system and check imported values against your GM's rules.</li><li><strong>Offline:</strong> after one online visit, the builder can reopen offline. Account sign-in and cloud saving require internet access.</li></ul>
+      <button class="btn btn-primary" onclick="app.copySiteLink()">Copy site link for your group</button><p id="shareStatus" role="status"></p>
+      <p class="community-note">Independent fan-made tool. Community links are external services. Savage Worlds and setting names belong to their respective owners.</p>
+    </div>`;
+    main.scrollTop = 0;
+    document.querySelectorAll('#stepNav li').forEach(li => li.classList.remove('active'));
+  },
+
+  async copySiteLink() {
+    const status = document.getElementById('shareStatus');
+    try {
+      await navigator.clipboard.writeText('https://smsheets.com/');
+      status.textContent = 'Link copied. Paste it into your gaming group chat.';
+    } catch {
+      status.textContent = 'Share this link: https://smsheets.com/';
+    }
+  },
+
+
   showStorePage() {
+    document.querySelector('.sidebar')?.classList.remove('account-open');
     const main = document.getElementById('mainContent');
     const summaryPanel = document.getElementById('summaryPanel');
     if (summaryPanel) summaryPanel.style.display = 'none';
@@ -2074,14 +2147,14 @@ const app = {
           <a class="store-quick-link" href="https://shop.peginc.com" target="_blank" rel="noopener">PEG Official Store</a>
           <a class="store-quick-link" href="https://www.drivethrurpg.com/en/publisher/27/pinnacle-entertainment" target="_blank" rel="noopener">DriveThruRPG PDFs</a>
           <a class="store-quick-link" href="https://www.amazon.com/s?k=savage+worlds+adventure+edition" target="_blank" rel="noopener">Amazon</a>
-          <a class="store-quick-link" href="https://www.kickstarter.com/projects/545820095/deadlands-30th-anniversary-celebration" target="_blank" rel="noopener">Deadlands Kickstarter</a>
+          <a class="store-quick-link" href="https://shop.peginc.com/blogs/news" target="_blank" rel="noopener">Publisher News</a>
         </div>
 
         <!-- KICKSTARTER CALLOUT -->
         <div class="store-callout">
-          <h3>Deadlands 30th Anniversary Kickstarter</h3>
-          <p>New combined core rulebook, starter box, bestiary, leatherbound edition, commemorative dice, and more.</p>
-          <a href="https://www.kickstarter.com/projects/545820095/deadlands-30th-anniversary-celebration" target="_blank" rel="noopener">View on Kickstarter &rarr;</a>
+          <h3>Check the latest releases</h3>
+          <p>Prices, availability, and editions change. Visit Pinnacle for current products and announcements.</p>
+          <a href="https://shop.peginc.com/blogs/news" target="_blank" rel="noopener">Publisher news &rarr;</a>
         </div>
 
         <!-- CORE SAVAGE WORLDS -->
@@ -2093,7 +2166,6 @@ const app = {
             </div>
             <div class="store-banner-showcase">
               <img src="images/swade-core.webp" alt="SWADE Core Rules" class="store-showcase-book store-showcase-hero">
-              <img src="images/swade-accessory-box.jpg" alt="SWADE Accessory Box" class="store-showcase-book">
             </div>
           </div>
           <div class="store-grid">
@@ -2112,7 +2184,6 @@ const app = {
         <!-- DEADLANDS -->
         <div class="store-section">
           <div class="store-section-banner" style="border-color: #b8860b;">
-            <img src="banner-deadlands.jpg" alt="Deadlands: The Weird West" class="store-banner-bg">
             <div class="store-banner-content">
               <h2 class="store-banner-title" style="color: #d4a64a;">Deadlands: The Weird West</h2>
               <p class="store-banner-desc">Gunslingers, hucksters, and mad scientists face the horrors of the Weird West.</p>
@@ -2138,14 +2209,12 @@ const app = {
         <!-- RIFTS -->
         <div class="store-section">
           <div class="store-section-banner" style="border-color: #00bfff;">
-            <img src="banner-rifts.jpg" alt="Rifts for Savage Worlds" class="store-banner-bg">
             <div class="store-banner-content">
               <h2 class="store-banner-title" style="color: #6ec6ff;">Rifts for Savage Worlds</h2>
               <p class="store-banner-desc">Post-apocalyptic adventure across the shattered megaverse of Rifts Earth.</p>
             </div>
             <div class="store-banner-showcase">
               <img src="images/rifts-core.png" alt="Rifts Player's Guide" class="store-showcase-book">
-              <img src="images/rifts-dice.jpg" alt="Rifts Dice" class="store-showcase-accessory">
             </div>
           </div>
           <div class="store-grid">
@@ -2165,7 +2234,6 @@ const app = {
         <!-- 50 FATHOMS -->
         <div class="store-section">
           <div class="store-section-banner" style="border-color: #2e8b57;">
-            <img src="banner-pirates.jpg" alt="50 Fathoms" class="store-banner-bg">
             <div class="store-banner-content">
               <h2 class="store-banner-title" style="color: #4ecca3;">50 Fathoms (Pirates)</h2>
               <p class="store-banner-desc">Sail the drowned world of Caribdus. Swashbuckling adventure on the high seas.</p>
@@ -2184,14 +2252,11 @@ const app = {
         <!-- PATHFINDER -->
         <div class="store-section">
           <div class="store-section-banner" style="border-color: #7b2d8e;">
-            <img src="banner-pathfinder.jpg" alt="Pathfinder for Savage Worlds" class="store-banner-bg">
             <div class="store-banner-content">
               <h2 class="store-banner-title" style="color: #b48adb;">Pathfinder for Savage Worlds</h2>
               <p class="store-banner-desc">The world of Golarion meets the Fast! Furious! Fun! of Savage Worlds.</p>
             </div>
             <div class="store-banner-showcase">
-              <img src="images/pathfinder-core.jpg" alt="Savage Pathfinder Core Rules" class="store-showcase-book">
-              <img src="images/pathfinder-dice.jpg" alt="Pathfinder Dice" class="store-showcase-accessory">
             </div>
           </div>
           <div class="store-grid">
@@ -2218,6 +2283,8 @@ const app = {
   },
 
   storeItem(name, desc, price, badgeText, badgeType, url, imgSrc) {
+    const availableImages = ['images/swade-core.webp', 'images/rifts-core.png', 'images/deadlands-dice.png', 'images/deadlands-core.webp', 'images/deadlands-boxed-set.webp'];
+    if (!availableImages.includes(imgSrc)) imgSrc = null;
     const imgHtml = imgSrc
       ? `<div class="store-item-img"><img src="${imgSrc}" alt="${name}" loading="lazy"></div>`
       : '';
@@ -2229,7 +2296,7 @@ const app = {
           <div class="store-item-desc">${desc}</div>
           <div class="store-item-meta">
             <span class="store-item-badge store-badge-${badgeType}">${badgeText}</span>
-            <span class="store-item-price">${price}</span>
+            <span class="store-item-price">Check retailer</span>
             <a class="store-item-link" href="${url}" target="_blank" rel="noopener">Visit &rarr;</a>
           </div>
         </div>
