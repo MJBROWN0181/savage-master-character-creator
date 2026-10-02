@@ -22,6 +22,13 @@ export function validateDndCharacter(c,{draft=false}={}){
  for(const k of ['slotTotals','slotsUsed'])if(c[k]!==undefined&&!(k==='slotTotals'&&c[k]===null)&&(!Array.isArray(c[k])||c[k].length!==9||c[k].some(n=>!integer(n,0,20))))fail();
  if(c.castingAbility!==undefined&&![3,4,5].includes(c.castingAbility))fail();
  if(c.concentration!==undefined&&(typeof c.concentration!=='string'||c.concentration.length>120))fail();
+ if(c.starting!==undefined){const a=c.starting;if(!a||!['gear','money','gm'].includes(a.mode))fail();
+  if(a.mode==='gear'&&!integer(a.kit,0,1))fail();
+  if(a.mode==='gm'&&a.gmGold!==null&&!integer(a.gmGold,0,1000000))fail();
+  if(a.mode==='money'){if(!['srd','higher','custom'].includes(a.method))fail();if(a.method==='higher'&&(!Array.isArray(a.rolls)||a.rolls.length>1||a.rolls.some(n=>!integer(n,0,10))))fail();if(a.method==='custom'&&(!integer(a.count,1,10)||!integer(a.sides,2,20)||!integer(a.multiplier,1,1000)||!integer(a.flat,0,1000000)||!Array.isArray(a.rolls)||a.rolls.length>a.count||a.rolls.some(n=>!integer(n,0,a.sides))))fail();}
+ }
+ if(c.inventory!==undefined&&(!Array.isArray(c.inventory)||c.inventory.length>200||c.inventory.some(r=>!r||typeof r.name!=='string'||r.name.length>200||!integer(r.page,1,364)||!integer(r.quantity,1,10000)||!integer(r.paidCp,0,100000000))))fail();
+ if(c.loadoutFromKit!==undefined&&(typeof c.loadoutFromKit!=='boolean'||c.loadoutFromKit&&c.starting?.mode!=='gear'))fail();
  if(!draft&&creationIssues(c).length)fail();
  const safe=(v,depth=0)=>{if(depth>12)fail();if(v&&typeof v==='object')for(const k of Object.keys(v)){if(['__proto__','prototype','constructor'].includes(k))fail();safe(v[k],depth+1);}};safe(c);
 }
