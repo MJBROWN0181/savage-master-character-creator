@@ -12,6 +12,7 @@ import { makeFunctionReference as ref } from "convex/server";
 import { CharacterAccount } from "./account.jsx";
 import "./campaigns.css";
 import "./profile.css";
+import {FriendsArea,FriendActions} from "./profile-friends.jsx";
 const blank = {
   handle: `table-${crypto.randomUUID().slice(0, 8)}`,
   displayName: "",
@@ -887,6 +888,7 @@ function App() {
           ) : publicProfile ? (
             <>
               <ProfileCard p={publicProfile} />
+              <FriendActions handle={handle}/>
               <section>
                 <h2>Keep our tables welcoming</h2>
                 <p>
@@ -938,10 +940,11 @@ function App() {
           <header className="workspace-hero">
             <div><span className="art-eyebrow">Keep the stories worth telling</span><h1>Your place at the table</h1>
             <p>
-              One identity. Every adventure. Make your profile feel like you.
+              One profile for every game. Keep your friends, characters, and memories together.
             </p></div><img className="workspace-art" src="/images/art/memory-journal.webp" alt="" width="720" height="480" decoding="async"/>
           </header>
           <CharacterAccount accountOnly />
+          <FriendsArea/>
           {isLoading ? (
             <p>Checking account…</p>
           ) : isAuthenticated ? (
