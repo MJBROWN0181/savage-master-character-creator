@@ -1,3 +1,4 @@
+@import "/typography.css";
 .profile-nav {
   display: flex;
   gap: 24px;
@@ -118,7 +119,7 @@
 .avatar-placeholder {
   display: grid;
   place-items: center;
-  font: 48px Georgia;
+  font: 48px var(--font-heading);
   background: #00000020;
   color: var(--profile-accent);
 }
@@ -134,7 +135,7 @@
   color: var(--profile-text);
 }
 .profile-eyebrow {
-  font: 10px system-ui;
+  font: 10px var(--font-body);
   letter-spacing: 1.8px;
   text-transform: uppercase;
   color: var(--profile-muted);
@@ -168,7 +169,7 @@
   border: 1px solid #80808050;
   border-radius: 20px;
   padding: 4px 12px;
-  font: 12px system-ui;
+  font: 12px var(--font-body);
 }
 .profile-sections {
   display: grid;

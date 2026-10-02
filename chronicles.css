@@ -1,7 +1,8 @@
+@import "/typography.css";
 @import "./theme-motion.css";
 :root {
   color-scheme: dark;
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   background: #11181d;
   color: #ece6d8;
 }
@@ -57,7 +58,7 @@ body {
 }
 .chron-brand small {
   display: block;
-  font: 12px system-ui;
+  font: 12px var(--font-body);
   color: #9dadad;
   margin-top: 5px;
 }
@@ -65,7 +66,7 @@ body {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
-  font: 14px system-ui;
+  font: 14px var(--font-body);
 }
 .chron-nav [aria-current] {
   color: #fff;
@@ -90,7 +91,7 @@ body {
   overflow: hidden;
 }
 .chron-eyebrow {
-  font: 11px system-ui;
+  font: 11px var(--font-body);
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #b5d4c7;
@@ -163,7 +164,7 @@ body {
 }
 .chronicles label {
   display: block;
-  font: 14px system-ui;
+  font: 14px var(--font-body);
   color: #ddd7c9;
   margin-bottom: 14px;
 }
@@ -253,7 +254,7 @@ body {
 .chron-author small {
   display: block;
   color: #91a4a6;
-  font: 12px system-ui;
+  font: 12px var(--font-body);
   margin-top: 5px;
 }
 .chron-tag {
@@ -261,13 +262,13 @@ body {
   border-radius: 20px;
   padding: 6px 10px;
   color: #b4c7bf;
-  font: 11px system-ui;
+  font: 11px var(--font-body);
 }
 .chron-game {
   display: block;
   margin-top: 20px;
   color: #8ebbb3;
-  font: 12px system-ui;
+  font: 12px var(--font-body);
 }
 .chron-story {
   white-space: pre-wrap;
