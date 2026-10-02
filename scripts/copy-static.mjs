@@ -13,3 +13,6 @@ const hash = createHash('sha256');
 for (const asset of assets.filter(asset => asset !== '/')) hash.update(await readFile(`dist${asset}`));
 const worker = (await readFile('sw.js', 'utf8')).replace("'savage-master-v2'", JSON.stringify(`savage-master-${hash.digest('hex').slice(0,12)}`)).replace('/* BUILD_ASSETS */', bundled.map(asset => `${JSON.stringify(asset)},`).join('\n'));
 await writeFile('dist/sw.js', worker);
+
+await cp('pathfinder-data/ORC-NOTICE.md','dist/ORC-NOTICE.md');
+await cp('pathfinder-data/APACHE-LICENSE.txt','dist/PF-APACHE-LICENSE.txt');

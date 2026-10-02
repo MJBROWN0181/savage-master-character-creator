@@ -1,0 +1,2 @@
+export const attributes:string[];export const skills:Record<string,string>;export const rankNames:string[];export function fresh():any;export function stats(c:any):any;export function validate(c:any):void;export function proficiency(rank:number,level?:number):number;
+export function budget(c:any):number;export function issues(c:any):string[];

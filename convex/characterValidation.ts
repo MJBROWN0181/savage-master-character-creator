@@ -1,3 +1,4 @@
+import {validate as validatePathfinder,issues as pathfinderIssues} from '../pathfinder-model.mjs';
 import {validateDndCharacter} from '../dnd-validation.mjs';
 const identifier = /^[a-zA-Z0-9_-]{1,100}$/;
 const dice = new Set([0,4,6,8,10,12]);
@@ -5,6 +6,7 @@ export function validateCharacterSnapshot(snapshot: any) {
   const fail=()=>{throw new Error("Invalid character or backup too large.");};
   if(!snapshot || snapshot.version!==1 || !snapshot.character || JSON.stringify(snapshot).length>200_000) fail();
   const c=snapshot.character;
+  if(snapshot.system==='pathfinder2e'){validatePathfinder(c);if(pathfinderIssues(c).length)fail();return;}
   if(snapshot.system==='dnd5e'){validateDndCharacter(c);return;}
   const text=(x:any,max:number)=>typeof x==='string'&&x.length<=max;
   const id=(x:any)=>typeof x==='string'&&identifier.test(x);
