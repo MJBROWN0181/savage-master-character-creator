@@ -3,3 +3,4 @@
 @media print{body{background:white;color:black}main{max-width:none;padding:0}.game-switch,.workspace-nav,header,.dnd-tabs,.dnd-toolbar,.dnd-note,.dnd-account,.dnd-issues,.dnd-builder>h2,.dnd-builder>p,.dnd-sheet button{display:none!important}section,.dnd-sheet article{background:white;border-color:#aaa;color:black;box-shadow:none}.dnd-sheet h2,.dnd-sheet h3,.dnd-sheet strong,.dnd-sheet small{color:black!important}.dnd-sheet .dnd-grid{grid-template-columns:repeat(3,1fr)}.dnd-sheet p{color:black}}
 
 @media print{.dnd-license{font-size:9px}.dnd-license h2{font-size:12px}.dnd-license a{color:black;overflow-wrap:anywhere}}
+.dnd-toolbar{align-items:center}.dnd-toolbar>button{flex:none}.dnd-import{display:flex;flex-direction:column;gap:4px;margin:0}
