@@ -87,6 +87,7 @@ def entries(start,end,category,valid):
         text=join(body) or stattext
         if not text:continue
         row={'name':ls[i]['text'],'category':category,'page':ls[i]['page'],'description':brief(text),'stats':fields,'tag':join(meta)}
+        if category=='Spells':row['fullDescription']=text
         if category=='Items' and not meta:row['tag']='Tools' if 'Ability:' in stattext else 'Adventuring gear'
         if category=='Class features':
             row['name']=ls[i]['class']+' · '+row['name'];row['tag']=ls[i]['class'];row['stats']=[ls[i]['subclass']] if ls[i]['subclass'] else []

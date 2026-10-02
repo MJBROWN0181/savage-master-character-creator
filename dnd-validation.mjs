@@ -1,4 +1,5 @@
 import {classData,backgrounds,speciesNames,skillAbilities,creationIssues} from './dnd-model.mjs';
+import {weapons,armors} from './dnd-play.mjs';
 export function validateDndCharacter(c,{draft=false}={}){
  const fail=()=>{throw new Error('Invalid 5e character.');};
  if(!c||typeof c!=='object'||Array.isArray(c)||JSON.stringify(c).length>190000)fail();
@@ -11,6 +12,16 @@ export function validateDndCharacter(c,{draft=false}={}){
  for(const key of ['skills','expertise'])if(!Array.isArray(c[key])||c[key].length>18||new Set(c[key]).size!==c[key].length||c[key].some(n=>!Object.hasOwn(skillAbilities,n)))fail();
  const trained=new Set([...backgrounds[c.background].skills,...c.skills]);if(c.expertise.some(n=>!trained.has(n)))fail();
  for(const [k,min,max,nullable] of [['ac',1,50,true],['hp',1,10000,true],['currentHp',0,10000,true],['tempHp',0,10000,false],['speed',0,300,false]])if(!(nullable&&c[k]===null)&&(!Number.isInteger(c[k])||c[k]<min||c[k]>max))fail();
+ const integer=(v,min,max)=>Number.isInteger(v)&&v>=min&&v<=max;
+ if(c.armor!==undefined&&c.armor!==''&&!armors.some(a=>a.name===c.armor))fail();
+ if(c.shield!==undefined&&typeof c.shield!=='boolean')fail();
+ if(c.defense!==undefined&&!['normal','monk','barbarian'].includes(c.defense))fail();
+ if(c.acBonus!==undefined&&!integer(c.acBonus,-20,20))fail();
+ if(c.weapons!==undefined&&(!Array.isArray(c.weapons)||c.weapons.length>20||c.weapons.some(w=>!w||!weapons.some(r=>r.name===w.name)||!['auto','str','dex','con','int','wis','cha'].includes(w.ability)||typeof w.proficient!=='boolean'||typeof w.twoHanded!=='boolean'||!integer(w.attackBonus,-20,20)||!integer(w.damageBonus,-20,20))))fail();
+ if(c.spellbook!==undefined&&(!Array.isArray(c.spellbook)||c.spellbook.length>339||new Set(c.spellbook.map(r=>r?.name)).size!==c.spellbook.length||c.spellbook.some(r=>!r||typeof r.name!=='string'||r.name.length>120||typeof r.prepared!=='boolean')))fail();
+ for(const k of ['slotTotals','slotsUsed'])if(c[k]!==undefined&&!(k==='slotTotals'&&c[k]===null)&&(!Array.isArray(c[k])||c[k].length!==9||c[k].some(n=>!integer(n,0,20))))fail();
+ if(c.castingAbility!==undefined&&![3,4,5].includes(c.castingAbility))fail();
+ if(c.concentration!==undefined&&(typeof c.concentration!=='string'||c.concentration.length>120))fail();
  if(!draft&&creationIssues(c).length)fail();
  const safe=(v,depth=0)=>{if(depth>12)fail();if(v&&typeof v==='object')for(const k of Object.keys(v)){if(['__proto__','prototype','constructor'].includes(k))fail();safe(v[k],depth+1);}};safe(c);
 }
