@@ -1,3 +1,4 @@
+@import "./theme-motion.css";
 @import url("./workspace-nav.css");
 :root {
   font-family: system-ui, sans-serif;

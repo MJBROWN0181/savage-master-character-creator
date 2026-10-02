@@ -1,6 +1,6 @@
 import { cp, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-const files = ['app.js', 'data.js', 'settings.js', 'style.css', 'workspace-nav.css', 'sw.js', 'manifest.json', 'logo.png', 'robots.txt', 'sitemap.xml'];
+const files = ['app.js', 'data.js', 'settings.js', 'style.css', 'workspace-nav.css', 'theme-motion.css', 'sw.js', 'manifest.json', 'logo.png', 'robots.txt', 'sitemap.xml'];
 for (const file of files) {
   await cp(file, `dist/${file}`);
 }

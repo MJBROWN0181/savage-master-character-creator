@@ -1,0 +1,17 @@
+/* A little enchanted motion, without distracting from the table. */
+@keyframes sm-arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sm-reveal{from{opacity:.35;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sm-rune{0%{box-shadow:0 0 0 0 #e4b96b44}100%{box-shadow:0 0 0 9px #e4b96b00}}
+@media(prefers-reduced-motion:no-preference){
+ .workspace-hero,.dnd-library-banner{animation:sm-arrive .45s ease-out both}
+ .workspace-hero .workspace-art{transition:transform .4s ease,filter .4s ease}
+ .workspace-hero:hover .workspace-art{transform:translateY(-3px) rotate(-1deg);filter:drop-shadow(0 10px 16px #e4b96b33)}
+ .dnd-grid>article,.dnd-spell-choice-cards>article,.dnd-start-options>label{animation:sm-arrive .28s ease-out both;transition:border-color .2s ease,box-shadow .2s ease}
+ .dnd-grid>article:hover,.dnd-spell-choice-cards>article:hover{border-color:#e4b96b77;box-shadow:0 4px 18px #e4b96b0d}
+ .game-switch a,.workspace-nav a,.dnd-tabs button,.dnd-category-nav button{transition:color .18s ease,background-color .18s ease,border-color .18s ease,transform .18s ease}
+ .dnd-tabs button:active,.dnd-category-nav button:active,.dnd-toolbar button:active{transform:scale(.97)}
+ .dnd-tabs button[aria-current=step],.dnd-category-nav button[aria-pressed=true]{animation:sm-rune .45s ease-out}
+ details[open]>:not(summary){animation:sm-reveal .22s ease-out}
+ [role=status]:not(:empty){animation:sm-arrive .22s ease-out}
+}
+@media print{.workspace-hero,.dnd-grid>article,details[open]>:not(summary){animation:none!important;transform:none!important;box-shadow:none!important}}
