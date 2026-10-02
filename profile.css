@@ -425,3 +425,11 @@
 .profile-friends form{align-items:flex-end;flex-wrap:wrap}.profile-friends form>button{align-self:flex-end}.friend-manager>p{font-size:13px;font-weight:400;color:var(--muted)}
 
 .profile-tab-panel{max-width:none}.profile-draft-state{font-size:12px;color:var(--muted);line-height:1.6}.profile-card,.profile-sections{min-width:0}.profile-card .profile-sections>section{min-width:0}
+
+.profile-entry { max-width: 520px; margin: 8vh auto; }
+.profile-entry .account-panel { margin-top: 28px; }
+.profile-tour { border-color: var(--gold); background: #e4b96b0a; }
+.profile-tour h2:focus, #my-profile:focus { outline: none; }
+.profile-tour-links, .profile-owner-actions { display: flex; flex-wrap: wrap; gap: 16px; margin: 24px 0; }
+.profile-owner-actions button { margin: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }

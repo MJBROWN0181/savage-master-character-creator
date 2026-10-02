@@ -1,15 +1,22 @@
-import React,{useState,useEffect,useRef} from 'react';
-import {createRoot} from 'react-dom/client';
-import {ConvexReactClient,useConvexAuth} from 'convex/react';
-import {ConvexAuthProvider} from '@convex-dev/auth/react';
-import {CharacterAccount} from './account.jsx';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 import './home.css';
-function Home(){const [entry,setEntry]=useState(null);const {isAuthenticated}=useConvexAuth();const entryRef=useRef(null);useEffect(()=>{if(entry){entryRef.current?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});entryRef.current?.focus({preventScroll:true});}},[entry]);return <div className="sm-home">
-<header className="home-nav"><a className="home-brand" href="/">Savage Master<span>Your tabletop adventure companion</span></a><nav aria-label="Explore Savage Master"><a href="#choose-game">Characters</a><a href="/campaigns">Campaigns</a><a href="/chronicles">Chronicles</a><a href="/profile">My Profile</a></nav></header>
-<main><section className="home-hero"><div><span className="home-eyebrow">Your character. Your table. Your story.</span><h1>Every adventure deserves to be remembered.</h1><p>Create your heroes, bring your sheets to the table, prepare your next campaign, and keep the friendships and memories that make it yours.</p><div className="home-actions"><button className="home-primary" onClick={()=>setEntry('signUp')}>Start Your Adventure</button><button className="home-secondary" onClick={()=>setEntry('signIn')}>Already On an Adventure?</button></div><small>New here? Create an account. Returning? Sign in to pick up your journey.</small></div><img src="/images/art/hero-kit.webp" alt="A collection of fantasy adventuring gear, a journal, and dice" width="720" height="480"/></section>
-{entry&&<section className="home-entry" ref={entryRef} tabIndex={-1} aria-labelledby="home-entry-title"><div className="home-entry-top"><div><span className="home-eyebrow">One account for every game</span><h2 id="home-entry-title">{isAuthenticated?'Welcome back, adventurer':entry==='signUp'?'Your adventure starts here':'Pick up where you left off'}</h2><p>{isAuthenticated?'You are signed in. Choose a character workshop, open your campaign, or make your profile yours.':entry==='signUp'?'Create your account, choose your game, and begin your first character.':'Sign in with your existing Savage Master account.'}</p></div><button className="home-secondary" onClick={()=>setEntry(null)}>Close</button></div><CharacterAccount key={entry} accountOnly initialMode={entry}/>{isAuthenticated&&<div className="home-actions"><a href="#choose-game">Open character workshops</a><a href="/campaigns">My campaigns</a><a href="/profile">My profile & friends</a></div>}</section>}
-<section id="choose-game" className="home-games"><span className="home-eyebrow">Choose your next chapter</span><h2>Three games. One gaming home.</h2><p>Character creation is free. Start a sheet now, then sign in when you want to save it to your account.</p><div className="home-grid">{[['Savage Worlds','/?game=savage','Heroes for pulp adventures, strange frontiers, and the worlds your table loves.'],['Dungeons & Dragons 5e','/dnd','Build with free SRD rules, choose your equipment and spells, and bring a readable sheet to play.'],['Pathfinder 2e','/pathfinder','Explore Remastered characters, training, equipment, and spell preparation. Some advanced effects require table adjustments.']].map(([name,url,copy])=><a className="home-game" href={url} key={name}><span aria-hidden="true">◇</span><h3>{name}</h3><p>{copy}</p><strong>Build a character →</strong></a>)}</div></section>
-<section className="home-features"><span className="home-eyebrow">For players and Game Masters</span><h2>Keep more than a character sheet.</h2><div className="home-grid">{[['/images/art/campaign-tome.webp','Prepare your next chapter','Organize campaigns, adventures, scenes, party invitations, and private GM notes.','/campaigns','Explore campaigns'],['/images/art/memory-journal.webp','Remember your journey','Keep personal player journals within your campaign and choose the excerpts you want to feature.','/campaigns','Open your journals'],['/images/art/5e-arcane-journey.webp','Make your gaming home yours','Customize your profile, showcase favorite characters, and connect with friends across games.','/profile','Explore profiles & friends']].map(([image,title,copy,url,label])=><article key={title}><img src={image} alt="" width="720" height="480" loading="lazy"/><h3>{title}</h3><p>{copy}</p><a href={url}>{label} →</a></article>)}</div></section>
-<section className="home-table"><h2>Built to sit beside your table.</h2><p>Use your physical dice and the tabletop or VTT you enjoy. Savage Master keeps your character details, campaign notes, and memories close at hand.</p><button className="home-primary" onClick={()=>setEntry('signUp')}>Start Your Adventure</button></section></main>
-<footer><strong>Savage Master</strong><p>Created by Visionary Studios 101. An independent tabletop companion.</p><nav aria-label="Official game products"><a href="https://shop.peginc.com/pages/new-to-savage-worlds" target="_blank" rel="noopener noreferrer">Official Savage Worlds products</a><a href="https://marketplace.dndbeyond.com/" target="_blank" rel="noopener noreferrer">Official D&D products</a><a href="https://store.paizo.com/pathfinder/" target="_blank" rel="noopener noreferrer">Official Pathfinder products</a></nav></footer></div>}
-if(window.savageMasterHome){const url=import.meta.env.VITE_CONVEX_URL;createRoot(document.getElementById('homeRoot')).render(url?<ConvexAuthProvider client={new ConvexReactClient(url)}><Home/></ConvexAuthProvider>:<p>Adventure tools are temporarily unavailable. Please try again shortly.</p>);}
+
+export function Home() {
+  return <main className="sm-home" aria-label="Savage Master">
+    <div className="home-welcome">
+      <div className="home-logo">
+        <img src="/logo.png" alt="Savage Master" width="2000" height="2000" fetchPriority="high" />
+      </div>
+      <div className="home-actions">
+        <a className="home-primary" href="/profile?entry=signUp">Begin Your Adventure</a>
+        <a className="home-secondary" href="/profile?entry=signIn">Already On One</a>
+      </div>
+      <p className="home-slogan">Your character. Your table. Your story.</p>
+    </div>
+  </main>;
+}
+
+if (window.savageMasterHome) {
+  createRoot(document.getElementById('homeRoot')).render(<Home />);
+}

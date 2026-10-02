@@ -10,7 +10,7 @@ const listRef = makeFunctionReference('characters:list');
 const loadRef = makeFunctionReference('characters:load');
 const saveRef = makeFunctionReference('characters:save');
 
-export function CharacterAccount({accountOnly = false, initialMode = 'signIn'}) {
+export function CharacterAccount({accountOnly = false, initialMode = 'signIn', onModeChange}) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
   const convex = useConvex();
@@ -21,6 +21,10 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn'}) 
   const [busy, setBusy] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [resetEmail, setResetEmail] = useState('');
+
+  useEffect(() => {
+    if (mode === 'signUp' || mode === 'signIn') onModeChange?.(mode);
+  }, [mode, onModeChange]);
 
   useEffect(() => {
     if (accountOnly) return;
