@@ -89,9 +89,21 @@ function App() {
     try {
       await fn();
       setMessage(success);
-    } catch {
+    } catch (error) {
+      const known = [
+        "Let the tale settle. Please try again later.",
+        "You can create up to 10 Tomes.",
+        "You can follow up to 200 storytellers.",
+        "This player has followers turned off.",
+        "Join this Tome before posting.",
+        "Complete your public-profile review before sharing a tale.",
+        "Check your title, story, and category.",
+        "This tale is unavailable.",
+        "Tome unavailable.",
+      ];
       setMessage(
-        "That action could not be completed. Check your connection and try again. Sharing requires a reviewed public profile; new tales are limited to one every 30 seconds.",
+        known.find((text) => String(error?.message).includes(text)) ||
+          "That action could not be completed. Check your connection and try again.",
       );
     } finally {
       setBusy(false);
@@ -129,14 +141,12 @@ function App() {
             <button
               onClick={() => {
                 setCompose(true);
-                document
-                  .getElementById("chron-compose")
-                  ?.scrollIntoView({
-                    behavior: matchMedia("(prefers-reduced-motion: reduce)")
-                      .matches
-                      ? "instant"
-                      : "smooth",
-                  });
+                document.getElementById("chron-compose")?.scrollIntoView({
+                  behavior: matchMedia("(prefers-reduced-motion: reduce)")
+                    .matches
+                    ? "instant"
+                    : "smooth",
+                });
               }}
             >
               ✦ Share a tale
