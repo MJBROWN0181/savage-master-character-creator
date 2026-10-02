@@ -269,6 +269,19 @@
 .profile-settings-top button {
   white-space: nowrap;
 }
+.profile-settings-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0}
+.profile-settings-actions a{font-size:13px;color:var(--gold);text-decoration:underline;text-underline-offset:4px}
+.profile-settings{min-width:0}
+.profile-tabs{position:sticky;top:0;z-index:5;background:var(--bg,#172126);padding-top:12px}
+.profile-tabs button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.profile-tab-panel{width:100%;max-width:none;box-sizing:border-box}
+.profile-tab-panel input,.profile-tab-panel textarea,.profile-tab-panel select{box-sizing:border-box;max-width:100%}
+.profile-tab-panel small{display:block;line-height:1.6;color:var(--muted)}
+.profile-tab-panel article{min-width:0;overflow-wrap:anywhere}
+.profile-tab-panel fieldset{min-width:0}
+.profile-preview-heading{scroll-margin-top:85px}
+@media(min-width:850px){#panel-about{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 24px}#panel-about>label:has(textarea),#panel-about>label:has(input[maxlength="1600"]){grid-column:1/-1}}
+@media(max-width:600px){.profile-settings-actions{margin-bottom:16px}.profile-settings-actions button{margin-bottom:0}.profile-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.profile-tabs button{white-space:normal;min-width:0}.order-row span{min-width:0;overflow-wrap:anywhere}.profile-card .character-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}.profile-sections{min-width:0}.profile-sections>section{min-width:0}}
 .profile-tabs {
   display: flex;
   gap: 6px;
@@ -409,3 +422,5 @@
 .friend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}.friend-person{display:flex;align-items:center;gap:12px;text-decoration:none}.friend-person img,.friend-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}.friend-avatar{display:grid;place-items:center;background:#35454c;color:var(--gold)}.friend-person small{display:block}.friend-actions{display:flex;flex-wrap:wrap;gap:8px}.friend-actions button{font-size:12px;padding:8px 12px}.friend-empty{font-size:14px;color:var(--muted)}.profile-friends form{max-width:500px}.profile-friends article p{font-size:13px;overflow-wrap:anywhere}
 .friend-manager>summary{cursor:pointer;color:var(--gold);padding:8px 0}.friend-manager>form{margin-top:16px}.friend-manager>div{margin-top:20px}
 .profile-friends form{align-items:flex-end;flex-wrap:wrap}.profile-friends form>button{align-self:flex-end}.friend-manager>p{font-size:13px;font-weight:400;color:var(--muted)}
+
+.profile-tab-panel{max-width:none}.profile-draft-state{font-size:12px;color:var(--muted);line-height:1.6}.profile-card,.profile-sections{min-width:0}.profile-card .profile-sections>section{min-width:0}

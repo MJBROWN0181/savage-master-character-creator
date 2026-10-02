@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ConvexReactClient,
@@ -141,6 +141,8 @@ function ProfileCard({ p, characters = [] }) {
   );
 }
 function Editor({ initial, characters, journals, onStatus }) {
+  const fingerprint = (value) => JSON.stringify(Object.fromEntries([...Object.keys(blank), 'avatarId', 'backgroundId'].map(key => [key, key === 'favorites' ? value.favorites.map(({characterId,imageId}) => ({characterId,imageId})) : value[key]])));
+  const [savedFingerprint,setSavedFingerprint] = useState(() => fingerprint(initial || blank));
   const [tab, setTab] = useState("about"),
     [guided, setGuided] = useState(false);
   const steps = [
@@ -155,6 +157,13 @@ function Editor({ initial, characters, journals, onStatus }) {
     [age, setAge] = useState(false),
     [policy, setPolicy] = useState(false),
     [busy, setBusy] = useState(false);
+  const hasUnsavedChanges = fingerprint(draft) !== savedFingerprint;
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedChanges]);
   const save = useMutation(ref("profiles:save")),
     uploadUrl = useMutation(ref("profiles:uploadUrl")),
     validate = useAction(ref("profileImages:validate")),
@@ -253,6 +262,7 @@ function Editor({ initial, characters, journals, onStatus }) {
     for (const k of ["avatarId", "backgroundId"])
       if (draft[k]) payload[k] = draft[k];
     await save({ ...payload, ageConfirmed: age });
+    setSavedFingerprint(fingerprint(draft));
   }
   const appearance = (k, value) =>
     field("appearance", { ...draft.appearance, [k]: value });
@@ -274,6 +284,8 @@ function Editor({ initial, characters, journals, onStatus }) {
               your draft until you save.
             </p>
           </div>
+          <div className="profile-settings-actions">
+          <a href="#profile-preview">Preview my page</a>
           <button
             type="button"
             onClick={() => {
@@ -283,6 +295,7 @@ function Editor({ initial, characters, journals, onStatus }) {
           >
             Start here
           </button>
+          </div>
         </div>
         <div
           role="tablist"
@@ -810,7 +823,7 @@ function Editor({ initial, characters, journals, onStatus }) {
           </div>
         )}
         <div className="profile-settings-footer">
-          <a href="#profile-preview">Preview your page ↓</a>
+          <span className="profile-draft-state">{!initial || hasUnsavedChanges ? "Unsaved changes · preview updates as you edit" : "Your private draft is saved"}</span>
           <div className="profile-step-actions">
             {guided && step > 0 && (
               <button
@@ -852,7 +865,7 @@ function Editor({ initial, characters, journals, onStatus }) {
           </div>
         </div>
       </section>
-      <h2 id="profile-preview">Draft preview · only you can see this</h2>
+      <h2 id="profile-preview" className="profile-preview-heading">Draft preview · only you can see this</h2>
       <ProfileCard p={draft} characters={characters} />
     </>
   );
@@ -880,7 +893,7 @@ function App() {
     report = useMutation(ref("profiles:report"));
   return (
     <main>
-<nav className="game-switch" aria-label="Game system"><a href="/">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Characters</a><a href="/campaigns">Campaigns</a><a href="/profile" aria-current="page">My Profile</a></nav>
+<nav className="game-switch" aria-label="Game system"><a href="/">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Characters</a><a href="/campaigns">Campaigns</a><a href="/profile" aria-current="page">My Profile</a></nav>
       {handle ? (
         <>
           {publicProfile === undefined ? (
