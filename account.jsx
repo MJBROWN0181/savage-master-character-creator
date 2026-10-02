@@ -10,13 +10,13 @@ const listRef = makeFunctionReference('characters:list');
 const loadRef = makeFunctionReference('characters:load');
 const saveRef = makeFunctionReference('characters:save');
 
-export function CharacterAccount({accountOnly = false}) {
+export function CharacterAccount({accountOnly = false, initialMode = 'signIn'}) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
   const convex = useConvex();
   const save = useMutation(saveRef);
   const characters = useQuery(listRef, isAuthenticated ? {} : 'skip');
-  const [mode, setMode] = useState('signIn');
+  const [mode, setMode] = useState(initialMode);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
@@ -92,7 +92,7 @@ export function CharacterAccount({accountOnly = false}) {
       </>}
       <button className="btn btn-sm" onClick={() => { setSelectedId(null); signOut(); }}>Sign Out</button>
     </> : <>
-      <p>Sign in to save and load characters across devices.</p>
+      <p>{mode === 'signUp' ? 'Create an account to keep your characters and adventures together.' : 'Sign in to save and load characters across devices.'}</p>
       <form onSubmit={submit}>
         {mode === 'reset-verification' || mode === 'email-verification' ? <>
           <input name="email" type="hidden" value={resetEmail} />
@@ -115,11 +115,11 @@ export function CharacterAccount({accountOnly = false}) {
   </section>;
 }
 
-if (url && document.getElementById('accountRoot')) {
+if (url && document.getElementById('accountRoot') && !window.savageMasterHome) {
   const convex = new ConvexReactClient(url);
   createRoot(document.getElementById('accountRoot')).render(
     <ConvexAuthProvider client={convex}><CharacterAccount /></ConvexAuthProvider>
   );
-} else if (document.getElementById('accountRoot')) {
+} else if (document.getElementById('accountRoot') && !window.savageMasterHome) {
   document.getElementById('accountRoot').textContent = 'Cloud saving needs a Convex deployment.';
 }
