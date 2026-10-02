@@ -85,7 +85,7 @@ export function CharacterAccount({accountOnly = false}) {
       <button className="btn btn-sm" disabled={busy} onClick={() => window.characterCloud.save()}>Save Character</button>
       <button className="btn btn-sm" onClick={() => { if (window.savageMasterBridge.newCharacter()) setSelectedId(null); }}>New Character</button>
       <div className="account-list">
-        {characters?.length ? characters.map(c => <button key={c._id} className="account-item" disabled={busy} onClick={() => loadCharacter(c._id)}>
+        {characters?.filter(c=>c.setting!=='dnd5e').length ? characters.filter(c=>c.setting!=='dnd5e').map(c => <button key={c._id} className="account-item" disabled={busy} onClick={() => loadCharacter(c._id)}>
           {c.name}{c._id === selectedId ? ' (open)' : ''}
         </button>) : <p>No saved characters yet.</p>}
       </div>

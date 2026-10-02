@@ -1,0 +1,8 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {newDndCharacter,dndStats,creationIssues} from '../dnd-model.mjs';
+import {validateDndCharacter} from '../dnd-validation.mjs';
+test('2024 background boosts, proficiency, saves, and level-one HP are calculated',()=>{const c=newDndCharacter();c.name='Aster';const s=dndStats(c);assert.deepEqual(s.scores,[17,15,13,8,10,12]);assert.equal(s.hp,11);assert.equal(s.ac,12);assert.equal(s.saves[0],5);assert.equal(s.skills.Athletics,5);assert.equal(s.skills.Perception,0);validateDndCharacter(c);});
+test('criminal alert initiative and trained expertise use proficiency',()=>{const c=newDndCharacter();c.name='Scout';c.background='Criminal';c.boosts=[0,2,1,0,0,0];c.expertise=['Stealth'];assert.equal(dndStats(c).initiative,5);assert.equal(dndStats(c).skills.Stealth,7);});
+test('ability methods and background allocations must be valid before cloud save',()=>{const c=newDndCharacter();c.name='Hero';c.scores=[15,15,15,15,15,15];assert.throws(()=>validateDndCharacter(c));c.method='physical';assert.doesNotThrow(()=>validateDndCharacter(c));c.boosts=[0,0,0,2,1,0];assert.throws(()=>validateDndCharacter(c));c.boosts=[2,1,0,0,0,0];c.method='points';c.scores=[15,14,13,12,10,8];assert.equal(creationIssues(c).length,0);});
+test('later levels require recorded HP; malicious or malformed backups are rejected',()=>{const c=newDndCharacter();c.name='Hero';c.level=5;assert.throws(()=>validateDndCharacter(c));c.hp=44;assert.equal(dndStats(c).pb,3);validateDndCharacter(c);c.className='constructor';assert.throws(()=>validateDndCharacter(c));c.className='Fighter';c.skills=['<script>'];assert.throws(()=>validateDndCharacter(c));});

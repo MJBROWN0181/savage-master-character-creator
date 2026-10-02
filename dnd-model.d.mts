@@ -1,0 +1,10 @@
+export const abilities: string[];
+export const skillAbilities: Record<string,number>;
+export const classData: Record<string,any>;
+export const backgrounds: Record<string,any>;
+export const speciesNames: string[];
+export function newDndCharacter(): any;
+export function dndStats(character:any): any;
+export function creationIssues(character:any): string[];
+export function modifier(value:number):number;
+export function signed(value:number):string;
