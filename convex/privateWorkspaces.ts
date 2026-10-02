@@ -1,10 +1,10 @@
 import { getAuthUserId } from '@convex-dev/auth/server';
 import { mutationGeneric as mutation, queryGeneric as query } from 'convex/server';
 import { v } from 'convex/values';
-export const createCampaign=mutation({args:{name:v.string()},handler:async(ctx,{name})=>{
+export const createCampaign=mutation({args:{name:v.string(),system:v.optional(v.union(v.literal('dnd5e'),v.literal('savageWorlds')))},handler:async(ctx,{name,system})=>{
  const ownerId=await getAuthUserId(ctx);if(!ownerId)throw new Error('Sign in.');
  if(!name.trim()||name.length>160)throw new Error('Invalid campaign name.');
- return ctx.db.insert('campaigns',{ownerId,name:name.trim(),updatedAt:Date.now()});
+ return ctx.db.insert('campaigns',{ownerId,name:name.trim(),...(system?{system}:{}),updatedAt:Date.now()});
 }});
 export const listJournals=query({args:{},handler:async(ctx)=>{
  const ownerId=await getAuthUserId(ctx);if(!ownerId)return [];
