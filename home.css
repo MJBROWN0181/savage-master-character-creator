@@ -16,6 +16,7 @@ html:not([data-home=true]) #homeRoot { display: none; }
 .home-welcome { width: min(100%, 560px); text-align: center; }
 .home-logo {
   position: relative;
+  overflow: hidden;
   width: min(74vw, 340px);
   aspect-ratio: 1;
   margin: 0 auto 36px;
