@@ -6,11 +6,11 @@ const localPageRoutes = {
   configureServer(server) {
     server.middlewares.use((request, response, next) => {
       const url = new URL(request.url, 'http://localhost');
-      if (url.pathname === '/profile' || url.pathname === '/campaigns') {
+      if (url.pathname === '/profile' || url.pathname === '/campaigns' || url.pathname === '/dnd') {
         response.writeHead(302, {Location: url.pathname + '.html' + url.search});
         response.end();
       } else next();
     });
   },
 };
-export default defineConfig({ plugins: [localPageRoutes, react()], build: {rollupOptions: {input: {main: 'index.html', campaigns: 'campaigns.html', profile: 'profile.html'}}} });
+export default defineConfig({ plugins: [localPageRoutes, react()], build: {rollupOptions: {input: {main: 'index.html', campaigns: 'campaigns.html', profile: 'profile.html', dnd: 'dnd.html'}}} });
