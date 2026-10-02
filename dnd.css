@@ -4,3 +4,4 @@
 
 @media print{.dnd-license{font-size:9px}.dnd-license h2{font-size:12px}.dnd-license a{color:black;overflow-wrap:anywhere}}
 .dnd-toolbar{align-items:center}.dnd-toolbar>button{flex:none}.dnd-import{display:flex;flex-direction:column;gap:4px;margin:0}
+.dnd-species-card h4{margin:8px 0 0;color:var(--gold)}.dnd-species-card ul{padding-left:20px;margin:0 0 12px}.dnd-species-card li{margin-bottom:8px;font-size:14px}.dnd-species-card p{font-size:14px}.dnd-species-stats{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13px}.dnd-species-card>a{display:block;margin-top:auto}.dnd-builder>.dnd-species-card{margin:20px 0}.dnd-grid:has(.dnd-species-card){grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}

@@ -2,6 +2,7 @@ import React,{useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './campaigns.css';
 import './dnd.css';
+import {SpeciesCard} from './dnd-species.jsx';
 import {ConvexReactClient} from 'convex/react';
 import {ConvexAuthProvider} from '@convex-dev/auth/react';
 import {DndBuilder} from './dnd-builder.jsx';
@@ -18,7 +19,7 @@ function App(){const [tab,setTab]=useState('create'),[search,setSearch]=useState
  <div role="tabpanel" id={'panel-'+tab} aria-labelledby={'tab-'+tab}>
  {tab==='create'?<DndBuilder/>:tab==='start'?<><h2>Your 5e table starts here</h2><p>Create and save your 5e hero in the Create character tab. Use Campaigns and My Profile for your stories. Find official open rules in the reference tabs.</p><div className="dnd-grid"><Reference name="Build your first character" page={19}><p>Start with the official open character-creation guide.</p></Reference><article><h3>Keep the adventure together</h3><p>Prepare scenes and keep private notes in your campaign workspace.</p><a href="/campaigns">Open Campaigns →</a></article><article><h3>Make a gaming home</h3><p>Add the games you play, your favorite memories, and your own artwork.</p><a href="/profile">Open My Profile →</a></article></div><p className="dnd-note">Ability modifiers, saving throws, skill bonuses, proficiency, and basic defenses are calculated. Record detailed features, spells, and equipment choices from the SRD. Higher-level HP and armor use your sheet overrides.</p></>:<>
  <label>Find {tabs.find(t=>t[0]===tab)[1].toLowerCase()}<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Type a name…"/></label>
- <div className="dnd-grid">{tab==='classes'&&classes.filter(c=>matches(c[0])||matches(c[1])).map(([name,sub,page])=><Reference key={name} name={name} page={page}><p>Included SRD subclass: {sub}</p></Reference>)}{tab==='species'&&species.filter(s=>matches(s[0])).map(([name,page])=><Reference key={name} name={name} page={page}/>)}{tab==='backgrounds'&&['Acolyte','Criminal','Sage','Soldier'].filter(matches).map(name=><Reference key={name} name={name} page={83}/>)}{tab==='rules'&&rules.filter(r=>matches(r[0])).map(([name,page,summary])=><Reference key={name} name={name} page={page}><p>{summary}</p></Reference>)}</div>
+ <div className="dnd-grid">{tab==='classes'&&classes.filter(c=>matches(c[0])||matches(c[1])).map(([name,sub,page])=><Reference key={name} name={name} page={page}><p>Included SRD subclass: {sub}</p></Reference>)}{tab==='species'&&species.filter(s=>matches(s[0])).map(([name,page])=><SpeciesCard key={name} name={name}/>)}{tab==='backgrounds'&&['Acolyte','Criminal','Sage','Soldier'].filter(matches).map(name=><Reference key={name} name={name} page={83}/>)}{tab==='rules'&&rules.filter(r=>matches(r[0])).map(([name,page,summary])=><Reference key={name} name={name} page={page}><p>{summary}</p></Reference>)}</div>
  {((tab==='classes'?classes.filter(c=>matches(c[0])||matches(c[1])):tab==='species'?species.filter(s=>matches(s[0])):tab==='backgrounds'?['Acolyte','Criminal','Sage','Soldier'].filter(matches):rules.filter(r=>matches(r[0]))).length===0)&&<p>No matches. Try another name.</p>}
  </>}
  </div></section>
