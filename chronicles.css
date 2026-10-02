@@ -1,0 +1,447 @@
+@import "./theme-motion.css";
+:root {
+  color-scheme: dark;
+  font-family: Georgia, serif;
+  background: #11181d;
+  color: #ece6d8;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.chronicles a {
+  color: #e1c28a;
+  text-underline-offset: 4px;
+}
+.chronicles button,
+.chronicles input,
+.chronicles select,
+.chronicles textarea {
+  font: inherit;
+}
+.chronicles button {
+  background: #d9b978;
+  color: #171e21;
+  border: 1px solid #d9b978;
+  border-radius: 8px;
+  padding: 11px 17px;
+  cursor: pointer;
+}
+.chronicles button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.chronicles .quiet {
+  background: transparent;
+  color: #dfc69c;
+  border-color: #475054;
+}
+.chronicles :focus-visible {
+  outline: 3px solid #91d1c6;
+  outline-offset: 4px;
+}
+.chron-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  max-width: 1240px;
+  margin: auto;
+  padding: 24px;
+}
+.chron-brand {
+  font-size: 25px;
+  text-decoration: none;
+}
+.chron-brand small {
+  display: block;
+  font: 12px system-ui;
+  color: #9dadad;
+  margin-top: 5px;
+}
+.chron-nav nav {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font: 14px system-ui;
+}
+.chron-nav [aria-current] {
+  color: #fff;
+}
+.chronicles main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 24px;
+}
+.chron-hero {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 35px;
+  align-items: center;
+  padding: 42px;
+  border: 1px solid #46524d;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 85% 20%, #28413e 0, transparent 55%),
+    linear-gradient(135deg, #1c252b, #182129);
+  position: relative;
+  overflow: hidden;
+}
+.chron-eyebrow {
+  font: 11px system-ui;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #b5d4c7;
+}
+.chron-hero h1 {
+  font-size: clamp(42px, 7vw, 72px);
+  margin: 12px 0;
+  color: #efd5a4;
+}
+.chronicles p {
+  line-height: 1.7;
+  color: #bfcccd;
+}
+.chron-hero p {
+  max-width: 590px;
+  font-size: 18px;
+}
+.chron-art {
+  position: relative;
+  text-align: center;
+}
+.chron-art svg {
+  width: 100%;
+  max-width: 330px;
+  filter: drop-shadow(0 0 16px #d0a26322);
+}
+.chron-moon {
+  position: absolute;
+  top: -20px;
+  right: 25%;
+  font-size: 52px;
+  color: #edd6a3;
+}
+.chron-star {
+  position: absolute;
+  top: 40px;
+  left: 13%;
+  color: #c6e0d8;
+}
+.chron-art-caption {
+  display: block;
+  color: #c9bb97;
+  font-style: italic;
+  font-size: 13px;
+}
+.chron-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  margin: 32px 0;
+}
+.chron-panel,
+.chron-post,
+.chron-empty {
+  padding: 25px;
+  border: 1px solid #344348;
+  background: #192229;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+.chronicles h2 {
+  font-size: 23px;
+  margin: 0 0 14px;
+}
+.chronicles h3 {
+  font-size: 26px;
+  color: #efdbb4;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.chronicles label {
+  display: block;
+  font: 14px system-ui;
+  color: #ddd7c9;
+  margin-bottom: 14px;
+}
+.chronicles input:not([type="checkbox"]),
+.chronicles textarea,
+.chronicles select {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 12px;
+  background: #10191f;
+  border: 1px solid #51615f;
+  border-radius: 7px;
+  color: #eee;
+  margin-top: 7px;
+}
+.chronicles textarea {
+  resize: vertical;
+}
+.chron-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.chron-check {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 9px;
+  line-height: 1.6 !important;
+  margin-top: 15px;
+}
+.chron-check input {
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.chron-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.chron-feed-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.chron-feed-heading label {
+  max-width: 250px;
+}
+.chron-status:empty {
+  display: none;
+}
+.chron-status {
+  padding: 12px;
+  border-left: 3px solid #d9b978;
+}
+.chron-post header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.chron-author {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-decoration: none;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.chron-author img,
+.chron-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.chron-avatar {
+  display: grid;
+  place-items: center;
+  background: #32453f;
+  color: #e8c887;
+}
+.chron-author small {
+  display: block;
+  color: #91a4a6;
+  font: 12px system-ui;
+  margin-top: 5px;
+}
+.chron-tag {
+  border: 1px solid #596258;
+  border-radius: 20px;
+  padding: 6px 10px;
+  color: #b4c7bf;
+  font: 11px system-ui;
+}
+.chron-game {
+  display: block;
+  margin-top: 20px;
+  color: #8ebbb3;
+  font: 12px system-ui;
+}
+.chron-story {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chron-post footer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid #334247;
+  padding-top: 16px;
+}
+.chron-post .toasted {
+  background: #30483c;
+  color: #e5dbb6;
+  border-color: #7eaa89;
+}
+.chron-empty {
+  text-align: center;
+  padding: 40px 25px;
+  background: linear-gradient(150deg, #1b2d30, #1b2029);
+}
+.chron-empty > span {
+  font-size: 45px;
+  color: #d9b978;
+}
+.chron-prompt {
+  padding: 25px;
+  border-left: 2px solid #c1a366;
+  margin-bottom: 25px;
+}
+.chron-prompt > span {
+  color: #d9b978;
+  font-size: 32px;
+}
+.chronicles small {
+  line-height: 1.6;
+}
+.chron-bottom {
+  text-align: center;
+  padding: 35px;
+  color: #879b9c;
+  border-top: 1px solid #2d3b40;
+  font-size: 14px;
+}
+aside {
+  min-width: 0;
+}
+.chron-feed {
+  min-width: 0;
+}
+@media (max-width: 850px) {
+  .chron-layout {
+    grid-template-columns: 1fr;
+  }
+  aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  .chron-nav {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .chron-hero {
+    padding: 28px;
+    gap: 15px;
+  }
+}
+@media (max-width: 540px) {
+  .chronicles main {
+    padding: 0 15px;
+  }
+  .chron-nav {
+    padding: 20px 15px;
+  }
+  .chron-nav nav {
+    gap: 15px;
+  }
+  .chron-hero {
+    grid-template-columns: 1fr;
+    padding: 25px;
+  }
+  .chron-art {
+    max-width: 240px;
+    margin: 15px auto 0;
+  }
+  .chron-art svg {
+    max-height: 145px;
+  }
+  .chron-moon {
+    font-size: 35px;
+  }
+  .chron-layout {
+    margin-top: 22px;
+  }
+  .chron-panel,
+  .chron-post {
+    padding: 20px;
+  }
+  .chron-fields,
+  aside {
+    grid-template-columns: 1fr;
+  }
+  .chron-feed-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .chron-feed-heading label {
+    width: 100%;
+    max-width: none;
+  }
+  .chronicles h3 {
+    font-size: 23px;
+  }
+  .chron-hero p {
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chron-hero {
+    animation: sm-arrive 0.5s ease both;
+  }
+  .chron-art svg {
+    animation: chron-glow 6s ease-in-out infinite;
+  }
+}
+@keyframes chron-glow {
+  50% {
+    filter: drop-shadow(0 0 24px #d0a26355);
+  }
+}
+
+.chron-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 25px 0;
+}
+.chron-tome-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+.chron-tome-grid article {
+  padding: 18px;
+  border: 1px solid #435550;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.chron-tome-grid article.selected {
+  border-color: #d9b978;
+  background: #243531;
+}
+.chron-tome-grid article > a {
+  display: block;
+  margin: 12px 0;
+}
+.chron-tome-grid article > button {
+  margin: 8px 0;
+}
+.chron-sponsor {
+  padding: 22px;
+  border: 1px dashed #4b5757;
+  border-radius: 12px;
+  color: #829998;
+}
+.chron-sponsor p {
+  font-size: 13px;
+}
+.chron-author-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}

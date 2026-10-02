@@ -893,7 +893,7 @@ function App() {
     report = useMutation(ref("profiles:report"));
   return (
     <main>
-<nav className="game-switch" aria-label="Game system"><a href="/">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Characters</a><a href="/campaigns">Campaigns</a><a href="/profile" aria-current="page">My Profile</a></nav>
+<nav className="game-switch" aria-label="Game system"><a href="/">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Characters</a><a href="/campaigns">Campaigns</a><a href="/chronicles">Chronicles</a><a href="/profile" aria-current="page">My Profile</a></nav>
       {handle ? (
         <>
           {publicProfile === undefined ? (
