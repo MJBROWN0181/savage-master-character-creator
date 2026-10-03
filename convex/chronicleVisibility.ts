@@ -1,5 +1,6 @@
 // Shared by the feed, permalinks, reactions, and reposts: one visibility policy.
 export async function reviewedAuthor(ctx: any, id: any) {
+  if ((await ctx.db.get(id))?.communityPausedAt !== undefined) return null;
   const profile = await ctx.db.query('profiles').withIndex('by_owner', (q: any) => q.eq('ownerId', id)).unique();
   return profile?.reviewStatus === 'approved' && profile.publicSnapshot ? profile : null;
 }

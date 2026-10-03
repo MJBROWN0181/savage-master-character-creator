@@ -168,23 +168,27 @@ test('reviewers recover missing legacy notifications without approving and canno
 
 test('only administrators can grant helpers access; email verification, role limits, and revocation are enforced', async () => {
   const { t, player, unverified, reviewer } = await fixture();
+  await player.mutation(save, draft);
+  await reviewer.mutation(save, { ...draft, handle: 'reviewer' });
   const grant = ref<'mutation'>('profiles:setReviewerAccess');
   const team = ref<'query'>('profiles:reviewTeam');
   for (const caller of [t, player, unverified]) {
-    await expect(caller.mutation(grant, { email: 'player@example.test', enabled: true })).rejects.toThrow('administrators');
+    await expect(caller.mutation(grant, { handle: 'new-player', enabled: true })).rejects.toThrow('administrators');
     await expect(caller.query(team, {})).rejects.toThrow('administrators');
   }
-  await reviewer.mutation(grant, { email: ' PLAYER@example.test ', enabled: true });
+  await reviewer.mutation(grant, { handle: ' @NEW-PLAYER ', enabled: true });
   expect(await player.query(ref<'query'>('profiles:canReview'), {})).toBe(true);
   expect(await player.query(ref<'query'>('profiles:canManageReviewers'), {})).toBe(false);
   await expect(player.query(team, {})).rejects.toThrow('administrators');
   const userId = await t.run(ctx => ctx.db.insert('users', { email: 'new-helper@example.test' }));
-  await reviewer.mutation(grant, { email: 'new-helper@example.test', enabled: true });
+  await t.withIdentity({ subject: userId }).mutation(save, { ...draft, handle: 'new-helper' });
+  await expect(reviewer.mutation(grant, { handle: 'new-helper', enabled: true })).rejects.toThrow('verify');
   expect(await t.withIdentity({ subject: userId }).query(ref<'query'>('profiles:canReview'), {})).toBe(false);
-  await reviewer.mutation(grant, { email: 'player@example.test', enabled: false });
+  await reviewer.mutation(grant, { handle: 'new-player', enabled: false });
   expect(await player.query(ref<'query'>('profiles:canReview'), {})).toBe(false);
   await expect(player.query(queue, {})).rejects.toThrow('verified profile reviewers');
-  await expect(reviewer.mutation(grant, { email: 'reviewer@example.test', enabled: false })).rejects.toThrow('server settings');
+  await expect(reviewer.mutation(grant, { handle: 'reviewer', enabled: false })).rejects.toThrow('server settings');
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
 });
 
 test('moderators inspect published content and hide reports without losing private data, with decision history', async () => {

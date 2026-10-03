@@ -4,13 +4,16 @@ import { v } from "convex/values";
 
 export default defineSchema({
   ...authTables,
-  profileReviewTeam: defineTable({email:v.string(),grantedBy:v.id('users'),grantedAt:v.number(),revokedAt:v.optional(v.number())}).index('by_email',['email']),
+  profileReviewTeam: defineTable({email:v.optional(v.string()),userId:v.optional(v.id('users')),role:v.optional(v.union(v.literal('admin'),v.literal('moderator'))),grantedBy:v.id('users'),grantedAt:v.number(),revokedAt:v.optional(v.number())}).index('by_email',['email']).index('by_user',['userId']),
+  moderationOwners: defineTable({key:v.literal('primary'),userId:v.id('users'),createdAt:v.number()}).index('by_key',['key']),
+  moderationAudit: defineTable({actorId:v.id('users'),memberId:v.optional(v.id('users')),ticketId:v.optional(v.id('supportTickets')),action:v.string(),createdAt:v.number()}).index('by_created',['createdAt']),
   profileModerationLog: defineTable({profileId:v.id('profiles'),reviewerId:v.id('users'),action:v.union(v.literal('approved'),v.literal('changes_requested'),v.literal('hidden'),v.literal('reports_dismissed')),note:v.string(),createdAt:v.number()}).index('by_created',['createdAt']),
   users: defineTable({
     ...authTables.users.validator.fields,
     termsAcceptedVersion: v.optional(v.string()),
     termsAcceptedAt: v.optional(v.number()),
     profileFrameEnabled: v.optional(v.boolean()),
+    communityPausedAt: v.optional(v.number()),
     profileFrameSelection: v.optional(v.union(v.literal('auto'),v.literal('admin'),v.literal('founding-100'),v.literal('founding-50-supporters'))),
   }).index('email', ['email']).index('phone', ['phone']),
   profileFrameAwards: defineTable({ownerId:v.id('users'),kind:v.union(v.literal('founding-100'),v.literal('founding-50-supporters')),number:v.number(),awardedAt:v.number(),paymentId:v.optional(v.string())}).index('by_owner_kind',['ownerId','kind']).index('by_kind_number',['kind','number']),
@@ -20,6 +23,7 @@ export default defineSchema({
     kind: v.union(v.literal('bug'), v.literal('help')), title: v.string(), body: v.string(), email: v.string(), diagnostics: v.optional(v.string()),
     status: v.union(v.literal('open'), v.literal('in_progress'), v.literal('resolved')),
     createdAt: v.number(), updatedAt: v.number(), reply: v.optional(v.string()),
+    category: v.optional(v.union(v.literal('characters'), v.literal('campaigns'), v.literal('profiles'), v.literal('community'), v.literal('billing'), v.literal('other'))),
     notification: v.union(v.literal('pending'), v.literal('sent'), v.literal('failed'), v.literal('unconfigured')),
   }).index('by_owner_created', ['ownerId', 'createdAt']).index('by_email_created', ['email', 'createdAt']).index('by_created', ['createdAt']).index('by_request', ['requestId']),
   chronicleTomeReports: defineTable({tomeId:v.id("chronicleTomes"),ownerId:v.id("users"),reason:v.string(),createdAt:v.number()}).index("by_tome_owner",["tomeId","ownerId"]),

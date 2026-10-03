@@ -121,7 +121,7 @@ test('profile status explains the review gate and shows the private change reque
 
 test('a review link asks guests to sign in and does not show private profiles', async () => {
   const html = await renderApp('?reviews=1');
-  expect(html).toContain('Profile review queue');
+  expect(html).toContain('Admin workspace');
   expect(html).toContain('Sign in with your authorized reviewer account');
   expect(html).not.toContain('Approve profile');
 });

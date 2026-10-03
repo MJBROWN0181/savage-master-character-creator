@@ -4,7 +4,7 @@ import { makeFunctionReference as ref } from 'convex/server';
 import { mutation, query, internalQuery, internalMutation } from './_generated/server';
 
 export const submit = mutation({
-  args: { requestId: v.string(), kind: v.union(v.literal('bug'), v.literal('help')), title: v.string(), body: v.string(), email: v.string(), diagnostics: v.optional(v.string()) },
+  args: { requestId: v.string(), kind: v.union(v.literal('bug'), v.literal('help')), title: v.string(), body: v.string(), email: v.string(), diagnostics: v.optional(v.string()), category: v.optional(v.union(v.literal('characters'), v.literal('campaigns'), v.literal('profiles'), v.literal('community'), v.literal('billing'), v.literal('other'))) },
   handler: async (ctx, args) => {
     const ownerId = await getAuthUserId(ctx) ?? undefined;
     const email = args.email.trim().toLowerCase();

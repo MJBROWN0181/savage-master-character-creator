@@ -11,8 +11,8 @@ export const notify = internalAction({
     if (!info) return;
     const key = process.env.SUPPORT_RESEND_KEY || process.env.AUTH_RESEND_KEY;
     const from = process.env.SUPPORT_EMAIL_FROM || process.env.AUTH_EMAIL_FROM;
-    const to = process.env.PROFILE_REVIEW_EMAIL_TO || process.env.PROFILE_MODERATOR_ADMIN_EMAILS || process.env.PROFILE_REVIEWER_EMAILS || process.env.BUG_EDITOR_EMAILS || process.env.SUPPORT_EMAIL_TO;
-    const recipients = (to || "").split(",").map(email => email.trim()).filter(Boolean);
+    const to = process.env.PROFILE_REVIEW_EMAIL_TO || info.recipient || process.env.PROFILE_MODERATOR_ADMIN_EMAILS || process.env.PROFILE_REVIEWER_EMAILS || process.env.BUG_EDITOR_EMAILS || process.env.SUPPORT_EMAIL_TO;
+    const recipients = (to || "").split(",").map((email: string) => email.trim()).filter(Boolean);
     const mark = (status: "pending" | "sent" | "failed" | "unconfigured") =>
       ctx.runMutation(ref<"mutation", any>("profiles:markReviewNotification"), { profileId, requestedAt, status });
     if (!key || !from || !recipients.length) { await mark("unconfigured"); return; }

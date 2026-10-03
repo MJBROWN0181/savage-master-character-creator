@@ -6,7 +6,7 @@ import {
 } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { publicPost, visiblePost } from './chronicleVisibility';
+import { publicPost, visiblePost, reviewedAuthor } from './chronicleVisibility';
 import { memberIdentity, activeMember } from './communityAccess';
 const games = [
   "Any tabletop game",
@@ -16,11 +16,7 @@ const games = [
 ];
 const kinds = ["Session tale", "Epic roll", "Character moment", "Table memory"];
 async function author(ctx: any, id: any) {
-  const p = await ctx.db
-    .query("profiles")
-    .withIndex("by_owner", (q: any) => q.eq("ownerId", id))
-    .unique();
-  return p?.reviewStatus === "approved" && p.publicSnapshot ? p : null;
+  return reviewedAuthor(ctx, id);
 }
 async function blocked(ctx: any, a: any, b: any) {
   if (!a) return false;

@@ -452,7 +452,7 @@
 .profile-moderation-tabs button[aria-pressed="true"] { border-color: var(--gold); }
 .profile-review-team form { display: grid; gap: 16px; margin: 24px 0; }
 .profile-review-team form > label { display: grid; gap: 8px; }
-.profile-review-team input[type="email"] { width: 100%; }
+.profile-review-team input[type="text"] { width: 100%; }
 .profile-team-list, .profile-decision-list { list-style: none; padding: 0; }
 .profile-team-list li { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
 .profile-team-list small { display: block; color: var(--muted); }

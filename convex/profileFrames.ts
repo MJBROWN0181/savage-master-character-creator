@@ -3,13 +3,11 @@ import { v, ConvexError } from 'convex/values';
 import { makeFunctionReference as ref } from 'convex/server';
 import { query, mutation, internalMutation, type QueryCtx, type MutationCtx } from './_generated/server';
 import type { Id } from './_generated/dataModel';
+import { moderationRole } from './moderationAccess';
 
 type Kind = 'founding-100' | 'founding-50-supporters';
 export async function isProfileAdmin(ctx: QueryCtx, ownerId: Id<'users'>) {
-  const user = await ctx.db.get(ownerId);
-  const emails = (process.env.PROFILE_MODERATOR_ADMIN_EMAILS || process.env.BUG_EDITOR_EMAILS || process.env.PROFILE_REVIEWER_EMAILS || '')
-    .split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
-  return !!user?.emailVerificationTime && emails.includes(user.email?.trim().toLowerCase() || '');
+  return ['owner', 'admin'].includes(await moderationRole(ctx, ownerId));
 }
 async function counter(ctx: MutationCtx, kind: Kind) {
   const old = await ctx.db.query('profileFrameCounters').withIndex('by_kind', q => q.eq('kind', kind)).unique();

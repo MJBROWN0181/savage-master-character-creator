@@ -840,21 +840,48 @@ export function ReportReviewCard({ item, onStatus }) {
 export function ReviewTeam({ onStatus }) {
   const team = useQuery(ref('profiles:reviewTeam'), {}), history = useQuery(ref('profiles:moderationHistory'), {});
   const setAccess = useMutation(ref('profiles:setReviewerAccess'));
-  const [email, setEmail] = useState(''), [accepted, setAccepted] = useState(false), [busy, setBusy] = useState(false);
-  async function update(address, enabled) {
-    setBusy(true); try { await setAccess({ email: address, enabled }); onStatus(enabled ? 'Reviewer access granted. They can open /profile-reviews after verifying their account email.' : 'Reviewer access revoked.'); if (enabled) { setEmail(''); setAccepted(false); } }
+  const [handle, setHandle] = useState(''), [role, setRole] = useState('admin'), [accepted, setAccepted] = useState(false), [busy, setBusy] = useState(false);
+  async function update(handle, enabled, role = 'admin') {
+    setBusy(true); try { await setAccess({ handle, enabled, role }); onStatus(enabled ? 'Staff access granted. They can open the Admin workspace.' : 'Staff access revoked.'); if (enabled) { setHandle(''); setAccepted(false); } }
     catch (error) { onStatus(reviewError(error)); } finally { setBusy(false); }
   }
-  return <section className="profile-review-team"><h2>Your moderation team</h2><p>Add trusted helpers by the email they use for Savage Master. They must verify that email before opening reviews. Helpers can review submitted public details and reports; they cannot manage this team or access billing, account controls, or private journals.</p>
-    <form onSubmit={e => { e.preventDefault(); if (accepted) update(email, true); }}><label>Helper's account email<input type="email" required maxLength={254} value={email} disabled={busy} onChange={e => setEmail(e.target.value)} /></label><label className="check"><input type="checkbox" required checked={accepted} disabled={busy} onChange={e => setAccepted(e.target.checked)} />I trust this person to view submissions and reports and make moderation decisions.</label><button disabled={busy || !accepted}>Grant reviewer access</button></form>
-    {team === undefined ? <p>Loading team.</p> : !team.length ? <p>No helpers have been added.</p> : <ul className="profile-team-list">{team.map(member => <li key={member.email}><span>{member.email}<small>{member.revokedAt === undefined ? 'Active reviewer' : 'Access revoked'}</small></span><button type="button" className="secondary" disabled={busy} onClick={() => update(member.email, member.revokedAt !== undefined)}>{member.revokedAt === undefined ? 'Revoke access' : 'Restore access'}</button></li>)}</ul>}
-    <h2>Recent moderation decisions</h2>{history === undefined ? <p>Loading decisions.</p> : !history.length ? <p>No decisions recorded yet.</p> : <ul className="profile-decision-list">{history.map((entry, index) => <li key={index}><strong>@{entry.handle} · {entry.action.replaceAll('_', ' ')}</strong><p>{entry.reviewerEmail} · {new Date(entry.createdAt).toLocaleString()}</p>{entry.note && <blockquote>{entry.note}</blockquote>}</li>)}</ul>}
+  return <section className="profile-review-team"><h2>Your moderation team</h2><p>You are the owner. Add trusted, verified members by their gamer handle. Admins receive the Admin frame; moderators receive the same review tools. Only you can appoint or remove staff. Staff can review profiles, track bug tickets, and pause community access.</p>
+    <form onSubmit={e => { e.preventDefault(); if (accepted) update(handle, true, role); }}><label>Helper's gamer handle<input type="text" required maxLength={32} placeholder="@gamer-handle" value={handle} disabled={busy} onChange={e => setHandle(e.target.value)} /></label><label>Role<select value={role} disabled={busy} onChange={e => setRole(e.target.value)}><option value="admin">Admin</option><option value="moderator">Moderator</option></select></label><label className="check"><input type="checkbox" required checked={accepted} disabled={busy} onChange={e => setAccepted(e.target.checked)} />I trust this person to make community moderation decisions.</label><button disabled={busy || !accepted}>Grant staff access</button></form>
+    {team === undefined ? <p>Loading team.</p> : !team.length ? <p>No helpers have been added.</p> : <ul className="profile-team-list">{team.map((member, index) => <li key={`${member.handle}:${index}`}><span>@{member.handle}<small>{member.revokedAt === undefined ? member.role : 'Access revoked'}</small></span><button type="button" className="secondary" disabled={busy || !member.handle} onClick={() => update(member.handle, member.revokedAt !== undefined, member.role)}>{member.revokedAt === undefined ? 'Revoke access' : 'Restore access'}</button></li>)}</ul>}
+    <h2>Recent moderation decisions</h2>{history === undefined ? <p>Loading decisions.</p> : !history.length ? <p>No decisions recorded yet.</p> : <ul className="profile-decision-list">{history.map((entry, index) => <li key={index}><strong>@{entry.handle} · {entry.action.replaceAll('_', ' ')}</strong><p>@{entry.reviewerHandle} · {new Date(entry.createdAt).toLocaleString()}</p></li>)}</ul>}
   </section>;
+}
+export function StaffMembers({ onStatus }) {
+  const [cursor, setCursor] = useState(null), [busy, setBusy] = useState(false);
+  const rows = useQuery(ref('moderation:members'), { paginationOpts: { cursor, numItems: 30 } });
+  const update = useMutation(ref('moderation:setCommunityAccess'));
+  async function change(member) {
+    if (!confirm(`${member.communityPaused ? 'Restore' : 'Pause'} community access for ${member.handle ? '@' + member.handle : 'this member'}? Private game data stays available.`)) return;
+    setBusy(true);
+    try { await update({ memberId: member.memberId, paused: !member.communityPaused }); onStatus('Member community access updated.'); }
+    catch (error) { onStatus(reviewError(error)); } finally { setBusy(false); }
+  }
+  return <section><h2>Member accounts</h2><p>Pause public profiles and community participation when needed. Members keep their own account and private game data. Passwords, contact details, and payments are unavailable here.</p>{!rows ? <p>Loading members.</p> : <><ul className="profile-team-list">{rows.page.map(member => <li key={member.memberId}><span><strong>{member.handle ? '@' + member.handle : 'Profile not created'}</strong><small>{member.role} · {member.verified ? 'Verified account' : 'Unverified account'} · {member.reviewStatus.replaceAll('_', ' ')} · {member.communityPaused ? 'Community paused' : 'Community active'}</small></span><button type="button" className="secondary" disabled={busy || member.role === 'owner'} onClick={() => change(member)}>{member.communityPaused ? 'Restore access' : 'Pause access'}</button></li>)}</ul><div className="profile-owner-actions">{cursor && <button type="button" onClick={() => setCursor(null)}>Back to first page</button>}{!rows.isDone && <button type="button" onClick={() => setCursor(rows.continueCursor)}>Next members</button>}</div></>}</section>;
+}
+export function StaffBugReports({ onStatus }) {
+  const tickets = useQuery(ref('moderation:bugReports'), {}), update = useMutation(ref('moderation:updateBugReport'));
+  const [busy, setBusy] = useState(false);
+  async function change(ticket, status) {
+    setBusy(true);
+    try { await update({ id: ticket.id, updatedAt: ticket.updatedAt, status }); onStatus('Bug ticket updated.'); }
+    catch (error) { onStatus(reviewError(error)); } finally { setBusy(false); }
+  }
+  return <section><h2>Bug reports</h2><p>Track issue categories and ticket progress here. Original messages and error details stay in the private support inbox because they may contain personal information.</p>{tickets === undefined ? <p>Loading bug tickets.</p> : !tickets.length ? <p>No bug reports yet.</p> : <ul className="profile-team-list">{tickets.map(ticket => <li key={ticket.id}><span><strong>Bug {ticket.id.slice(-8)} · {ticket.category.replaceAll('_', ' ')}</strong><small>{new Date(ticket.createdAt).toLocaleString()}</small></span><label>Ticket status<select disabled={busy} value={ticket.status} onChange={e => change(ticket, e.target.value)}><option value="open">Open</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option></select></label></li>)}</ul>}</section>;
+}
+export function StaffAccessLink() {
+  const access = useQuery(ref('moderation:mine'), {});
+  return access && access.role !== 'member' ? <a href="/profile-reviews">{access.role === 'owner' ? 'Owner / Admin' : access.role === 'admin' ? 'Admin' : 'Moderator'} workspace</a> : null;
 }
 export function ProfileReviews({ onStatus }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const allowed = useQuery(ref('profiles:canReview'), isAuthenticated ? {} : 'skip');
   const canManage = useQuery(ref('profiles:canManageReviewers'), isAuthenticated ? {} : 'skip');
+  const access = useQuery(ref('moderation:mine'), isAuthenticated ? {} : 'skip');
   const profileId = new URLSearchParams(location.search).get('profile');
   const [tab, setTab] = useState('pending');
   const rows = useQuery(ref('profiles:pendingReviews'), allowed === true ? profileId ? { profileId } : {} : 'skip');
@@ -862,13 +889,17 @@ export function ProfileReviews({ onStatus }) {
   return <section className="profile-reviews">
     <a href="/">Back to Savage Master</a>
     <p className="profile-eyebrow">Private moderation workspace</p>
-    <h1>Profile review queue</h1>
+    <h1>Admin workspace</h1>
+    <p>Staff see gamer handles and community status. Account emails, contact details, payments, private journals, and private character sheets are excluded. Submitted profiles contain the details players chose for public review.</p>
     <p>Review each player's chosen public details before enabling Chronicles posting. Check for explicit imagery, hate, harassment, threats, scams, exposed private information, and rights to uploaded material.</p>
     {isLoading ? <p>Checking account.</p> : !isAuthenticated ? <><p>Sign in with your authorized reviewer account.</p><CharacterAccount accountOnly /></> : allowed === undefined ? <p>Checking reviewer access.</p> : !allowed ? <p>This queue is available to authorized, verified reviewers.</p> : rows === undefined ? <p>Opening the review queue.</p> : <>
-      <nav className="profile-moderation-tabs" aria-label="Moderation sections"><button type="button" aria-pressed={tab === 'pending'} onClick={() => setTab('pending')}>Pending profiles</button><button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>Reported profiles</button>{canManage === true && <button type="button" aria-pressed={tab === 'team'} onClick={() => setTab('team')}>Team & decisions</button>}</nav>
+      <p>Your role: <strong>{access?.role === 'owner' ? 'Owner / Admin' : access?.role}</strong></p>
+      <nav className="profile-moderation-tabs" aria-label="Moderation sections"><button type="button" aria-pressed={tab === 'pending'} onClick={() => setTab('pending')}>Pending profiles</button><button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>Reported profiles</button><button type="button" aria-pressed={tab === 'bugs'} onClick={() => setTab('bugs')}>Bug reports</button><button type="button" aria-pressed={tab === 'members'} onClick={() => setTab('members')}>Member accounts</button>{canManage === true && <button type="button" aria-pressed={tab === 'team'} onClick={() => setTab('team')}>Team & decisions</button>}</nav>
       {tab === 'pending' && <>{profileId && <p><a href="/profile-reviews">View all pending profiles</a></p>}<p>{rows.length ? `${rows.length} ${rows.length === 1 ? 'profile' : 'profiles'} awaiting review${rows.length === 100 ? ' (showing the first 100)' : ''}.` : profileId ? 'This submission is no longer awaiting review or the link is unavailable.' : 'No profiles are waiting for review.'}</p>{rows.map(profile => <ReviewCard key={`${profile._id}:${profile.updatedAt}:${profile.reviewRequestedAt}`} profile={profile} onStatus={onStatus} />)}</>}
       {tab === 'reports' && (reports === undefined ? <p>Loading reports.</p> : !reports.length ? <p>No open profile reports.</p> : reports.map(item => <ReportReviewCard key={`${item.profileId}:${item.updatedAt}:${item.reports.map(report => report._id).join(',')}`} item={item} onStatus={onStatus} />))}
       {tab === 'team' && canManage === true && <ReviewTeam onStatus={onStatus} />}
+      {tab === 'bugs' && <StaffBugReports onStatus={onStatus} />}
+      {tab === 'members' && <StaffMembers onStatus={onStatus} />}
     </>}
   </section>;
 }
@@ -1024,6 +1055,7 @@ export function App() {
                     <a href="/chronicles"><strong>Meet Around the Fire</strong><small>Find friends, shared stories, and community tomes.</small></a>
                   </nav>
                   <div className="profile-owner-actions">
+                    <StaffAccessLink />
                     <button type="button" onClick={() => setEditing(true)}>Edit profile & background</button>
                     <button type="button" className="secondary" onClick={() => setTour(true)}>Show me around</button>
                   </div>

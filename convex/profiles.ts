@@ -8,6 +8,7 @@ import {
 import { v, ConvexError } from "convex/values";
 import { makeFunctionReference as ref } from "convex/server";
 import { profileFrame, isProfileAdmin } from './profileFrames';
+import { moderatorId, moderationOwnerId, isModerationOwner, staffHandle } from './moderationAccess';
 
 const appearance = v.object({
   background: v.string(),
@@ -331,7 +332,7 @@ export const publicProfile = query({
       .query("profiles")
       .withIndex("by_handle", (q) => q.eq("handle", handle))
       .unique();
-    if (!p || p.reviewStatus !== "approved" || !p.publicSnapshot) return null;
+    if (!p || p.reviewStatus !== "approved" || !p.publicSnapshot || (await ctx.db.get(p.ownerId))?.communityPausedAt !== undefined) return null;
     const s = p.publicSnapshot;
     return {
       ...s,
@@ -404,51 +405,48 @@ export const reviewQueue = internalQuery({
     ),
 });
 async function reviewer(ctx: any) {
-  const id = await getAuthUserId(ctx);
-  if (!id) return null;
-  const user = await ctx.db.get(id);
-  const allowed = (process.env.PROFILE_REVIEWER_EMAILS || process.env.BUG_EDITOR_EMAILS || "")
-    .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);
-  if (!user?.emailVerificationTime || !user.email) return null;
-  const email = user.email.trim().toLowerCase();
-  const grant = await ctx.db.query("profileReviewTeam").withIndex("by_email", (q: any) => q.eq("email", email)).unique();
-  const admins = (process.env.PROFILE_MODERATOR_ADMIN_EMAILS || process.env.BUG_EDITOR_EMAILS || process.env.PROFILE_REVIEWER_EMAILS || "")
-    .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);
-  return allowed.includes(email) || admins.includes(email) || (grant && grant.revokedAt === undefined) ? id : null;
+  return moderatorId(ctx);
 }
 async function moderationAdmin(ctx: any) {
-  const id = await getAuthUserId(ctx);
-  if (!id) return null;
-  return await isProfileAdmin(ctx, id) ? id : null;
+  return moderationOwnerId(ctx);
 }
 export const canReview = query({ args: {}, handler: async ctx => !!await reviewer(ctx) });
 export const canManageReviewers = query({ args: {}, handler: async ctx => !!await moderationAdmin(ctx) });
 export const reviewTeam = query({
   args: {}, handler: async ctx => {
     if (!await moderationAdmin(ctx)) throw new ConvexError("Only moderation administrators can manage the team.");
-    return (await ctx.db.query("profileReviewTeam").take(100)).map(({ email, grantedAt, revokedAt }) => ({ email, grantedAt, revokedAt }));
+    const rows = await ctx.db.query("profileReviewTeam").take(100);
+    return Promise.all(rows.map(async row => {
+      const userId = row.userId || (row.email ? (await ctx.db.query('users').withIndex('email', q => q.eq('email', row.email)).first())?._id : undefined);
+      return { handle: userId ? await staffHandle(ctx, userId) : 'Account unavailable', role: row.role || 'moderator', grantedAt: row.grantedAt, revokedAt: row.revokedAt };
+    }));
   },
 });
 export const setReviewerAccess = mutation({
-  args: { email: v.string(), enabled: v.boolean() },
-  handler: async (ctx, { email: input, enabled }) => {
+  args: { handle: v.string(), enabled: v.boolean(), role: v.optional(v.union(v.literal('admin'), v.literal('moderator'))) },
+  handler: async (ctx, { handle: input, enabled, role = 'admin' }) => {
     const adminId = await moderationAdmin(ctx);
     if (!adminId) throw new ConvexError("Only moderation administrators can manage the team.");
-    const email = input.trim().toLowerCase();
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ConvexError("Enter a valid helper email address.");
-    const configured = [process.env.PROFILE_MODERATOR_ADMIN_EMAILS, process.env.PROFILE_REVIEWER_EMAILS, process.env.BUG_EDITOR_EMAILS]
-      .filter(Boolean).join(",").split(",").map(email => email.trim().toLowerCase());
-    if (configured.includes(email)) throw new ConvexError("This account's access is managed in the server settings.");
-    const existing = await ctx.db.query("profileReviewTeam").withIndex("by_email", q => q.eq("email", email)).unique();
+    const handle = input.trim().replace(/^@/, '').toLowerCase();
+    const profile = await ctx.db.query('profiles').withIndex('by_handle', q => q.eq('handle', handle)).unique();
+    if (!profile) throw new ConvexError('Choose an existing member handle.');
+    const user = await ctx.db.get(profile.ownerId);
+    if (!user?.emailVerificationTime) throw new ConvexError('The member must verify their account before receiving staff access.');
+    if (await isModerationOwner(ctx, user._id)) throw new ConvexError("The owner role is protected by server settings.");
+    const existing = await ctx.db.query('profileReviewTeam').withIndex('by_user', q => q.eq('userId', user._id)).unique()
+      || (user.email ? await ctx.db.query('profileReviewTeam').withIndex('by_email', q => q.eq('email', user.email)).unique() : null);
     if (enabled) {
-      if (existing?.revokedAt === undefined && existing) return;
+      if (existing && existing.revokedAt === undefined && existing.role === role) return;
       if (!existing && (await ctx.db.query("profileReviewTeam").take(100)).length >= 100) throw new ConvexError("The moderation team limit has been reached.");
-      const grant = { email, grantedBy: adminId, grantedAt: Date.now(), revokedAt: undefined };
+      const grant = { userId: user._id, email: undefined, role, grantedBy: adminId, grantedAt: Date.now(), revokedAt: undefined };
       if (existing) await ctx.db.patch(existing._id, grant);
       else await ctx.db.insert("profileReviewTeam", grant);
     } else if (existing && existing.revokedAt === undefined) {
       await ctx.db.patch(existing._id, { revokedAt: Date.now() });
+    } else if (!existing) {
+      await ctx.db.insert('profileReviewTeam', { userId: user._id, role, grantedBy: adminId, grantedAt: Date.now(), revokedAt: Date.now() });
     }
+    await ctx.db.insert('moderationAudit', { actorId: adminId, memberId: user._id, action: enabled ? `${role}_granted` : 'staff_access_revoked', createdAt: Date.now() });
   },
 });
 export const pendingReviews = query({
@@ -516,7 +514,9 @@ export const reviewNotificationInfo = internalQuery({
   handler: async (ctx, a) => {
     const p = await ctx.db.get(a.profileId);
     if (!p || p.reviewStatus !== "pending" || p.reviewRequestedAt !== a.requestedAt || p.reviewNotification === "sent") return null;
-    return { handle: p.handle };
+    const owner = await ctx.db.query('moderationOwners').withIndex('by_key', q => q.eq('key', 'primary')).unique();
+    const ownerUser = owner && await ctx.db.get(owner.userId);
+    return { handle: p.handle, recipient: ownerUser?.emailVerificationTime ? ownerUser.email : undefined };
   },
 });
 export const markReviewNotification = internalMutation({
@@ -586,9 +586,9 @@ export const moderationHistory = query({
   args: {}, handler: async ctx => {
     if (!await moderationAdmin(ctx)) throw new ConvexError("Only moderation administrators can view decision history.");
     const rows = await ctx.db.query("profileModerationLog").withIndex("by_created").order("desc").take(100);
-    return Promise.all(rows.map(async row => ({ action: row.action, note: row.note, createdAt: row.createdAt,
+    return Promise.all(rows.map(async row => ({ action: row.action, createdAt: row.createdAt,
       handle: (await ctx.db.get(row.profileId))?.handle || "Removed profile",
-      reviewerEmail: (await ctx.db.get(row.reviewerId))?.email || "Removed account",
+      reviewerHandle: await staffHandle(ctx, row.reviewerId),
     })));
   },
 });

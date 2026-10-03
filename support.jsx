@@ -8,7 +8,7 @@ import { BugMascot, BugPaths, signalBug } from './bug-mascot.jsx';
 import { BugCompanion } from './bug-companion.jsx';
 
 const capture = () => window.smBugCapture?.snapshot() || { page: location.pathname, errors: [] };
-const defaultDraft = () => ({ kind: 'bug', title: '', body: '', email: '', attach: true, requestId: crypto.randomUUID() });
+const defaultDraft = () => ({ kind: 'bug', category: 'other', title: '', body: '', email: '', attach: true, requestId: crypto.randomUUID() });
 const draftKey = 'sm-support-draft-v1';
 function readDraft() {
   try {
@@ -41,7 +41,7 @@ function ReportForm({ send, connected, initialKind, onSent }) {
     event.preventDefault(); if (!send || busy) return;
     setBusy(true); setMessage(''); signalBug('sending');
     try {
-      const result = await send({ requestId: draft.requestId, kind: draft.kind, title: draft.title.trim(), body: draft.body.trim(), email: draft.email.trim(), ...(draft.attach && draft.kind === 'bug' ? { diagnostics } : {}) });
+      const result = await send({ requestId: draft.requestId, kind: draft.kind, category: draft.category || 'other', title: draft.title.trim(), body: draft.body.trim(), email: draft.email.trim(), ...(draft.attach && draft.kind === 'bug' ? { diagnostics } : {}) });
       setReceipt(result.reference); signalBug('success'); onSent?.(result);
       setDraft(defaultDraft());
     } catch (error) {
@@ -55,6 +55,7 @@ function ReportForm({ send, connected, initialKind, onSent }) {
     {(busy || receipt) && <div className="bug-delivery"><BugMascot state={busy ? 'sending' : 'success'} size={62} /><span>{busy ? 'Bug is carrying your report to the team…' : 'Your ticket is safely recorded.'}</span></div>}
     <fieldset disabled={busy}>
       <label>How can I help?<select value={draft.kind} onChange={e => { set({ kind: e.target.value }); signalBug(e.target.value === 'bug' ? 'inspect' : 'guide'); }}><option value="bug">Report a bug</option><option value="help">Create a support ticket</option></select></label>
+      {draft.kind === 'bug' && <label>Where did it happen?<select value={draft.category || 'other'} onChange={e => set({ category: e.target.value })}><option value="characters">Character sheets</option><option value="campaigns">Campaigns</option><option value="profiles">Profiles</option><option value="community">Community</option><option value="billing">Billing</option><option value="other">Something else</option></select><small>Staff see this category and ticket status. Your message and contact details stay with private support.</small></label>}
       <label>{draft.kind === 'bug' ? 'What went wrong?' : 'What do you need help with?'}<input required maxLength={160} value={draft.title} onChange={e => set({ title: e.target.value })} placeholder="A short summary" /></label>
       <label>{draft.kind === 'bug' ? 'What happened?' : 'Tell us a little more'}<textarea required maxLength={6000} rows={4} value={draft.body} onChange={e => set({ body: e.target.value })} placeholder={draft.kind === 'bug' ? 'What did you click? What happened, and what did you expect?' : 'Tell us how we can help.'} /></label>
       <label>Your reply email<input required type="email" maxLength={254} autoComplete="email" value={draft.email} onChange={e => set({ email: e.target.value })} placeholder="you@example.com" /></label>
