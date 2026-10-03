@@ -5,8 +5,9 @@ import {
   internalMutation,
   internalQuery,
 } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { makeFunctionReference as ref } from "convex/server";
+import { profileFrame, isProfileAdmin } from './profileFrames';
 
 const appearance = v.object({
   background: v.string(),
@@ -56,6 +57,7 @@ export const mine = query({
     if (!p) return null;
     return {
       ...p,
+      frame: (await profileFrame(ctx, p.ownerId)).active,
       avatarUrl: p.avatarId ? await ctx.storage.getUrl(p.avatarId) : null,
       backgroundUrl: p.backgroundId
         ? await ctx.storage.getUrl(p.backgroundId)
@@ -333,6 +335,7 @@ export const publicProfile = query({
     const s = p.publicSnapshot;
     return {
       ...s,
+      frame: (await profileFrame(ctx, p.ownerId)).active,
       official: p.official === 'bug' ? 'bug' : undefined,
       avatarUrl: p.official === 'bug' ? '/images/art/the-bug.png' : s.avatarId ? await ctx.storage.getUrl(s.avatarId) : null,
       backgroundUrl: s.backgroundId
@@ -406,19 +409,62 @@ async function reviewer(ctx: any) {
   const user = await ctx.db.get(id);
   const allowed = (process.env.PROFILE_REVIEWER_EMAILS || process.env.BUG_EDITOR_EMAILS || "")
     .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);
-  return user?.emailVerificationTime && allowed.includes(user.email?.toLowerCase() || "") ? id : null;
+  if (!user?.emailVerificationTime || !user.email) return null;
+  const email = user.email.trim().toLowerCase();
+  const grant = await ctx.db.query("profileReviewTeam").withIndex("by_email", (q: any) => q.eq("email", email)).unique();
+  const admins = (process.env.PROFILE_MODERATOR_ADMIN_EMAILS || process.env.BUG_EDITOR_EMAILS || process.env.PROFILE_REVIEWER_EMAILS || "")
+    .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);
+  return allowed.includes(email) || admins.includes(email) || (grant && grant.revokedAt === undefined) ? id : null;
+}
+async function moderationAdmin(ctx: any) {
+  const id = await getAuthUserId(ctx);
+  if (!id) return null;
+  return await isProfileAdmin(ctx, id) ? id : null;
 }
 export const canReview = query({ args: {}, handler: async ctx => !!await reviewer(ctx) });
+export const canManageReviewers = query({ args: {}, handler: async ctx => !!await moderationAdmin(ctx) });
+export const reviewTeam = query({
+  args: {}, handler: async ctx => {
+    if (!await moderationAdmin(ctx)) throw new ConvexError("Only moderation administrators can manage the team.");
+    return (await ctx.db.query("profileReviewTeam").take(100)).map(({ email, grantedAt, revokedAt }) => ({ email, grantedAt, revokedAt }));
+  },
+});
+export const setReviewerAccess = mutation({
+  args: { email: v.string(), enabled: v.boolean() },
+  handler: async (ctx, { email: input, enabled }) => {
+    const adminId = await moderationAdmin(ctx);
+    if (!adminId) throw new ConvexError("Only moderation administrators can manage the team.");
+    const email = input.trim().toLowerCase();
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ConvexError("Enter a valid helper email address.");
+    const configured = [process.env.PROFILE_MODERATOR_ADMIN_EMAILS, process.env.PROFILE_REVIEWER_EMAILS, process.env.BUG_EDITOR_EMAILS]
+      .filter(Boolean).join(",").split(",").map(email => email.trim().toLowerCase());
+    if (configured.includes(email)) throw new ConvexError("This account's access is managed in the server settings.");
+    const existing = await ctx.db.query("profileReviewTeam").withIndex("by_email", q => q.eq("email", email)).unique();
+    if (enabled) {
+      if (existing?.revokedAt === undefined && existing) return;
+      if (!existing && (await ctx.db.query("profileReviewTeam").take(100)).length >= 100) throw new ConvexError("The moderation team limit has been reached.");
+      const grant = { email, grantedBy: adminId, grantedAt: Date.now(), revokedAt: undefined };
+      if (existing) await ctx.db.patch(existing._id, grant);
+      else await ctx.db.insert("profileReviewTeam", grant);
+    } else if (existing && existing.revokedAt === undefined) {
+      await ctx.db.patch(existing._id, { revokedAt: Date.now() });
+    }
+  },
+});
 export const pendingReviews = query({
-  args: {},
-  handler: async ctx => {
-    if (!await reviewer(ctx)) throw new Error("Only verified profile reviewers can open this queue.");
-    const rows = await ctx.db.query("profiles")
+  args: { profileId: v.optional(v.string()) },
+  handler: async (ctx, { profileId }) => {
+    const reviewerId = await reviewer(ctx);
+    if (!reviewerId) throw new ConvexError("Only verified profile reviewers can open this queue.");
+    const id = profileId ? ctx.db.normalizeId("profiles", profileId) : null;
+    const selected = id ? await ctx.db.get(id) : null;
+    const rows = profileId ? selected?.reviewStatus === "pending" ? [selected] : [] : await ctx.db.query("profiles")
       .withIndex("by_review", q => q.eq("reviewStatus", "pending")).take(100);
     return Promise.all(rows.map(async p => ({
       ...await snapshot(ctx, p),
       _id: p._id, updatedAt: p.updatedAt, reviewRequestedAt: p.reviewRequestedAt,
       reviewNotification: p.reviewNotification,
+      isOwnProfile: p.ownerId === reviewerId,
       avatarUrl: p.avatarId ? await ctx.storage.getUrl(p.avatarId) : null,
       backgroundUrl: p.backgroundId ? await ctx.storage.getUrl(p.backgroundId) : null,
       favorites: await Promise.all(p.favorites.map(async f => ({
@@ -433,18 +479,36 @@ export const decideReview = mutation({
     expectedRequestedAt: v.optional(v.number()), approve: v.boolean(), note: v.string() },
   handler: async (ctx, a) => {
     const reviewerId = await reviewer(ctx);
-    if (!reviewerId) throw new Error("Only verified profile reviewers can make this decision.");
+    if (!reviewerId) throw new ConvexError("Only verified profile reviewers can make this decision.");
     const p = await ctx.db.get(a.profileId);
     if (!p || p.reviewStatus !== "pending" || p.updatedAt !== a.expectedUpdatedAt || p.reviewRequestedAt !== a.expectedRequestedAt)
-      throw new Error("Profile changed; review the current draft.");
-    if (p.ownerId === reviewerId) throw new Error("Another reviewer must review your own profile.");
+      throw new ConvexError("Profile changed; review the current draft.");
+    if (p.ownerId === reviewerId) throw new ConvexError("Another reviewer must review your own profile.");
     if (a.note.trim().length > 500 || (!a.approve && !a.note.trim()))
-      throw new Error("Explain the requested changes in up to 500 characters.");
+      throw new ConvexError("Explain the requested changes in up to 500 characters.");
     await ctx.db.patch(p._id, {
       reviewStatus: a.approve ? "approved" : "rejected",
       publicSnapshot: a.approve ? await snapshot(ctx, p) : undefined,
       reviewNote: a.approve ? undefined : a.note.trim(),
     });
+    await ctx.db.insert("profileModerationLog", { profileId: p._id, reviewerId, action: a.approve ? "approved" : "changes_requested", note: a.note.trim(), createdAt: Date.now() });
+  },
+});
+// Repair missing legacy notices and retry failed delivery without publishing the profile.
+export const resendReviewNotice = mutation({
+  args: { profileId: v.id("profiles") },
+  handler: async (ctx, { profileId }) => {
+    if (!await reviewer(ctx)) throw new ConvexError("Only verified profile reviewers can send review notices.");
+    const p = await ctx.db.get(profileId);
+    if (!p || p.reviewStatus !== "pending") throw new ConvexError("This profile is no longer awaiting review.");
+    if (p.reviewNotification === "sent") throw new ConvexError("The review email has already been sent.");
+    const elapsed = Date.now() - (p.reviewRequestedAt || 0);
+    if (p.reviewRequestedAt && elapsed < 60000) throw new ConvexError("Please wait a minute before sending another review email.");
+    if (p.reviewNotification === "pending" && p.reviewRequestedAt && elapsed < 600000)
+      throw new ConvexError("The review email is still being delivered. Please try again later.");
+    const requestedAt = Math.max(Date.now(), (p.reviewRequestedAt || 0) + 1);
+    await ctx.db.patch(profileId, { reviewRequestedAt: requestedAt, reviewNotification: "pending" });
+    await ctx.scheduler.runAfter(0, ref<"action", any>("profileReviewEmail:notify"), { profileId, requestedAt, attempt: 0 });
   },
 });
 export const reviewNotificationInfo = internalQuery({
@@ -473,6 +537,61 @@ export const withdraw = internalMutation({
     });
   },
 });
+export const reportedReviews = query({
+  args: {},
+  handler: async ctx => {
+    if (!await reviewer(ctx)) throw new ConvexError("Only verified profile reviewers can open reports.");
+    const reports = await ctx.db.query("profileReports").withIndex("by_resolution_created", q => q.eq("resolvedAt", undefined)).order("desc").take(100);
+    const profileIds = [...new Set(reports.map(report => report.profileId))];
+    return Promise.all(profileIds.map(async profileId => {
+      const p = await ctx.db.get(profileId);
+      const s = p?.publicSnapshot;
+      return {
+        profileId, updatedAt: p?.updatedAt, handle: p?.handle || "Removed profile",
+        isPublic: p?.reviewStatus === "approved" && !!s,
+        reports: reports.filter(report => report.profileId === profileId).map(({ _id, reason, createdAt }) => ({ _id, reason, createdAt })),
+        // Inspect the published version, never unrelated edits in the owner's draft.
+        profile: s ? { ...s,
+          avatarUrl: s.avatarId ? await ctx.storage.getUrl(s.avatarId) : null,
+          backgroundUrl: s.backgroundId ? await ctx.storage.getUrl(s.backgroundId) : null,
+          favorites: await Promise.all(s.favorites.map(async (f: any) => ({ name: f.name, imageUrl: f.imageId ? await ctx.storage.getUrl(f.imageId) : null }))),
+        } : null,
+      };
+    }));
+  },
+});
+export const resolveReports = mutation({
+  args: { profileId: v.id("profiles"), expectedUpdatedAt: v.optional(v.number()), reportIds: v.array(v.id("profileReports")), hide: v.boolean(), note: v.string() },
+  handler: async (ctx, a) => {
+    const reviewerId = await reviewer(ctx);
+    if (!reviewerId) throw new ConvexError("Only verified profile reviewers can resolve reports.");
+    const p = await ctx.db.get(a.profileId);
+    if (p?.updatedAt !== a.expectedUpdatedAt) throw new ConvexError("Profile changed; inspect the current public version.");
+    const note = a.note.trim();
+    if (note.length > 500 || (a.hide && !note)) throw new ConvexError("Explain the requested changes in up to 500 characters.");
+    if (!a.reportIds.length || a.reportIds.length > 100) throw new ConvexError("Select the reports you reviewed.");
+    const reports = await Promise.all(a.reportIds.map(id => ctx.db.get(id)));
+    if (reports.some(report => !report || report.profileId !== a.profileId || report.resolvedAt !== undefined))
+      throw new ConvexError("Reports changed; refresh the report queue.");
+    if (a.hide) {
+      if (!p || p.reviewStatus !== "approved" || !p.publicSnapshot) throw new ConvexError("This profile is already private.");
+      await ctx.db.patch(p._id, { reviewStatus: "rejected", publicSnapshot: undefined, reviewNote: note });
+    }
+    const resolvedAt = Date.now();
+    for (const report of reports) await ctx.db.patch(report!._id, { resolvedAt, resolvedBy: reviewerId, resolution: a.hide ? "hidden" : "dismissed" });
+    await ctx.db.insert("profileModerationLog", { profileId: a.profileId, reviewerId, action: a.hide ? "hidden" : "reports_dismissed", note, createdAt: resolvedAt });
+  },
+});
+export const moderationHistory = query({
+  args: {}, handler: async ctx => {
+    if (!await moderationAdmin(ctx)) throw new ConvexError("Only moderation administrators can view decision history.");
+    const rows = await ctx.db.query("profileModerationLog").withIndex("by_created").order("desc").take(100);
+    return Promise.all(rows.map(async row => ({ action: row.action, note: row.note, createdAt: row.createdAt,
+      handle: (await ctx.db.get(row.profileId))?.handle || "Removed profile",
+      reviewerEmail: (await ctx.db.get(row.reviewerId))?.email || "Removed account",
+    })));
+  },
+});
 export const report = mutation({
   args: { handle: v.string(), reason: v.string() },
   handler: async (ctx, a) => {
@@ -492,7 +611,11 @@ export const report = mutation({
         q.eq("profileId", p._id).eq("reporterId", reporterId),
       )
       .unique();
-    if (old) throw new Error("You have already reported this profile.");
+    if (old && old.resolvedAt === undefined) throw new Error("You have already reported this profile.");
+    if (old) {
+      await ctx.db.patch(old._id, { reason: a.reason, createdAt: Date.now(), resolvedAt: undefined, resolvedBy: undefined, resolution: undefined });
+      return;
+    }
     await ctx.db.insert("profileReports", {
       profileId: p._id,
       reporterId,

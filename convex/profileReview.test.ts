@@ -9,6 +9,8 @@ const draft = { handle: 'new-player', displayName: 'New player', bio: 'Hello', g
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubEnv('PROFILE_REVIEWER_EMAILS', 'reviewer@example.test');
+  vi.stubEnv('PROFILE_MODERATOR_ADMIN_EMAILS', 'reviewer@example.test');
+  vi.stubEnv('BUG_EDITOR_EMAILS', '');
   vi.stubEnv('SUPPORT_RESEND_KEY', 'test-key');
   vi.stubEnv('SUPPORT_EMAIL_FROM', 'Support <support@smsheets.com>');
   vi.stubEnv('SUPPORT_EMAIL_TO', 'support@smsheets.com');
@@ -31,7 +33,7 @@ const queue = ref<'query'>('profiles:pendingReviews'), decide = ref<'mutation'>(
 function decision(p: any, approve = true, note = '') {
   return { profileId: p._id, expectedUpdatedAt: p.updatedAt, expectedRequestedAt: p.reviewRequestedAt, approve, note };
 }
-test('completed new profiles automatically queue once and email support without exposing private drafts', async () => {
+test('completed new profiles email reviewers a private link to the exact submission', async () => {
   const { t, player, reviewer } = await fixture();
   await expect(player.mutation(save, { ...draft, communityAccepted: false })).rejects.toThrow('community rules');
   const id = await player.mutation(save, draft);
@@ -45,8 +47,9 @@ test('completed new profiles automatically queue once and email support without 
   expect(rows[0].ownerId).toBeUndefined();
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   expect(mail).toHaveBeenCalledTimes(1);
-  expect(mail.mock.calls[0][0]).toMatchObject({ to: ['support@smsheets.com'], subject: '[Savage Master Profile review] @new-player' });
-  expect(mail.mock.calls[0][0].text).toContain('https://smsheets.com/profile?reviews=1');
+  expect(mail.mock.calls[0][0]).toMatchObject({ to: ['reviewer@example.test'], subject: '[Savage Master Profile review] @new-player' });
+  expect(mail.mock.calls[0][0].text).toContain(`https://smsheets.com/profile-reviews?profile=${id}`);
+  expect(mail.mock.calls[0][0].html).toContain('Review profile</a>');
   expect(mail.mock.calls[0][0].text).not.toContain('Changed while pending');
   expect((await player.query(mine, {}) as any).reviewNotification).toBe('sent');
 });
@@ -119,7 +122,7 @@ test('development review notifications link to the development site', async () =
   vi.stubEnv('SITE_URL', 'http://localhost:5173');
   await player.mutation(save, draft);
   await t.finishAllScheduledFunctions(vi.runAllTimers);
-  expect(mail.mock.calls[0][0].text).toContain('http://localhost:5173/profile?reviews=1');
+  expect(mail.mock.calls[0][0].text).toContain('http://localhost:5173/profile-reviews?profile=');
 });
 test('private existing drafts stay private and missing email configuration does not lose the review', async () => {
   const { t, player, reviewer } = await fixture();
@@ -129,9 +132,83 @@ test('private existing drafts stay private and missing email configuration does 
   expect((await player.query(mine, {}) as any).reviewStatus).toBe('private');
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   expect(mail).not.toHaveBeenCalled();
-  vi.advanceTimersByTime(61000); vi.stubEnv('SUPPORT_EMAIL_TO', '');
+  vi.advanceTimersByTime(61000); vi.stubEnv('SUPPORT_RESEND_KEY', ''); vi.stubEnv('AUTH_RESEND_KEY', '');
   await player.mutation(ref<'mutation'>('profiles:requestReview'), {});
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   expect(await t.run(ctx => ctx.db.get(id))).toMatchObject({ reviewStatus: 'pending', reviewNotification: 'unconfigured' });
   expect(await reviewer.query(queue, {})).toHaveLength(1);
+});
+
+test('email links select a single pending profile and invalid or completed links reveal nothing', async () => {
+  const { t, player, reviewer } = await fixture();
+  const id = await player.mutation(save, draft);
+  await reviewer.mutation(save, { ...draft, handle: 'reviewer-profile' });
+  const selected: any = await reviewer.query(queue, { profileId: id });
+  expect(selected).toHaveLength(1); expect(selected[0].handle).toBe(draft.handle);
+  expect((await reviewer.query(queue, {}) as any).find((p: any) => p.handle === 'reviewer-profile').isOwnProfile).toBe(true);
+  expect(await reviewer.query(queue, { profileId: 'invalid' })).toEqual([]);
+  await reviewer.mutation(decide, decision(await player.query(mine, {})));
+  expect(await reviewer.query(queue, { profileId: id })).toEqual([]);
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+});
+
+test('reviewers recover missing legacy notifications without approving and cannot spam delivery', async () => {
+  const { t, player, reviewer } = await fixture();
+  const id: any = await player.mutation(save, draft);
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  await t.run(ctx => ctx.db.patch(id, { reviewRequestedAt: undefined, reviewNotification: undefined }));
+  const resend = ref<'mutation'>('profiles:resendReviewNotice');
+  await expect(player.mutation(resend, { profileId: id })).rejects.toThrow('verified profile reviewers');
+  await reviewer.mutation(resend, { profileId: id });
+  await expect(reviewer.mutation(resend, { profileId: id })).rejects.toThrow('wait a minute');
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  expect((await player.query(mine, {}) as any)).toMatchObject({ reviewStatus: 'pending', reviewNotification: 'sent' });
+  await expect(reviewer.mutation(resend, { profileId: id })).rejects.toThrow('already been sent');
+});
+
+test('only administrators can grant helpers access; email verification, role limits, and revocation are enforced', async () => {
+  const { t, player, unverified, reviewer } = await fixture();
+  const grant = ref<'mutation'>('profiles:setReviewerAccess');
+  const team = ref<'query'>('profiles:reviewTeam');
+  for (const caller of [t, player, unverified]) {
+    await expect(caller.mutation(grant, { email: 'player@example.test', enabled: true })).rejects.toThrow('administrators');
+    await expect(caller.query(team, {})).rejects.toThrow('administrators');
+  }
+  await reviewer.mutation(grant, { email: ' PLAYER@example.test ', enabled: true });
+  expect(await player.query(ref<'query'>('profiles:canReview'), {})).toBe(true);
+  expect(await player.query(ref<'query'>('profiles:canManageReviewers'), {})).toBe(false);
+  await expect(player.query(team, {})).rejects.toThrow('administrators');
+  const userId = await t.run(ctx => ctx.db.insert('users', { email: 'new-helper@example.test' }));
+  await reviewer.mutation(grant, { email: 'new-helper@example.test', enabled: true });
+  expect(await t.withIdentity({ subject: userId }).query(ref<'query'>('profiles:canReview'), {})).toBe(false);
+  await reviewer.mutation(grant, { email: 'player@example.test', enabled: false });
+  expect(await player.query(ref<'query'>('profiles:canReview'), {})).toBe(false);
+  await expect(player.query(queue, {})).rejects.toThrow('verified profile reviewers');
+  await expect(reviewer.mutation(grant, { email: 'reviewer@example.test', enabled: false })).rejects.toThrow('server settings');
+});
+
+test('moderators inspect published content and hide reports without losing private data, with decision history', async () => {
+  const { t, ids, player, reviewer } = await fixture();
+  const id: any = await player.mutation(save, draft);
+  await reviewer.mutation(decide, decision(await player.query(mine, {})));
+  const reporterId = await t.run(ctx => ctx.db.insert('users', { email: 'reporter@example.test', emailVerificationTime: Date.now() }));
+  const reporter = t.withIdentity({ subject: reporterId });
+  await reporter.mutation(ref<'mutation'>('profiles:report'), { handle: draft.handle, reason: 'Exposed private information' });
+  await player.mutation(save, { ...draft, bio: 'Unpublished private changes' });
+  const reports = ref<'query'>('profiles:reportedReviews'), resolve = ref<'mutation'>('profiles:resolveReports');
+  await expect(player.query(reports, {})).rejects.toThrow('verified profile reviewers');
+  const rows: any = await reviewer.query(reports, {});
+  expect(rows[0].profile.bio).toBe('Hello');
+  expect(rows[0].reports[0].reporterId).toBeUndefined();
+  const args = { profileId: id, expectedUpdatedAt: rows[0].updatedAt, reportIds: rows[0].reports.map((r: any) => r._id), hide: true, note: 'Please remove exposed personal information.' };
+  await expect(player.mutation(resolve, args)).rejects.toThrow('verified profile reviewers');
+  await expect(reviewer.mutation(resolve, { ...args, note: '' })).rejects.toThrow('Explain');
+  await reviewer.mutation(resolve, args);
+  expect(await t.query(ref<'query'>('profiles:publicProfile'), { handle: draft.handle })).toBeNull();
+  expect((await player.query(mine, {}) as any)).toMatchObject({ bio: 'Unpublished private changes', reviewStatus: 'rejected', reviewNote: args.note });
+  expect(await t.run(ctx => ctx.db.get(ids.player))).not.toBeNull();
+  expect(await reviewer.query(reports, {})).toEqual([]);
+  const history: any = await reviewer.query(ref<'query'>('profiles:moderationHistory'), {});
+  expect(history.map((r: any) => r.action)).toEqual(['hidden', 'approved']);
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
 });

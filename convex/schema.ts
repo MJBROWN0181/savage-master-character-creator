@@ -4,11 +4,17 @@ import { v } from "convex/values";
 
 export default defineSchema({
   ...authTables,
+  profileReviewTeam: defineTable({email:v.string(),grantedBy:v.id('users'),grantedAt:v.number(),revokedAt:v.optional(v.number())}).index('by_email',['email']),
+  profileModerationLog: defineTable({profileId:v.id('profiles'),reviewerId:v.id('users'),action:v.union(v.literal('approved'),v.literal('changes_requested'),v.literal('hidden'),v.literal('reports_dismissed')),note:v.string(),createdAt:v.number()}).index('by_created',['createdAt']),
   users: defineTable({
     ...authTables.users.validator.fields,
     termsAcceptedVersion: v.optional(v.string()),
     termsAcceptedAt: v.optional(v.number()),
+    profileFrameEnabled: v.optional(v.boolean()),
+    profileFrameSelection: v.optional(v.union(v.literal('auto'),v.literal('admin'),v.literal('founding-100'),v.literal('founding-50-supporters'))),
   }).index('email', ['email']).index('phone', ['phone']),
+  profileFrameAwards: defineTable({ownerId:v.id('users'),kind:v.union(v.literal('founding-100'),v.literal('founding-50-supporters')),number:v.number(),awardedAt:v.number(),paymentId:v.optional(v.string())}).index('by_owner_kind',['ownerId','kind']).index('by_kind_number',['kind','number']),
+  profileFrameCounters: defineTable({kind:v.union(v.literal('founding-100'),v.literal('founding-50-supporters')),count:v.number(),initialized:v.boolean()}).index('by_kind',['kind']),
   supportTickets: defineTable({
     ownerId: v.optional(v.id('users')), requestId: v.string(), reference: v.string(),
     kind: v.union(v.literal('bug'), v.literal('help')), title: v.string(), body: v.string(), email: v.string(), diagnostics: v.optional(v.string()),
@@ -49,7 +55,7 @@ export default defineSchema({
   friendBlocks:defineTable({ownerId:v.id('users'),blockedId:v.id('users')}).index('by_owner_blocked',['ownerId','blockedId']).index('by_owner',['ownerId']),
   profiles: defineTable({official:v.optional(v.literal("bug")),ownerId:v.id('users'),handle:v.string(),displayName:v.string(),bio:v.string(),games:v.array(v.string()),memory:v.string(),roles:v.array(v.union(v.literal('player'),v.literal('gm'))),links:v.array(v.object({label:v.string(),url:v.string(),kind:v.union(v.literal('social'),v.literal('shop'))})),favorites:v.array(v.object({characterId:v.id('characters'),imageId:v.optional(v.id('_storage'))})),highlights:v.array(v.object({journalId:v.id('privateJournals'),excerpt:v.string()})),avatarId:v.optional(v.id('_storage')),backgroundId:v.optional(v.id('_storage')),appearance:v.object({background:v.string(),accent:v.string(),font:v.string(),layout:v.string(),sections:v.array(v.string())}),ageConfirmedAt:v.number(),updatedAt:v.number(),reviewRequestedAt:v.optional(v.number()),reviewNotification:v.optional(v.union(v.literal('pending'),v.literal('sent'),v.literal('failed'),v.literal('unconfigured'))),reviewNote:v.optional(v.string()),reviewStatus:v.union(v.literal('private'),v.literal('pending'),v.literal('approved'),v.literal('rejected')),publicSnapshot:v.optional(v.any())}).index('by_owner',['ownerId']).index('by_handle',['handle']).index('by_review',['reviewStatus']),
   profileMedia: defineTable({ownerId:v.id('users'),storageId:v.id('_storage'),createdAt:v.number()}).index('by_storage',['storageId']).index('by_owner',['ownerId']),
-  profileReports: defineTable({profileId:v.id('profiles'),reporterId:v.id('users'),reason:v.string(),createdAt:v.number()}).index('by_profile_reporter',['profileId','reporterId']),
+  profileReports: defineTable({profileId:v.id('profiles'),reporterId:v.id('users'),reason:v.string(),createdAt:v.number(),resolvedAt:v.optional(v.number()),resolvedBy:v.optional(v.id('users')),resolution:v.optional(v.union(v.literal('hidden'),v.literal('dismissed')))}).index('by_profile_reporter',['profileId','reporterId']).index('by_resolution_created',['resolvedAt','createdAt']),
   adventures:defineTable({campaignId:v.id('campaigns'),title:v.string(),updatedAt:v.number()}).index('by_campaign',['campaignId']),
   scenes:defineTable({adventureId:v.id('adventures'),title:v.string(),notes:v.string(),updatedAt:v.number()}).index('by_adventure',['adventureId']),
   campaignInvites:defineTable({campaignId:v.id('campaigns'),token:v.string(),expiresAt:v.number()}).index('by_token',['token']),

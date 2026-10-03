@@ -5,6 +5,7 @@ import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { makeFunctionReference as ref } from 'convex/server';
 import { CharacterAccount } from './account.jsx';
 import { friendlyError } from './community-ui.jsx';
+import { ProfileFrameSettings } from './profile-frame-settings.jsx';
 import './campaigns.css';
 import './profile.css';
 import './community.css';
@@ -12,6 +13,7 @@ export function SettingsPage() {
   const {isAuthenticated,isLoading}=useConvexAuth(), {signOut,signIn}=useAuthActions();
   const profile=useQuery(ref('profiles:mine'),isAuthenticated?{}:'skip'), account=useQuery(ref('accountSettings:mine'),isAuthenticated?{}:'skip'), follows=useQuery(ref('chronicles:following'),isAuthenticated?{}:'skip');
   const review=useMutation(ref('profiles:requestReview')), unpublish=useMutation(ref('profiles:unpublish')), remove=useMutation(ref('profiles:deleteProfile')), followers=useMutation(ref('chronicles:setFollowers')), password=useAction(ref('accountSettings:changePassword'));
+  const canReview=useQuery(ref('profiles:canReview'),isAuthenticated?{}:'skip');
   const [appearance,setAppearance]=useState(()=>window.smAppearance?.getPreference() || 'auto');
   const [status,setStatus]=useState(''),[busy,setBusy]=useState(false),[policy,setPolicy]=useState(false),[confirmation,setConfirmation]=useState(''),[deleting,setDeleting]=useState(false),[resetting,setResetting]=useState(false);
   useEffect(()=>{const update=()=>setAppearance(window.smAppearance?.getPreference()||'auto');window.addEventListener('sm:appearance-change',update);return()=>window.removeEventListener('sm:appearance-change',update);},[]);
@@ -19,6 +21,8 @@ export function SettingsPage() {
   function download(){const {ownerId,...details}=profile;const blob=new Blob([JSON.stringify({profile:details},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${profile.handle}-profile.json`;a.click();URL.revokeObjectURL(url);}
   return <main className="settings-page"><a href="/profile">Back to my profile</a><header className="workspace-hero"><span className="profile-eyebrow">Make yourself at home</span><h1>Settings</h1><p>Your appearance, account, sharing, and privacy in one place.</p></header>
     <nav className="settings-nav" aria-label="Settings sections"><a href="#appearance">Appearance</a><a href="#review">Profile review</a><a href="#security">Password</a><a href="#privacy">Privacy</a><a href="#profile-data">Profile & data</a></nav>
+    {canReview === true && <section><h2>Moderation workspace</h2><p>Review submitted and reported profiles in your private workspace.</p><a href="/profile-reviews">Open profile reviews</a></section>}
+    <ProfileFrameSettings />
     <section id="appearance"><h2>Appearance</h2><p>Follow your device, or choose the light parchment or dark forest theme.</p><label>Color theme<select value={appearance} onChange={e=>window.smAppearance?.setPreference(e.target.value)}><option value="auto">Follow device</option><option value="light">Light</option><option value="dark">Dark</option></select></label></section>
     {isLoading?<p>Checking account…</p>:!isAuthenticated?<><p>Sign in for account settings.</p><CharacterAccount accountOnly/></>:<>
       <section id="review"><h2>Access to Around the Fire</h2>{profile===undefined?<p>Opening profile…</p>:!profile?<p><a href="/profile">Finish your profile</a> to automatically request review.</p>:<><p>Status: <strong>{profile.reviewStatus==='pending'?'Awaiting review':profile.reviewStatus==='approved'?'Approved':profile.reviewStatus==='rejected'?'Changes requested':'Private'}</strong></p>{profile.reviewNote&&<blockquote>{profile.reviewNote}</blockquote>}{profile.reviewStatus==='approved'?<p>Your public profile and posting access are ready. <a href="/chronicles">Open Around the Fire</a>.</p>:profile.reviewStatus==='pending'?<p>Your request is in the queue. Bug will keep it here while the team reviews your chosen profile details.</p>:<><p>Review grants a public profile and posting access. Update your details first, then submit them here.</p><a href="/profile?edit=1">Edit my profile</a><label className="check"><input type="checkbox" checked={policy} onChange={e=>setPolicy(e.target.checked)}/>I accept the community rules and sharing my chosen profile details publicly after approval.</label><button disabled={busy||!policy} onClick={()=>run(()=>review({}),'Your profile was submitted for review.')}>Request profile review</button></>}</>}</section>

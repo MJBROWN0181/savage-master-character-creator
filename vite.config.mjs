@@ -12,7 +12,7 @@ const localPageRoutes = {
   configureServer(server) {
     server.middlewares.use((request, response, next) => {
       const url = new URL(request.url, 'http://localhost');
-      if (url.pathname === '/install' || url.pathname === '/create' || url.pathname === '/settings' || url.pathname === '/chronicles' || url.pathname === '/profile' || url.pathname === '/campaigns' || url.pathname === '/dnd' || url.pathname === '/pathfinder' || url.pathname === '/builder' || url.pathname === '/pricing') {
+      if (url.pathname === '/profile-reviews' || url.pathname === '/install' || url.pathname === '/create' || url.pathname === '/settings' || url.pathname === '/chronicles' || url.pathname === '/profile' || url.pathname === '/campaigns' || url.pathname === '/dnd' || url.pathname === '/pathfinder' || url.pathname === '/builder' || url.pathname === '/pricing') {
         response.writeHead(302, {Location: url.pathname + '.html' + url.search});
         response.end();
       } else next();
@@ -20,4 +20,4 @@ const localPageRoutes = {
   },
 };
 export default defineConfig(({mode})=>({ plugins: [localShareRoutes(mode), localPageRoutes, installPlugin(), supportPlugin(), legalPlugin(), react()], build: {rollupOptions: {input: {legal: 'legal.html', install: 'install.html', create: 'create.html', settings: 'settings.html', support: 'support.html', chronicles: 'chronicles.html',
-        main: 'index.html', campaigns: 'campaigns.html', profile: 'profile.html', dnd: 'dnd.html', pathfinder: 'pathfinder.html', builder: 'builder.html', pricing: 'pricing.html'}}} }));
+        main: 'index.html', campaigns: 'campaigns.html', profile: 'profile.html', profileReviews: 'profile-reviews.html', dnd: 'dnd.html', pathfinder: 'pathfinder.html', builder: 'builder.html', pricing: 'pricing.html'}}} }));

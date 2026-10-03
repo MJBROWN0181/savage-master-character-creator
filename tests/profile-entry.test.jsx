@@ -2,14 +2,14 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, expect, test, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({ authenticated: false, loading: false, profile: null }));
+const state = vi.hoisted(() => ({ authenticated: false, loading: false, profile: null, frames: null }));
 vi.mock('convex/react', () => ({
   ConvexReactClient: class {},
   useConvexAuth: () => ({ isAuthenticated: state.authenticated, isLoading: state.loading }),
   useQuery: (reference, args) => {
     if (args === 'skip') return undefined;
     const name=reference[Symbol.for('functionName')];
-    return name === 'profiles:mine' ? state.profile : name === 'chronicles:feed' ? {posts:[],next:null} : name === 'chronicles:eligibility' ? state.profile?.reviewStatus === 'approved' : name === 'profiles:canReview' ? false : [];
+    return name === 'profiles:mine' ? state.profile : name === 'profileFrames:mine' ? state.frames : name === 'chronicles:feed' ? {posts:[],next:null} : name === 'chronicles:eligibility' ? state.profile?.reviewStatus === 'approved' : name === 'profiles:canReview' ? false : [];
   },
   useMutation: () => vi.fn(),
   useAction: () => vi.fn(),
@@ -25,6 +25,7 @@ beforeEach(() => {
   state.authenticated = false;
   state.loading = false;
   state.profile = null;
+  state.frames = null;
   vi.stubGlobal('window', { savageMasterHome: false });
   vi.stubGlobal('document', { getElementById: () => null });
   vi.stubGlobal('location', new URL('http://localhost/profile'));
@@ -123,4 +124,37 @@ test('a review link asks guests to sign in and does not show private profiles', 
   expect(html).toContain('Profile review queue');
   expect(html).toContain('Sign in with your authorized reviewer account');
   expect(html).not.toContain('Approve profile');
+});
+
+test('the dedicated moderation page has its own sign-in gate and does not start profile setup', async () => {
+  vi.stubGlobal('location', new URL('http://localhost/profile-reviews?profile=example'));
+  const { App } = await import('../profile.jsx');
+  const html = renderToStaticMarkup(<App />);
+  expect(html).toContain('Private moderation workspace');
+  expect(html).toContain('Sign in with your authorized reviewer account');
+  expect(html).not.toContain('Build your profile');
+});
+
+test('own-profile approval is visibly disabled before attempting the server action', async () => {
+  const { ReviewCard, reviewError } = await import('../profile.jsx');
+  const html = renderToStaticMarkup(<ReviewCard profile={{ ...state.profile, _id: 'own', handle: 'own-profile', displayName: 'Me', bio: '', games: [], roles: [], links: [], favorites: [], highlights: [], appearance: { sections: [] }, isOwnProfile: true }} onStatus={() => {}} />);
+  expect(html).toContain('Another authorized reviewer must review it');
+  expect(html).toMatch(/<button(?=[^>]*disabled="")[^>]*>Approve profile/);
+  expect(reviewError({ data: 'Another reviewer must review your own profile.' })).toBe('Another reviewer must review your own profile.');
+});
+
+test('frame controls show only earned options, default on, and preserve the award when hidden', async () => {
+  state.authenticated = true;
+  state.frames = { active: 'founding-100', available: ['founding-100'], enabled: true, selection: 'auto' };
+  const { ProfileFrameSettings } = await import('../profile-frame-settings.jsx');
+  const visible = renderToStaticMarkup(<ProfileFrameSettings />);
+  expect(visible).toContain('Show my earned profile frame');
+  expect(visible).toContain('checked=""');
+  expect(visible).toContain('founding-100-v1.webp');
+  expect(visible).not.toContain('<option value="admin">');
+  state.frames = { ...state.frames, enabled: false, active: null };
+  const hidden = renderToStaticMarkup(<ProfileFrameSettings />);
+  expect(hidden).not.toContain('checked=""');
+  expect(hidden).not.toContain('founding-100-v1.webp');
+  expect(hidden).toContain('<option value="founding-100">');
 });

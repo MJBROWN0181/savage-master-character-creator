@@ -2,6 +2,7 @@ import {getAuthUserId} from '@convex-dev/auth/server';
 import {v} from 'convex/values';
 import {query, internalQuery, internalMutation} from './_generated/server';
 import {accessTier, checkoutReady, environment} from './billingModel';
+import {awardLiveSupporter} from './profileFrames';
 
 const paidTier = v.union(v.literal('chronicle'), v.literal('storykeeper'));
 export const summary = query({args: {}, handler: async ctx => {
@@ -74,6 +75,8 @@ export const applyState = internalMutation({
       const status = ['CANCELLED', 'EXPIRED'].includes(row.status) ? row.status : args.status;
       await ctx.db.patch(row._id, {subscriptionId: args.subscriptionId, status, paidThrough: blocked ? 0 : args.paidThrough,
         paymentId: args.paymentId, syncedAt: Date.now(), syncStartedAt: args.syncStartedAt});
+      if (row.environment === 'live' && args.paymentId && !blocked && !args.blockTransactionId && args.paidThrough > Date.now())
+        await awardLiveSupporter(ctx, row.ownerId, args.paymentId);
     } else if (args.blockTransactionId === row.paymentId) {
       await ctx.db.patch(row._id, {paidThrough: 0});
     }

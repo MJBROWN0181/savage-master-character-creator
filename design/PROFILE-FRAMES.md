@@ -1,0 +1,13 @@
+# Gilded Storybook profile frames
+
+Original transparent overlays: Admin (teal shield and crown), Founding 100 (compass and laurel), Founding 50 Supporters (amber lantern). Original PNGs live in `design/art-source/profile-frames/`; 640px WebP assets live in `images/art/profile-frames/`. Full built-in image generation prompts and paths are in `PROFILE-FRAME-ART-PROMPTS.json`. Actual generated originals are 1254px square with transparent centers and corners. Generated lettering is limited to ADMIN, 100 and 50; accessible labels live in the app.
+
+Frames show automatically when earned. Settings offers Show my earned profile frame and a selector for earned frames; Automatic prioritizes Admin, Founding 50 Supporters, then Founding 100. Hiding a frame never removes the award. Appearance updates immediately on the existing public profile without changing the reviewed personal content.
+
+Admin is calculated from the verified account's configured moderation administrator role. Clients cannot claim it. Limited moderation helpers do not gain the Admin frame. Removing administrator access also removes the Admin frame option.
+
+Founding 100 goes to the first 100 verified accounts. Initialization backfills existing verified accounts in original signup order, then new verified signups receive the remaining slots. The authentication callback starts initialization automatically; operators can initialize existing accounts immediately with internal `profileFrames:backfillMembers` and `{ "cursor": null }`. Internal pagination handles more than 100 historical accounts. Duplicate sign-ins do not add awards, and deleted accounts do not free founder slots.
+
+Founding 50 Supporters goes to the first 50 distinct accounts whose live PayPal payment is confirmed through the existing server verification path. Sandbox, unpaid activation, blocked/refunded state and stale synchronization do not award it. Renewals do not consume more slots. The permanent historical award does not require an active subscription. Existing live payments from before this feature need an operator review of payment chronology before release; no historical payment ranking is guessed from browser checkout or subscription creation dates.
+
+Deployment must update both the frontend and Convex backend/schema. Configure the owner inbox and administrator emails, initialize existing verified members, repair any missing pending review email from the private workspace, and verify delivery and the review link with the owner. Production Convex CLI access was denied during implementation, so no live email delivery, deployment, or award backfill was performed.

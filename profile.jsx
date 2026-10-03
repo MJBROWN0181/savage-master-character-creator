@@ -15,8 +15,9 @@ import "./profile.css";
 import {FriendsArea,FriendActions} from "./profile-friends.jsx";
 import { BugGuide } from './bug-mascot.jsx';
 import { BugProfile } from './bug-profile.jsx';
-import { FollowingList, ProfilePosts, PostComposer } from './community-ui.jsx';
+import { FollowingList, ProfilePosts, PostComposer, friendlyError } from './community-ui.jsx';
 import './community.css';
+import { ProfileAvatar } from './profile-avatar.jsx';
 const blank = {
   handle: `table-${crypto.randomUUID().slice(0, 8)}`,
   displayName: "",
@@ -35,6 +36,9 @@ const blank = {
     sections: ["about", "games", "memory", "characters", "journal"],
   },
 };
+export function reviewError(error) {
+  return typeof error?.data === 'string' ? error.data : friendlyError(error);
+}
 const titles = {
   about: "About me",
   games: "Games at my table",
@@ -85,17 +89,7 @@ function ProfileCard({ p, characters = [] }) {
       }
     >
       <div className="profile-identity">
-        {p.avatarUrl ? (
-          <img
-            className="avatar"
-            src={p.avatarUrl}
-            alt={`${p.displayName || p.handle}'s profile`}
-          />
-        ) : (
-          <div className="avatar avatar-placeholder" aria-hidden="true">
-            {(p.displayName || p.handle || "?").slice(0, 1).toUpperCase()}
-          </div>
-        )}
+        <ProfileAvatar image={p.avatarUrl} name={p.displayName || p.handle || 'Your name here'} frame={p.frame} />
         <div>
           <span className="profile-eyebrow">
             Savage Master · Tabletop adventurer
@@ -795,41 +789,86 @@ export function ProfileReviewStatus({ profile }) {
     <a href="/chronicles">{profile.reviewStatus === 'approved' ? 'Open Chronicles' : 'Browse public Chronicles'}</a>
   </section>;
 }
-function ReviewCard({ profile, onStatus }) {
+export function ReviewCard({ profile, onStatus }) {
   const [note, setNote] = useState(''), [checked, setChecked] = useState(false), [busy, setBusy] = useState(false);
   const decide = useMutation(ref('profiles:decideReview'));
+  const resend = useMutation(ref('profiles:resendReviewNotice'));
   async function decision(approve) {
     setBusy(true);
     try {
       await decide({ profileId: profile._id, expectedUpdatedAt: profile.updatedAt, expectedRequestedAt: profile.reviewRequestedAt, approve, note });
       onStatus(approve ? `@${profile.handle} approved. Chronicles posting is enabled.` : `Changes requested from @${profile.handle}.`);
     } catch (error) {
-      onStatus(error.message.includes('Profile changed') ? 'This profile changed. Review the refreshed draft before deciding.' : error.message.includes('own profile') ? 'Another reviewer must review your own profile.' : 'Unable to save this decision. Check your reviewer access and try again.');
+      onStatus(reviewError(error));
     } finally { setBusy(false); }
   }
   return <article className="profile-review-item">
     <p className="profile-eyebrow">@{profile.handle} / Requested {new Date(profile.reviewRequestedAt || profile.updatedAt).toLocaleString()}</p>
     <ProfileCard p={profile} />
     <p className="profile-review-delivery">Email notice: {profile.reviewNotification || 'No notice recorded'}</p>
-    <label className="check"><input type="checkbox" checked={checked} disabled={busy} onChange={e => setChecked(e.target.checked)} />I reviewed all profile text, images, links, and selected excerpts for the community rules.</label>
+    {profile.reviewNotification !== 'sent' && <button type="button" className="secondary" disabled={busy} onClick={async () => {
+      setBusy(true); try { await resend({ profileId: profile._id }); onStatus('Review email queued. The delivery status will update here.'); } catch (error) { onStatus(reviewError(error)); } finally { setBusy(false); }
+    }}>Send review email</button>}
+    {profile.isOwnProfile && <p role="note">This is your own profile. Another authorized reviewer must review it; you cannot approve it yourself.</p>}
+    <label className="check"><input type="checkbox" checked={checked} disabled={busy || profile.isOwnProfile} onChange={e => setChecked(e.target.checked)} />I reviewed all profile text, images, links, and selected excerpts for the community rules.</label>
     <label>Note to the player when requesting changes<textarea maxLength={500} value={note} disabled={busy} onChange={e => setNote(e.target.value)} /></label>
     <div className="profile-owner-actions">
-      <button type="button" disabled={busy || !checked} onClick={() => decision(true)}>Approve profile</button>
-      <button type="button" className="secondary" disabled={busy || !checked || !note.trim()} onClick={() => decision(false)}>Request changes</button>
+      <button type="button" disabled={busy || !checked || profile.isOwnProfile} onClick={() => decision(true)}>Approve profile</button>
+      <button type="button" className="secondary" disabled={busy || !checked || !note.trim() || profile.isOwnProfile} onClick={() => decision(false)}>Request changes</button>
     </div>
   </article>;
 }
-function ProfileReviews({ onStatus }) {
+export function ReportReviewCard({ item, onStatus }) {
+  const resolve = useMutation(ref('profiles:resolveReports'));
+  const [note, setNote] = useState(''), [checked, setChecked] = useState(false), [busy, setBusy] = useState(false);
+  async function decision(hide) {
+    setBusy(true);
+    try { await resolve({ profileId: item.profileId, expectedUpdatedAt: item.updatedAt, reportIds: item.reports.map(report => report._id), hide, note }); onStatus(hide ? `@${item.handle} hidden. The player can see your note and submit changes.` : `Reports for @${item.handle} dismissed.`); }
+    catch (error) { onStatus(reviewError(error)); } finally { setBusy(false); }
+  }
+  return <article className="profile-review-item">
+    <h2>Reports for @{item.handle}</h2>
+    {item.profile && <ProfileCard p={item.profile} />}
+    {!item.isPublic && <p>This profile is already private or removed.</p>}
+    {item.reports.map(report => <blockquote key={report._id}><p>{report.reason}</p><small>{new Date(report.createdAt).toLocaleString()}</small></blockquote>)}
+    <label className="check"><input type="checkbox" checked={checked} disabled={busy} onChange={e => setChecked(e.target.checked)} />I checked the published profile and these reports against the community rules.</label>
+    <label>Reason shown to the player if hidden<textarea maxLength={500} value={note} disabled={busy} onChange={e => setNote(e.target.value)} /></label>
+    <p>Hiding removes the public profile and posting access. Their account and private game data remain available.</p>
+    <div className="profile-owner-actions"><button type="button" disabled={busy || !checked || !note.trim() || !item.isPublic} onClick={() => decision(true)}>Hide public profile</button><button type="button" className="secondary" disabled={busy || !checked} onClick={() => decision(false)}>Dismiss reviewed reports</button></div>
+  </article>;
+}
+export function ReviewTeam({ onStatus }) {
+  const team = useQuery(ref('profiles:reviewTeam'), {}), history = useQuery(ref('profiles:moderationHistory'), {});
+  const setAccess = useMutation(ref('profiles:setReviewerAccess'));
+  const [email, setEmail] = useState(''), [accepted, setAccepted] = useState(false), [busy, setBusy] = useState(false);
+  async function update(address, enabled) {
+    setBusy(true); try { await setAccess({ email: address, enabled }); onStatus(enabled ? 'Reviewer access granted. They can open /profile-reviews after verifying their account email.' : 'Reviewer access revoked.'); if (enabled) { setEmail(''); setAccepted(false); } }
+    catch (error) { onStatus(reviewError(error)); } finally { setBusy(false); }
+  }
+  return <section className="profile-review-team"><h2>Your moderation team</h2><p>Add trusted helpers by the email they use for Savage Master. They must verify that email before opening reviews. Helpers can review submitted public details and reports; they cannot manage this team or access billing, account controls, or private journals.</p>
+    <form onSubmit={e => { e.preventDefault(); if (accepted) update(email, true); }}><label>Helper's account email<input type="email" required maxLength={254} value={email} disabled={busy} onChange={e => setEmail(e.target.value)} /></label><label className="check"><input type="checkbox" required checked={accepted} disabled={busy} onChange={e => setAccepted(e.target.checked)} />I trust this person to view submissions and reports and make moderation decisions.</label><button disabled={busy || !accepted}>Grant reviewer access</button></form>
+    {team === undefined ? <p>Loading team.</p> : !team.length ? <p>No helpers have been added.</p> : <ul className="profile-team-list">{team.map(member => <li key={member.email}><span>{member.email}<small>{member.revokedAt === undefined ? 'Active reviewer' : 'Access revoked'}</small></span><button type="button" className="secondary" disabled={busy} onClick={() => update(member.email, member.revokedAt !== undefined)}>{member.revokedAt === undefined ? 'Revoke access' : 'Restore access'}</button></li>)}</ul>}
+    <h2>Recent moderation decisions</h2>{history === undefined ? <p>Loading decisions.</p> : !history.length ? <p>No decisions recorded yet.</p> : <ul className="profile-decision-list">{history.map((entry, index) => <li key={index}><strong>@{entry.handle} · {entry.action.replaceAll('_', ' ')}</strong><p>{entry.reviewerEmail} · {new Date(entry.createdAt).toLocaleString()}</p>{entry.note && <blockquote>{entry.note}</blockquote>}</li>)}</ul>}
+  </section>;
+}
+export function ProfileReviews({ onStatus }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const allowed = useQuery(ref('profiles:canReview'), isAuthenticated ? {} : 'skip');
-  const rows = useQuery(ref('profiles:pendingReviews'), allowed === true ? {} : 'skip');
+  const canManage = useQuery(ref('profiles:canManageReviewers'), isAuthenticated ? {} : 'skip');
+  const profileId = new URLSearchParams(location.search).get('profile');
+  const [tab, setTab] = useState('pending');
+  const rows = useQuery(ref('profiles:pendingReviews'), allowed === true ? profileId ? { profileId } : {} : 'skip');
+  const reports = useQuery(ref('profiles:reportedReviews'), allowed === true && tab === 'reports' ? {} : 'skip');
   return <section className="profile-reviews">
-    <a href="/profile">Back to my profile</a>
+    <a href="/">Back to Savage Master</a>
+    <p className="profile-eyebrow">Private moderation workspace</p>
     <h1>Profile review queue</h1>
     <p>Review each player's chosen public details before enabling Chronicles posting. Check for explicit imagery, hate, harassment, threats, scams, exposed private information, and rights to uploaded material.</p>
     {isLoading ? <p>Checking account.</p> : !isAuthenticated ? <><p>Sign in with your authorized reviewer account.</p><CharacterAccount accountOnly /></> : allowed === undefined ? <p>Checking reviewer access.</p> : !allowed ? <p>This queue is available to authorized, verified reviewers.</p> : rows === undefined ? <p>Opening the review queue.</p> : <>
-      <p>{rows.length ? `${rows.length} ${rows.length === 1 ? 'profile' : 'profiles'} awaiting review${rows.length === 100 ? ' (showing the first 100)' : ''}.` : 'No profiles are waiting for review.'}</p>
-      {rows.map(profile => <ReviewCard key={`${profile._id}:${profile.updatedAt}:${profile.reviewRequestedAt}`} profile={profile} onStatus={onStatus} />)}
+      <nav className="profile-moderation-tabs" aria-label="Moderation sections"><button type="button" aria-pressed={tab === 'pending'} onClick={() => setTab('pending')}>Pending profiles</button><button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>Reported profiles</button>{canManage === true && <button type="button" aria-pressed={tab === 'team'} onClick={() => setTab('team')}>Team & decisions</button>}</nav>
+      {tab === 'pending' && <>{profileId && <p><a href="/profile-reviews">View all pending profiles</a></p>}<p>{rows.length ? `${rows.length} ${rows.length === 1 ? 'profile' : 'profiles'} awaiting review${rows.length === 100 ? ' (showing the first 100)' : ''}.` : profileId ? 'This submission is no longer awaiting review or the link is unavailable.' : 'No profiles are waiting for review.'}</p>{rows.map(profile => <ReviewCard key={`${profile._id}:${profile.updatedAt}:${profile.reviewRequestedAt}`} profile={profile} onStatus={onStatus} />)}</>}
+      {tab === 'reports' && (reports === undefined ? <p>Loading reports.</p> : !reports.length ? <p>No open profile reports.</p> : reports.map(item => <ReportReviewCard key={`${item.profileId}:${item.updatedAt}:${item.reports.map(report => report._id).join(',')}`} item={item} onStatus={onStatus} />))}
+      {tab === 'team' && canManage === true && <ReviewTeam onStatus={onStatus} />}
     </>}
   </section>;
 }
@@ -870,7 +909,7 @@ export function App() {
   const [tour, setTour] = useState(() => new URLSearchParams(location.search).get('tour') === '1');
   const [entry, setEntry] = useState(() => new URLSearchParams(location.search).get("entry") === "signUp" ? "signUp" : "signIn");
   const handle = new URLSearchParams(location.search).get("user");
-  const reviews = new URLSearchParams(location.search).get('reviews') === '1';
+  const reviews = location.pathname.replace(/\.html$/, '') === '/profile-reviews' || new URLSearchParams(location.search).get('reviews') === '1';
   useEffect(() => {
     if (!isAuthenticated) { setEditing(false); return; }
     const cleanUrl = new URL(location.href);
@@ -894,7 +933,6 @@ export function App() {
       isAuthenticated && !handle && !reviews ? {} : "skip",
     ),
     report = useMutation(ref("profiles:report"));
-  const canReview = useQuery(ref('profiles:canReview'), isAuthenticated ? {} : 'skip');
   const tourRequested = React.useRef(new URLSearchParams(location.search).get('tour') === '1');
   useEffect(() => {
     if (!tourRequested.current || !isAuthenticated || !mine) return;
@@ -908,7 +946,7 @@ export function App() {
   }
   return (
     <main>
-{(handle || isAuthenticated) && <><nav className="game-switch" aria-label="Game system"><a href="/?game=savage">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/create">Create a character</a><a href="/campaigns">Campaigns</a><a href="/builder">Master Builder</a><a href="/chronicles">Around the Fire</a><a href="/profile" aria-current="page">My Profile</a></nav></>}
+{!reviews && (handle || isAuthenticated) && <><nav className="game-switch" aria-label="Game system"><a href="/?game=savage">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/create">Create a character</a><a href="/campaigns">Campaigns</a><a href="/builder">Master Builder</a><a href="/chronicles">Around the Fire</a><a href="/profile" aria-current="page">My Profile</a></nav></>}
       {reviews ? <ProfileReviews onStatus={setStatus} /> : handle === 'bug' ? <BugProfile /> : handle ? (
         <>
           {publicProfile === undefined ? (
@@ -976,7 +1014,6 @@ export function App() {
               <>
                 {tour && <WelcomeTour onFinish={finishTour} />}
                 {mine && <ProfileReviewStatus profile={mine} />}
-                {canReview === true && <p><a href="/profile?reviews=1">Open profile review queue</a></p>}
                 {mine && !editing ? <>
                   <div id="my-profile" tabIndex={-1}>
                     <ProfileCard p={mine} characters={characters} />

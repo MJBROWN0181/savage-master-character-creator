@@ -11,16 +11,21 @@ export const notify = internalAction({
     if (!info) return;
     const key = process.env.SUPPORT_RESEND_KEY || process.env.AUTH_RESEND_KEY;
     const from = process.env.SUPPORT_EMAIL_FROM || process.env.AUTH_EMAIL_FROM;
-    const to = process.env.PROFILE_REVIEW_EMAIL_TO || process.env.SUPPORT_EMAIL_TO;
+    const to = process.env.PROFILE_REVIEW_EMAIL_TO || process.env.PROFILE_MODERATOR_ADMIN_EMAILS || process.env.PROFILE_REVIEWER_EMAILS || process.env.BUG_EDITOR_EMAILS || process.env.SUPPORT_EMAIL_TO;
+    const recipients = (to || "").split(",").map(email => email.trim()).filter(Boolean);
     const mark = (status: "pending" | "sent" | "failed" | "unconfigured") =>
       ctx.runMutation(ref<"mutation", any>("profiles:markReviewNotification"), { profileId, requestedAt, status });
-    if (!key || !from || !to) { await mark("unconfigured"); return; }
+    if (!key || !from || !recipients.length) { await mark("unconfigured"); return; }
     try {
-      const queueUrl = new URL("/profile?reviews=1", process.env.SITE_URL || "https://smsheets.com").href;
+      const reviewUrl = new URL("/profile-reviews", process.env.SITE_URL || "https://smsheets.com");
+      reviewUrl.searchParams.set("profile", profileId);
+      const safeHandle = info.handle.replace(/[&<>"']/g, (char: string) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]!));
+      const safeUrl = reviewUrl.href.replace(/&/g, "&amp;");
       const { error } = await new Resend(key).emails.send({
-        from, to: to.split(",").map(email => email.trim()).filter(Boolean),
+        from, to: recipients,
         subject: `[Savage Master Profile review] @${info.handle}`,
-        text: `A player profile is waiting for review: @${info.handle}.\n\nSign in with your authorized reviewer account to inspect the current profile and approve it or request changes:\n${queueUrl}\n\nApproval enables public sharing and Chronicles posting. The profile remains private until you approve it. This email is a notification; review decisions happen in the private app queue.`,
+        text: `A player profile is waiting for review: @${info.handle}.\n\nReview this profile:\n${reviewUrl.href}\n\nSign in with your authorized reviewer account, check the profile, and approve it or request changes. Approval enables public sharing and Chronicles posting. The profile remains private until approved. Another reviewer must review your own profile.`,
+        html: `<h1>A profile is ready for your review</h1><p>@${safeHandle} submitted a profile for public sharing.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 20px;background:#23302d;color:#fff;border-radius:6px;text-decoration:none">Review profile</a></p><p>Sign in with your authorized reviewer account, check the profile, and approve it or request changes. The profile stays private until approved.</p><p>Another reviewer must review your own profile.</p>`,
       }, { idempotencyKey: `profile-review-${profileId}-${requestedAt}` });
       if (error) throw new Error("Delivery failed");
       await mark("sent");
