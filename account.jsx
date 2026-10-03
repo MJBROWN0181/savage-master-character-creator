@@ -4,6 +4,7 @@ import { ConvexReactClient, useConvexAuth, useMutation, useQuery, useConvex } fr
 import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { makeFunctionReference } from 'convex/server';
 import { needsEmailVerification, normalizeEmailCode, accountErrorMessage } from './account-auth.mjs';
+import { TERMS_VERSION } from './legal-terms.mjs';
 
 const url = import.meta.env.VITE_CONVEX_URL;
 const listRef = makeFunctionReference('characters:list');
@@ -48,9 +49,13 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
 
   async function submit(event) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    if (mode === 'signUp' && form.get('acceptedTerms') !== TERMS_VERSION) {
+      setStatus('Confirm you are 18 or older and agree to the Terms of Service.');
+      return;
+    }
     setBusy(true);
     setStatus('');
-    const form = new FormData(event.currentTarget);
     form.set('flow', mode);
     if (form.has('code')) form.set('code', normalizeEmailCode(form.get('code')));
     try {
@@ -106,6 +111,7 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
           <input name="email" type="email" placeholder="Email" aria-label="Email" required autoComplete="email" />
           {mode !== 'reset' && <input name="password" type="password" placeholder="Password" aria-label="Password" required minLength={8} autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'} />}
         </>}
+        {mode === 'signUp' && <label className="account-terms"><input type="checkbox" name="acceptedTerms" value={TERMS_VERSION} required /><span>I am 18 or older and agree to the <a href="/legal#terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>. I have read the <a href="/legal#privacy" target="_blank" rel="noopener noreferrer">Privacy Notice</a>.</span></label>}
         <button className="btn btn-sm" type="submit" disabled={busy}>{mode === 'signUp' ? 'Create Account' : mode === 'reset' ? 'Send Reset Code' : mode === 'reset-verification' ? 'Set New Password' : mode === 'email-verification' ? 'Verify Email' : 'Sign In'}</button>
       </form>
       <button className="account-switch" onClick={() => { setMode(mode === 'signUp' ? 'signIn' : 'signUp'); setStatus(''); }}>

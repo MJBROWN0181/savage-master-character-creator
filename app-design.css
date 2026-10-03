@@ -282,3 +282,12 @@ html[data-theme] .sm-view-table .workspace-art { display:none; }
 @media(max-width:540px) { html[data-theme] .sm-view-table .workspace-hero { padding:28px 22px; min-height:220px; background:linear-gradient(90deg,color-mix(in srgb,var(--sm-surface) 96%,transparent),color-mix(in srgb,var(--sm-surface) 78%,transparent)),url('/images/art/chronicles-harbor.webp') center/cover; } }
 
 html[data-app-installed="true"] [data-install-app] { display:none!important; }
+
+/* Quiet, always available legal links; never interrupt the character journey. */
+.sm-legal-footer { padding:16px 24px max(20px,env(safe-area-inset-bottom)); color:var(--sm-muted); font-size:12px; text-align:center; }
+.sm-legal-footer nav { display:flex; justify-content:center; flex-wrap:wrap; gap:8px 20px; }
+html[data-theme] .sm-legal-footer a { color:var(--sm-muted); text-decoration:underline; text-underline-offset:3px; }
+html[data-theme] .sm-legal-footer a:hover { color:var(--sm-gold); }
+.account-terms { display:flex!important; align-items:flex-start; gap:10px; font-size:13px; line-height:1.5; }
+html[data-theme] .account-terms input[type="checkbox"] { width:18px; height:18px; min-width:18px; margin:3px 0 0; accent-color:var(--sm-action); }
+@media print { .sm-legal-footer { display:none!important; } }

@@ -8,7 +8,7 @@
   try { const saved = localStorage.getItem(key); if (valid(saved)) preference = saved; } catch { /* Appearance also works without storage. */ }
   const path = location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
   const query = new URLSearchParams(location.search);
-  root.dataset.workspace = path.startsWith('/p/') ? 'community' : path === '/' ? (query.get('game') === 'savage' ? 'characters' : 'home') : ({'/create':'characters','/dnd':'characters','/pathfinder':'characters','/profile':'profile','/chronicles':'community','/builder':'world','/campaigns':'campaigns','/pricing':'account','/support':'support','/settings':'settings','/install':'install'}[path] || 'home');
+  root.dataset.workspace = path.startsWith('/p/') ? 'community' : path === '/' ? (query.get('game') === 'savage' ? 'characters' : 'home') : ({'/create':'characters','/dnd':'characters','/pathfinder':'characters','/profile':'profile','/chronicles':'community','/builder':'world','/campaigns':'campaigns','/pricing':'account','/support':'support','/settings':'settings','/install':'install','/legal':'legal'}[path] || 'home');
   function apply() {
     const theme = preference === 'auto' ? (device.matches ? 'dark' : 'light') : preference;
     root.dataset.theme = theme;

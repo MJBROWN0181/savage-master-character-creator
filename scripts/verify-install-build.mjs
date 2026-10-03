@@ -10,7 +10,14 @@ for (const path of pages) {
   assert(!html.includes('data-development="true"'), path + ': production registration');
   assert(!html.includes('deferredInstallPrompt'), path + ': no competing legacy installer');
   assert.equal((html.match(/<\/html>/g) || []).length, 1, path + ': complete document');
+  assert.equal((html.match(/class="sm-legal-footer"/g) || []).length, 1, path + ': shared legal footer');
+  for (const anchor of ['terms', 'privacy', 'publishers', 'copyright']) assert(html.includes(`/legal#${anchor}`), path + ': legal link ' + anchor);
 }
+const legal = await readFile('dist/legal.html', 'utf8');
+for (const anchor of ['terms', 'privacy', 'publishers', 'copyright']) assert(legal.includes(`id="${anchor}"`), 'legal section ' + anchor);
+assert(legal.includes('81 Ai Solutions'), 'operator identified');
+assert(legal.includes('support@smsheets.com'), 'copyright and privacy contact');
+assert((await stat('dist/SAVAGE-MASTER-ORC-NOTICE.md')).size > 0, 'adaptation notice shipped');
 const manifest = JSON.parse(await readFile('dist/manifest.json', 'utf8'));
 assert.equal(manifest.id, '/'); assert.equal(manifest.scope, '/'); assert.equal(manifest.display, 'standalone');
 for (const icon of manifest.icons) {

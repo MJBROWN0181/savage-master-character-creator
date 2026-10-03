@@ -4,6 +4,11 @@ import { v } from "convex/values";
 
 export default defineSchema({
   ...authTables,
+  users: defineTable({
+    ...authTables.users.validator.fields,
+    termsAcceptedVersion: v.optional(v.string()),
+    termsAcceptedAt: v.optional(v.number()),
+  }).index('email', ['email']).index('phone', ['phone']),
   supportTickets: defineTable({
     ownerId: v.optional(v.id('users')), requestId: v.string(), reference: v.string(),
     kind: v.union(v.literal('bug'), v.literal('help')), title: v.string(), body: v.string(), email: v.string(), diagnostics: v.optional(v.string()),

@@ -54,12 +54,18 @@ test('new members enter account creation and returning members enter sign-in', a
   const signup = await renderApp('?entry=signUp');
   expect(signup).toContain('Create Account');
   expect(signup).toContain('autoComplete="new-password"');
+  expect(signup).toContain('name="acceptedTerms"');
+  expect(signup).toMatch(/<input(?=[^>]*name="acceptedTerms")(?=[^>]*required="")(?=[^>]*value="2026-10-03")[^>]*>/);
+  expect(signup).toContain('href="/legal#terms"');
+  expect(signup).toContain('href="/legal#privacy"');
+  expect(signup).not.toContain('checked=""');
   expect(signup).toContain('build your profile');
   expect(signup).not.toContain('aria-label="Workspace"');
   const signin = await renderApp('?entry=signIn');
   expect(signin).toContain('>Sign In</button>');
   expect(signin).toContain('autoComplete="current-password"');
   expect(signin).toContain('Sign in to return to your profile.');
+  expect(signin).not.toContain('name="acceptedTerms"');
 });
 
 test('an authenticated member without a saved profile starts the guided wizard', async () => {

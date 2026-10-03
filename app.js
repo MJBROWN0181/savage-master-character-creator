@@ -2194,12 +2194,9 @@ const app = {
               <h2 class="store-banner-title" style="color: var(--accent);">Savage Worlds Core</h2>
               <p class="store-banner-desc">The foundation of every Savage Worlds game. Core rules, companions, and essential accessories.</p>
             </div>
-            <div class="store-banner-showcase">
-              <img src="images/swade-core.webp" alt="SWADE Core Rules" class="store-showcase-book store-showcase-hero">
-            </div>
           </div>
           <div class="store-grid">
-            ${this.storeItem('SWADE Core Rules', 'The complete Savage Worlds Adventure Edition rulebook. Everything you need to run any setting.', '$39.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10023', 'images/swade-core.webp')}
+            ${this.storeItem('SWADE Core Rules', 'The complete Savage Worlds Adventure Edition rulebook. Everything you need to run any setting.', '$39.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10023')}
             ${this.storeItem('SWADE Core Rules (PDF)', 'Digital-only version of the complete core rulebook.', '$19.99', 'PDF', 'pdf', 'https://shop.peginc.com/products/s2p10023pdf')}
             ${this.storeItem('Player\'s Book', 'Streamlined player reference with character creation, skills, edges, and combat rules.', '$19.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10031')}
             ${this.storeItem('GM Screen + Mini Settings', 'Three-panel GM screen with quick-reference tables plus bonus mini settings.', '$19.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10026')}
@@ -2219,16 +2216,14 @@ const app = {
               <p class="store-banner-desc">Gunslingers, hucksters, and mad scientists face the horrors of the Weird West.</p>
             </div>
             <div class="store-banner-showcase">
-              <img src="images/deadlands-core.webp" alt="Deadlands Core Rules" class="store-showcase-book">
-              <img src="images/deadlands-boxed-set.webp" alt="Deadlands Boxed Set" class="store-showcase-book">
               <img src="images/deadlands-dice.png" alt="Deadlands Dice" class="store-showcase-accessory">
             </div>
           </div>
           <div class="store-grid">
-            ${this.storeItem('Deadlands Core Rules', 'The complete Weird West setting book. Gunslingers, hucksters, mad scientists, and the Reckoning.', '$39.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10220', 'images/deadlands-core.webp')}
+            ${this.storeItem('Deadlands Core Rules', 'The complete Weird West setting book. Gunslingers, hucksters, mad scientists, and the Reckoning.', '$39.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10220')}
             ${this.storeItem('Deadlands Core Rules (PDF)', 'Digital-only version of the Deadlands setting book.', '$19.99', 'PDF', 'pdf', 'https://shop.peginc.com/products/s2p10220pdf')}
             ${this.storeItem('Deadlands Companion', 'Expanded content: new edges, powers, gear, creatures, and setting rules.', '$24.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10221')}
-            ${this.storeItem('Deadlands Boxed Set', 'Core rules, companion, maps, pawns, dice, bennies, and action deck in one premium box.', '$99.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10227', 'images/deadlands-boxed-set.webp')}
+            ${this.storeItem('Deadlands Boxed Set', 'Core rules, companion, maps, pawns, dice, bennies, and action deck in one premium box.', '$99.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10227')}
             ${this.storeItem('Deadlands Dice Set', 'Custom dice themed for the Weird West.', '$12.99', 'Accessory', 'accessory', 'https://shop.peginc.com/products/s2p91123', 'images/deadlands-dice.png')}
             ${this.storeItem('Deadlands Bennies', 'Set of 25 poker-chip style Weird West benny tokens.', '$19.99', 'Accessory', 'accessory', 'https://shop.peginc.com/products/s2p91122')}
             ${this.storeItem('Deadlands Pawns', 'Cardstock figure flats for cowboys, outlaws, undead, and monsters.', '$29.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p10226')}
@@ -2243,12 +2238,9 @@ const app = {
               <h2 class="store-banner-title" style="color: #6ec6ff;">Rifts for Savage Worlds</h2>
               <p class="store-banner-desc">Post-apocalyptic adventure across the shattered megaverse of Rifts Earth.</p>
             </div>
-            <div class="store-banner-showcase">
-              <img src="images/rifts-core.png" alt="Rifts Player's Guide" class="store-showcase-book">
-            </div>
           </div>
           <div class="store-grid">
-            ${this.storeItem('Tomorrow Legion Player\'s Guide', 'Core player book for Savage Rifts. Iconic frameworks, gear, and the world of Rifts Earth.', '$29.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11200re', 'images/rifts-core.png')}
+            ${this.storeItem('Tomorrow Legion Player\'s Guide', 'Core player book for Savage Rifts. Iconic frameworks, gear, and the world of Rifts Earth.', '$29.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11200re')}
             ${this.storeItem('Savage Foes of North America', 'Bestiary of monsters, D-Bees, demons, and villains for Rifts North America.', '$24.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11202re')}
             ${this.storeItem('Atlantis and the Demon Seas', 'Sourcebook covering the Splugorth\'s domain, Atlantis, and the oceans of Rifts Earth.', '$39.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11216')}
             ${this.storeItem('Blood & Banes', 'Expanded threats, allies, and adventures across North America.', '$39.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11211')}
@@ -2286,11 +2278,9 @@ const app = {
               <h2 class="store-banner-title" style="color: #b48adb;">Pathfinder for Savage Worlds</h2>
               <p class="store-banner-desc">The world of Golarion meets the Fast! Furious! Fun! of Savage Worlds.</p>
             </div>
-            <div class="store-banner-showcase">
-            </div>
           </div>
           <div class="store-grid">
-            ${this.storeItem('Savage Pathfinder Core Rules', 'The world of Golarion adapted for Savage Worlds. Classes, races, spells, and the complete rules.', '$49.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11501', 'images/pathfinder-core.jpg')}
+            ${this.storeItem('Savage Pathfinder Core Rules', 'The world of Golarion adapted for Savage Worlds. Classes, races, spells, and the complete rules.', '$49.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11501')}
             ${this.storeItem('Savage Pathfinder Core (PDF)', 'Digital-only version of the Pathfinder core rules.', '$24.99', 'PDF', 'pdf', 'https://shop.peginc.com/products/s2p11501pdf')}
             ${this.storeItem('Bestiary', 'Monsters and creatures of Golarion for Savage Worlds.', '$29.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11502')}
             ${this.storeItem('Bestiary 2', 'Even more creatures from the depths of Golarion.', '$29.99', 'Print + PDF', 'print', 'https://shop.peginc.com/products/s2p11522')}
@@ -2306,14 +2296,13 @@ const app = {
           <p>Savage Worlds, Deadlands, and all related marks are trademarks of Pinnacle Entertainment Group.</p>
           <p>Pathfinder is a trademark of Paizo Inc. Rifts is a trademark of Palladium Books Inc.</p>
           <p style="margin-top: 0.5rem;">Prices shown are approximate and may vary. Visit the official store for current pricing.</p>
-          <p style="margin-top: 0.5rem;">Product images courtesy of Pinnacle Entertainment Group.</p>
         </div>
       </div>
     `;
   },
 
   storeItem(name, desc, price, badgeText, badgeType, url, imgSrc) {
-    const availableImages = ['images/swade-core.webp', 'images/rifts-core.png', 'images/deadlands-dice.png', 'images/deadlands-core.webp', 'images/deadlands-boxed-set.webp'];
+    const availableImages = ['images/deadlands-dice.png'];
     if (!availableImages.includes(imgSrc)) imgSrc = null;
     const imgHtml = imgSrc
       ? `<div class="store-item-img"><img src="${imgSrc}" alt="${name}" loading="lazy"></div>`
