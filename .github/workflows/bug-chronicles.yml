@@ -1,0 +1,21 @@
+name: Bug’s Chronicles updates
+on:
+  push:
+    branches: ['**']
+permissions:
+  contents: read
+jobs:
+  post-workshop-notes:
+    if: github.repository == 'MJBROWN0181/savage-master-character-creator' && github.event.deleted == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Read the pushed code
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Let Bug share his workshop notes
+        env:
+          BUG_CHRONICLES_ENDPOINT: ${{ vars.BUG_CHRONICLES_ENDPOINT }}
+          BUG_GITHUB_WEBHOOK_SECRET: ${{ secrets.BUG_GITHUB_WEBHOOK_SECRET }}
+        run: node scripts/post-bug-update.mjs

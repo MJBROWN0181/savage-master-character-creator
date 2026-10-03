@@ -6,6 +6,19 @@ A **Savage Worlds** character creator with four campaign settings, dice icons, c
 
 ## Features
 
+- **Support & the Bug** at `/support`: a quiet winged bug fairy carrying a tome
+  of code opens bug reports or support tickets from every page. Players can
+  review captured error details, copy/download a report, and send it to a private
+  Convex queue. Account owners can track tickets and team replies. See
+  [support setup](design/SUPPORT.md) for email notifications and team access.
+
+- **Savage Master Builder** at `/builder`: start with a rule set, then create a
+  custom world, lore, play style, and house rules. Upload PNG/JPEG/WebP maps,
+  add location notes, map connections, layers, custom travel routes, and player
+  handouts with print/poster controls. Open recommended map editors. Browser drafts
+  and maps work locally; account worlds and maps use Convex. See
+  [builder details](design/MASTER-BUILDER.md).
+
 - **4 Campaign Settings** with unique content:
   - **Deadlands** - The Weird West
   - **Rifts** - The Tomorrow Legion

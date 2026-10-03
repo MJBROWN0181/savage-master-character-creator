@@ -94,6 +94,8 @@ export const save = mutation({
     if (!old && !a.ageConfirmed)
       throw new Error("Confirm you are 18 or older to create a profile.");
     const handle = a.handle.trim().toLowerCase();
+    if (handle === 'bug' || old?.official === 'bug')
+      throw new Error('Bug is the official site companion. Choose another profile address.');
     if (!/^[a-z0-9][a-z0-9-]{2,29}$/.test(handle))
       throw new Error(
         "Use 3–30 letters, numbers, or hyphens for your profile address.",
@@ -313,7 +315,8 @@ export const publicProfile = query({
     const s = p.publicSnapshot;
     return {
       ...s,
-      avatarUrl: s.avatarId ? await ctx.storage.getUrl(s.avatarId) : null,
+      official: p.official === 'bug' ? 'bug' : undefined,
+      avatarUrl: p.official === 'bug' ? '/images/art/the-bug.png' : s.avatarId ? await ctx.storage.getUrl(s.avatarId) : null,
       backgroundUrl: s.backgroundId
         ? await ctx.storage.getUrl(s.backgroundId)
         : null,

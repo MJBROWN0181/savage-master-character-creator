@@ -9,14 +9,29 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as billing from "../billing.js";
+import type * as billingModel from "../billingModel.js";
+import type * as bug from "../bug.js";
+import type * as bugGithub from "../bugGithub.js";
+import type * as bugUpdates from "../bugUpdates.js";
 import type * as campaigns from "../campaigns.js";
 import type * as characterValidation from "../characterValidation.js";
 import type * as characters from "../characters.js";
+import type * as chronicleVisibility from "../chronicleVisibility.js";
+import type * as chronicles from "../chronicles.js";
+import type * as crons from "../crons.js";
+import type * as friends from "../friends.js";
 import type * as http from "../http.js";
+import type * as masterBuilder from "../masterBuilder.js";
 import type * as passwordReset from "../passwordReset.js";
+import type * as paypal from "../paypal.js";
+import type * as paypalClient from "../paypalClient.js";
 import type * as privateWorkspaces from "../privateWorkspaces.js";
 import type * as profileImages from "../profileImages.js";
 import type * as profiles from "../profiles.js";
+import type * as support from "../support.js";
+import type * as supportEmail from "../supportEmail.js";
+import type * as worldMaps from "../worldMaps.js";
 
 import type {
   ApiFromModules,
@@ -26,14 +41,29 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  billing: typeof billing;
+  billingModel: typeof billingModel;
+  bug: typeof bug;
+  bugGithub: typeof bugGithub;
+  bugUpdates: typeof bugUpdates;
   campaigns: typeof campaigns;
   characterValidation: typeof characterValidation;
   characters: typeof characters;
+  chronicleVisibility: typeof chronicleVisibility;
+  chronicles: typeof chronicles;
+  crons: typeof crons;
+  friends: typeof friends;
   http: typeof http;
+  masterBuilder: typeof masterBuilder;
   passwordReset: typeof passwordReset;
+  paypal: typeof paypal;
+  paypalClient: typeof paypalClient;
   privateWorkspaces: typeof privateWorkspaces;
   profileImages: typeof profileImages;
   profiles: typeof profiles;
+  support: typeof support;
+  supportEmail: typeof supportEmail;
+  worldMaps: typeof worldMaps;
 }>;
 
 /**

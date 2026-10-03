@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="style.css">
   <script>window.savageMasterHome = new URLSearchParams(location.search).get('game') !== 'savage'; document.documentElement.dataset.home = String(window.savageMasterHome);</script>
 <style>html[data-home="true"] .app{display:none!important}</style>
+<script src="/appearance.js"></script><link rel="stylesheet" href="/app-design.css"><script src="/workspace-shell.js" defer></script>
 </head>
 <body>
   <div id="homeRoot"></div>
@@ -44,7 +45,7 @@
     <!-- Mobile Header (hidden on desktop) -->
     <header class="mobile-header" id="mobileHeader">
       <img src="logo.png" alt="" class="mobile-logo">
-      <span class="mobile-title" id="mobileTitle">Savage Master</span>
+      <span class="mobile-title" id="mobileTitle">Character workshop</span>
       <button class="mobile-summary-btn" aria-label="Open workspace and character menu" onclick="document.querySelector('.sidebar').classList.toggle('account-open')">Menu</button>
       <button class="mobile-summary-btn" id="summaryToggle" onclick="app.toggleMobileSummary()">Summary</button>
     </header>
@@ -57,18 +58,18 @@
           <img src="logo.png" alt="Savage Master Character Creation" class="logo-img">
         </div>
       </div>
-<nav class="workspace-nav sidebar-workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/?game=savage" aria-current="page">Characters</a><a href="/campaigns">Campaigns</a><a href="/chronicles">Chronicles</a><a href="/profile">My Profile</a></nav>
+<nav class="workspace-nav sidebar-workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/?game=savage" aria-current="page">Characters</a><a href="/campaigns">Campaigns</a><a href="/builder">Master Builder</a><a href="/chronicles">Chronicles</a><a href="/profile">My Profile</a></nav>
 <aside class="official-products"><strong>Official Savage Worlds products</strong><p>Find books and supplements at Pinnacle’s store. Purchases do not unlock additional rules in Savage Master.</p><a href="https://shop.peginc.com/pages/new-to-savage-worlds" target="_blank" rel="noopener noreferrer">Shop official Savage Worlds books &amp; products ↗</a></aside><nav class="game-switch" aria-label="Game system"><a href="/?game=savage" aria-current="page">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e Preview</a></nav>
-      <ul class="steps" id="stepNav"></ul>
-      <div style="margin-top:auto; padding:1rem; border-top:1px solid var(--border);">
+      <div class="sm-builder-title"><span>Character workshop</span><h1>Savage Worlds</h1></div><ul class="steps" id="stepNav"></ul>
+      <div class="sm-character-tools" style="margin-top:auto; padding:1rem; border-top:1px solid var(--border);">
         <div id="accountRoot"></div>
-        <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportFoundryVTT()">Export Foundry VTT</button>
+        <details><summary>Backups &amp; exports</summary><button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportFoundryVTT()">Export Foundry VTT</button>
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportRoll20()">Export Roll20</button>
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportJSON()">Export JSON</button>
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.exportBackup()">Download editable backup</button>
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="document.getElementById('characterBackupInput').click()">Load character backup</button>
         <input id="characterBackupInput" type="file" accept=".json,application/json" hidden onchange="app.importBackup(this)">
-        <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.resetCharacter()">Reset current draft</button>
+        <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.resetCharacter()">Reset current draft</button></details>
         <button class="btn btn-sm" id="installAppBtn" style="width:100%; margin-bottom:0.4rem; display:none;" onclick="openInstallModal()">Get the App</button>
         <button class="btn btn-sm btn-store" style="width:100%;" onclick="app.showStorePage()">Official Content</button>
         <button class="btn btn-sm" style="width:100%; margin-top:0.4rem;" onclick="app.showCommunityPage()">Find Players &amp; Help</button>

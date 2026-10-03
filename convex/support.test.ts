@@ -1,0 +1,47 @@
+import { convexTest } from 'convex-test';
+import { expect, test, vi, afterEach } from 'vitest';
+import { makeFunctionReference as ref } from 'convex/server';
+import schema from './schema';
+const modules = import.meta.glob('./**/*.ts');
+const report = (overrides = {}) => ({ requestId: crypto.randomUUID(), kind: 'bug', title: 'Save failed', body: 'Clicked save and saw an error.', email: 'player@example.test', diagnostics: '{"errors":["save failed"]}', ...overrides });
+afterEach(() => vi.useRealTimers());
+test('guests receive a durable ticket reference and retries create only one ticket', async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules), args = report();
+  const first: any = await t.mutation(ref<'mutation'>('support:submit'), args);
+  expect(first.reference).toMatch(/^BUG-/);
+  expect(await t.mutation(ref<'mutation'>('support:submit'), args)).toEqual(first);
+  expect(await t.query(ref<'query'>('support:mine'), {})).toEqual([]);
+  const rows = await t.run(ctx => ctx.db.query('supportTickets').collect());
+  expect(rows).toHaveLength(1); expect(rows[0].notification).toBe('pending');
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  const ticket: any = await t.run(ctx => ctx.db.get(first.id));
+  expect(ticket?.notification).toBe('unconfigured');
+});
+test('tickets and team replies are private to their account owner', async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules);
+  const ids = await t.run(async ctx => [await ctx.db.insert('users', { email: 'alice@example.test' }), await ctx.db.insert('users', { email: 'bob@example.test' })]);
+  const alice = t.withIdentity({ subject: ids[0] }), bob = t.withIdentity({ subject: ids[1] });
+  const ticket: any = await alice.mutation(ref<'mutation'>('support:submit'), report());
+  expect(await bob.query(ref<'query'>('support:mine'), {})).toEqual([]);
+  expect(await t.query(ref<'query'>('support:mine'), {})).toEqual([]);
+  await t.mutation(ref<'mutation'>('support:respond'), { id: ticket.id, status: 'in_progress', reply: 'We are investigating.' });
+  const rows: any = await alice.query(ref<'query'>('support:mine'), {});
+  expect(rows[0].reply).toBe('We are investigating.'); expect(rows[0].status).toBe('in_progress');
+  expect(rows[0].diagnostics).toBeUndefined();
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+});
+test('rate limits, oversized reports and cross-account retry attempts are rejected', async () => {
+  vi.useFakeTimers();
+  const t = convexTest(schema, modules), args = report();
+  await t.mutation(ref<'mutation'>('support:submit'), args);
+  await expect(t.mutation(ref<'mutation'>('support:submit'), report())).rejects.toThrow('wait a minute');
+  await expect(t.mutation(ref<'mutation'>('support:submit'), { ...args, email: 'other@example.test' })).rejects.toThrow('new report');
+  await expect(t.mutation(ref<'mutation'>('support:submit'), report({ diagnostics: 'x'.repeat(20001) }))).rejects.toThrow('too large');
+  await expect(t.mutation(ref<'mutation'>('support:submit'), report({ email: 'invalid' }))).rejects.toThrow('valid reply');
+  vi.advanceTimersByTime(61000);
+  await t.mutation(ref<'mutation'>('support:submit'), report({ kind: 'help' }));
+  expect(await t.run(ctx => ctx.db.query('supportTickets').collect())).toHaveLength(2);
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+});

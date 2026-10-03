@@ -6,6 +6,7 @@ import {
 } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
+import { publicPost, visiblePost } from './chronicleVisibility';
 const games = [
   "Any tabletop game",
   "Savage Worlds",
@@ -228,12 +229,13 @@ export const feed = query({
     before: v.optional(v.union(v.string(), v.null())),
     tomeId: v.optional(v.id("chronicleTomes")),
     following: v.optional(v.boolean()),
+    authorHandle: v.optional(v.string()),
   },
-  handler: async (ctx, { before, tomeId, following }) => {
+  handler: async (ctx, { before, tomeId, following, authorHandle }) => {
     const viewer = await getAuthUserId(ctx);
-    const page = await ctx.db
-      .query("chroniclePosts")
-      .withIndex("by_created")
+    const target = authorHandle ? await ctx.db.query('profiles').withIndex('by_handle', q => q.eq('handle', authorHandle)).unique() : null;
+    if (authorHandle && (!target || !await author(ctx, target.ownerId) || await blocked(ctx, viewer, target.ownerId))) return {posts: [], next: null};
+    const page = await (target ? ctx.db.query('chroniclePosts').withIndex('by_owner', q => q.eq('ownerId', target.ownerId)) : ctx.db.query('chroniclePosts').withIndex('by_created'))
       .order("desc")
       .paginate({ numItems: 25, cursor: before ?? null });
     const rows = page.page,
@@ -268,31 +270,19 @@ export const feed = query({
         )
           continue;
       }
-      const p = await author(ctx, r.ownerId);
-      if (!p) continue;
-      const a = p.publicSnapshot;
-      posts.push({
-        ...r,
-        ownerId: undefined,
-        author: {
-          name: a.displayName || p.handle,
-          handle: p.handle,
-          avatar: a.avatarId ? await ctx.storage.getUrl(a.avatarId) : null,
-        },
-        mine: viewer === r.ownerId,
-        allowFollowers:
-          (await preferences(ctx, r.ownerId))?.allowFollowers !== false,
-        toasted: viewer
-          ? !!(await ctx.db
-              .query("chronicleToasts")
-              .withIndex("by_post_owner", (q) =>
-                q.eq("postId", r._id).eq("ownerId", viewer),
-              )
-              .unique())
-          : false,
-      });
+      const post = await publicPost(ctx, r, viewer);
+      if (post) posts.push(post);
     }
     return { posts, next: page.isDone ? null : page.continueCursor };
+  },
+});
+export const post = query({
+  args: { id: v.string() },
+  handler: async (ctx, {id}) => {
+    const normalized = ctx.db.normalizeId('chroniclePosts', id);
+    if (!normalized) return null;
+    const row = await ctx.db.get(normalized);
+    return row ? publicPost(ctx, row, await getAuthUserId(ctx)) : null;
   },
 });
 export const eligibility = query({
@@ -379,7 +369,7 @@ export const toast = mutation({
       p.hidden ||
       !(await author(ctx, p.ownerId)) ||
       (await blocked(ctx, ownerId, p.ownerId)) ||
-      !(await visibleTome(ctx, p, ownerId))
+      !(await visiblePost(ctx, p, ownerId))
     )
       throw new Error("This tale is unavailable.");
     const old = await ctx.db
@@ -415,7 +405,7 @@ export const report = mutation({
       p.hidden ||
       (await blocked(ctx, ownerId, p.ownerId)) ||
       !(await author(ctx, p.ownerId)) ||
-      !(await visibleTome(ctx, p, ownerId))
+      !(await visiblePost(ctx, p, ownerId))
     )
       throw new Error("This tale is unavailable.");
     if (!reason.trim() || reason.length > 500)

@@ -1,0 +1,15 @@
+# Blended workspace design
+
+The approved direction uses one shared palette, typography, navigation, focus treatment, and control sizing across three workspace styles. Profiles and personal journals use illustrated journal surfaces. Chronicles and the Gaming Table use cinematic landscape headers. Character sheets and GM preparation use clear tactical panels and progressively disclosed tools.
+
+Appearance defaults to Follow device, with persistent Light and Dark overrides on each browser. Layout responds independently to viewport size. All workspaces share the same Explore menu on small screens; wide desktop screens also show direct workspace links. Campaign links preserve the selected campaign without carrying invitation tokens.
+
+Campaign preparation, the Gaming Table, and My Journal are distinct accessible tabs. Journal drafts stay in memory when changing tabs or campaigns and warn before leaving the page. Successful saves clear only the submitted draft; failures preserve it. Private GM scene references are excluded from the player table, in addition to existing server authorization. The Gaming Table provides a campaign reference workspace, not a live synchronized virtual tabletop.
+
+Validation: TypeScript check, production build, 44 Vitest tests and 61 Node tests passed. New coverage checks device appearance, manual overrides, storage failures and synchronization, GM-only scene rendering, and journal escaping. Browser review covered phone layouts across all workspaces, tablet layout, and desktop Light/Dark. No overflow or broken images was found in the phone route checks. Signed-in campaign interactions were not exercised against a real account; privacy and rendering were verified by tests. Pathfinder's existing large rules bundle still produces a build size warning.
+
+## Original background artwork
+
+Generated with the built-in image-generation tool. Optimized asset: `images/art/chronicles-harbor.webp` (approximately 294 KB). The source remains in the generated-images folder.
+
+Prompt: Create an original wide panoramic cinematic fantasy landscape illustration for the Savage Master tabletop RPG web application. Landscape 3:2 composition, premium hand-painted atmospheric concept art with restrained ink-and-watercolor details, matching existing antique gold, muted forest teal, leather, ivory and parchment illustration identity. Scene: an inviting ancient coastal town with warm lantern-lit gathering houses and a modest stone tower overlooking a teal bay, distant mountains and a winding path through foreground trees. Quiet sense of adventure and community. The strongest scenic detail is on the right; the left half has calm mist and open atmospheric space where website headings will be placed. Soft bronze sunset light, subtle forest teal and deep charcoal shadows, no neon, no bright magical effects. Rich painterly texture but clear broad composition that reads as a cropped wide header. No text, lettering, logos, user interface, identifiable characters, or existing franchise references. This is background art, not a screenshot. Do not add decorative frames.

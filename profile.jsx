@@ -13,6 +13,8 @@ import { CharacterAccount } from "./account.jsx";
 import "./campaigns.css";
 import "./profile.css";
 import {FriendsArea,FriendActions} from "./profile-friends.jsx";
+import { BugGuide } from './bug-mascot.jsx';
+import { BugProfile } from './bug-profile.jsx';
 const blank = {
   handle: `table-${crypto.randomUUID().slice(0, 8)}`,
   displayName: "",
@@ -331,11 +333,8 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
           ))}
         </div>
         {guided && (
-          <div className="profile-step">
-            <span>
-              Step {step + 1} of {steps.length}
-            </span>
-            <p>
+          <BugGuide step={step}>
+              Step {step + 1} of {steps.length}.{' '}
               {
                 [
                   "Start with a name and picture, or leave them for later. Your Player and GM roles share this profile.",
@@ -345,8 +344,7 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
                   "Preview your page, confirm your age, and save privately. Request sharing only when you are ready.",
                 ][step]
               }
-            </p>
-          </div>
+          </BugGuide>
         )}
         {tab === "about" && (
           <div
@@ -871,7 +869,7 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
     </>
   );
 }
-export function WelcomeTour({ onFinish }) {
+export function WelcomeTour({ onFinish, guest = false }) {
   const [step, setStep] = useState(0);
   const heading = React.useRef(null);
   useEffect(() => { heading.current?.focus(); }, [step]);
@@ -879,17 +877,23 @@ export function WelcomeTour({ onFinish }) {
     ["Your heroes start here", "Create and save characters for Savage Worlds, Dungeons & Dragons 5e, and Pathfinder 2e. Your account keeps them together.", [["Savage Worlds", "/?game=savage"], ["Dungeons & Dragons 5e", "/dnd"], ["Pathfinder 2e", "/pathfinder"]]],
     ["Bring your table together", "Create a campaign, invite your party, and prepare your next adventure. Keep scenes, party details, and private Game Master notes together.", [["Campaigns", "/campaigns"]]],
     ["Keep the memories", "Write player journals in your campaigns and revisit your adventures in Chronicles. Choose favorite characters and journal excerpts to showcase on your profile.", [["Chronicles", "/chronicles"]]],
-    ["Make yourself at home", "Your profile is your starting point. Customize your page and use Friends below to connect with the people at your table.", []],
+    ["Make yourself at home", "Your profile is your starting point. Customize your page and use Friends below to connect with the people at your table.", [["Bug's official updates", "/profile?user=bug"], ["Support", "/support"]]],
   ];
   const [title, description, links] = stops[step];
   return <section className="profile-tour" aria-labelledby="tour-title">
     <p className="profile-eyebrow">Welcome to Savage Master / {step + 1} of {stops.length}</p>
     <h2 id="tour-title" tabIndex={-1} ref={heading}>{title}</h2>
     <p>{description}</p>
+    <BugGuide step={step}>{[
+      'Pick your game to start a character. You can come back to this tour at any time from my button.',
+      'Your Game Master’s private notes stay with the GM. Invite your players when your campaign is ready.',
+      'Chronicles is public. Share only what you choose, and follow my profile for official updates.',
+      'You are ready to explore. My tome is always nearby if you need setup help or want to report an error.',
+    ][step]}</BugGuide>
     <div className="profile-tour-links">{links.map(([label, href]) => <a key={href} href={href} target="_blank" rel="noopener noreferrer">{label}<span className="sr-only"> (opens in a new tab)</span></a>)}</div>
     <div className="profile-step-actions">
       {step > 0 && <button type="button" className="secondary" onClick={() => setStep(step - 1)}>Back</button>}
-      <button type="button" onClick={() => step < stops.length - 1 ? setStep(step + 1) : onFinish()}>{step < stops.length - 1 ? "Next" : "Open my profile"}</button>
+      <button type="button" onClick={() => step < stops.length - 1 ? setStep(step + 1) : onFinish()}>{step < stops.length - 1 ? "Next" : guest ? 'Continue to account' : "Open my profile"}</button>
       <button type="button" className="secondary" onClick={onFinish}>Skip tour</button>
     </div>
   </section>;
@@ -899,11 +903,11 @@ export function App() {
   const { isAuthenticated, isLoading } = useConvexAuth(),
     [status, setStatus] = useState("");
   const [editing, setEditing] = useState(false);
-  const [tour, setTour] = useState(false);
+  const [tour, setTour] = useState(() => new URLSearchParams(location.search).get('tour') === '1');
   const [entry, setEntry] = useState(() => new URLSearchParams(location.search).get("entry") === "signUp" ? "signUp" : "signIn");
   const handle = new URLSearchParams(location.search).get("user");
   useEffect(() => {
-    if (!isAuthenticated) { setEditing(false); setTour(false); return; }
+    if (!isAuthenticated) { setEditing(false); return; }
     const cleanUrl = new URL(location.href);
     cleanUrl.searchParams.delete("entry");
     history.replaceState(null, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
@@ -925,10 +929,21 @@ export function App() {
       isAuthenticated && !handle ? {} : "skip",
     ),
     report = useMutation(ref("profiles:report"));
+  const tourRequested = React.useRef(new URLSearchParams(location.search).get('tour') === '1');
+  useEffect(() => {
+    if (!tourRequested.current || !isAuthenticated || !mine) return;
+    tourRequested.current = false; setTour(true);
+    const url = new URL(location.href); url.searchParams.delete('tour'); history.replaceState(null, '', url.pathname + url.search + url.hash);
+  }, [isAuthenticated, mine]);
+  function finishTour() {
+    tourRequested.current = false; setTour(false); setStatus('');
+    const url = new URL(location.href); url.searchParams.delete('tour'); history.replaceState(null, '', url.pathname + url.search + url.hash);
+    requestAnimationFrame(() => document.getElementById(isAuthenticated ? 'my-profile' : 'profile-entry-title')?.focus());
+  }
   return (
     <main>
-{(handle || isAuthenticated) && <><nav className="game-switch" aria-label="Game system"><a href="/?game=savage">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/?game=savage">Characters</a><a href="/campaigns">Campaigns</a><a href="/chronicles">Chronicles</a><a href="/profile" aria-current="page">My Profile</a></nav></>}
-      {handle ? (
+{(handle || isAuthenticated) && <><nav className="game-switch" aria-label="Game system"><a href="/?game=savage">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/?game=savage">Characters</a><a href="/campaigns">Campaigns</a><a href="/builder">Master Builder</a><a href="/chronicles">Chronicles</a><a href="/profile" aria-current="page">My Profile</a></nav></>}
+      {handle === 'bug' ? <BugProfile /> : handle ? (
         <>
           {publicProfile === undefined ? (
             <p>Opening profile…</p>
@@ -991,11 +1006,16 @@ export function App() {
               <p>Opening your profile.</p>
             ) : (
               <>
-                {tour && <WelcomeTour onFinish={() => { setTour(false); setStatus(""); document.getElementById("my-profile")?.focus(); }} />}
+                {tour && <WelcomeTour onFinish={finishTour} />}
                 {mine && !editing ? <>
                   <div id="my-profile" tabIndex={-1}>
                     <ProfileCard p={mine} characters={characters} />
                   </div>
+                  <nav className="sm-profile-paths" aria-label="Your adventure">
+                    <a href="/?game=savage"><strong>Your heroes</strong><small>Create a character or return to a sheet.</small></a>
+                    <a href="/campaigns?view=journal"><strong>Your journal</strong><small>Keep the moments that make your story.</small></a>
+                    <a href="/chronicles"><strong>Meet at Chronicles</strong><small>Find friends, shared stories, and community tomes.</small></a>
+                  </nav>
                   <div className="profile-owner-actions">
                     <button type="button" onClick={() => setEditing(true)}>Customize my profile</button>
                     <button type="button" className="secondary" onClick={() => setTour(true)}>Show me around</button>
@@ -1018,12 +1038,12 @@ export function App() {
               </>
             )
           ) : (
-            <section className="profile-entry" aria-labelledby="profile-entry-title">
+            <>{tour && <WelcomeTour guest onFinish={finishTour} />}<section className="profile-entry" aria-labelledby="profile-entry-title">
               <a href="/">Back to home</a>
-              <h1 id="profile-entry-title">{entry === "signUp" ? "Begin Your Adventure" : "Already On One"}</h1>
+              <h1 id="profile-entry-title" tabIndex={-1}>{entry === "signUp" ? "Begin Your Adventure" : "Already On One"}</h1>
               <p>{entry === "signUp" ? "Create your account, build your profile, and let us show you around." : "Sign in to return to your profile."}</p>
               <CharacterAccount accountOnly initialMode={entry} onModeChange={setEntry} />
-            </section>
+            </section></>
           )}
         </>
       )}
@@ -1032,7 +1052,10 @@ export function App() {
   );
 }
 const url = import.meta.env.VITE_CONVEX_URL;
-if (document.getElementById("profileRoot")) createRoot(document.getElementById("profileRoot")).render(
+const profileHost = document.getElementById('profileRoot');
+const profileRoot = profileHost ? import.meta.hot?.data.profileRoot || createRoot(profileHost) : null;
+if (import.meta.hot && profileRoot) import.meta.hot.data.profileRoot = profileRoot;
+profileRoot?.render(
   url ? (
     <ConvexAuthProvider client={new ConvexReactClient(url)}>
       <App />

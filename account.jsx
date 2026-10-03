@@ -39,7 +39,7 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
           const id = await save({ id: selectedId || undefined, snapshot: backup });
           setSelectedId(id);
           setStatus('Character saved to your account.');
-        } catch (error) { setStatus(error.message); }
+        } catch (error) { window.smBugCapture?.record('Character save error', error); setStatus(error.message); }
         finally { setBusy(false); }
       },
     };
@@ -66,7 +66,7 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
       } else {
         setStatus(mode === 'signUp' ? 'Account created. You can save your character now.' : 'Signed in.');
       }
-    } catch (error) { setStatus(accountErrorMessage(mode, error)); }
+    } catch (error) { window.smBugCapture?.record('Account error', error); setStatus(accountErrorMessage(mode, error)); }
     finally { setBusy(false); }
   }
 
@@ -78,7 +78,7 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
       window.savageMasterBridge.loadBackup(backup);
       setSelectedId(id);
       setStatus('Character loaded.');
-    } catch (error) { setStatus(error.message); }
+    } catch (error) { window.smBugCapture?.record('Character load error', error); setStatus(error.message); }
     finally { setBusy(false); }
   }
 
@@ -115,6 +115,7 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
         {mode === 'reset' || mode === 'reset-verification' || mode === 'email-verification' ? 'Back to sign in' : 'Forgot password?'}
       </button>
     </>}
+    <a className="account-switch" href="/pricing">Billing &amp; Account</a>
     {status && <p className="account-status" role="status">{status}</p>}
   </section>;
 }

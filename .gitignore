@@ -11,3 +11,10 @@ dist/
 .vercel
 .env*
 .resend-key.local
+
+# Local verification captures and provider setup notes
+output/
+/account-live.jpg
+/domain-live.jpg
+/resend-key-setup.jpg
+/resend-dns.txt

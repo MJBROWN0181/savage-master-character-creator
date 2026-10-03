@@ -10,6 +10,8 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { makeFunctionReference as ref } from "convex/server";
 import { CharacterAccount } from "./account.jsx";
 import "./chronicles.css";
+import { BugMascot } from './bug-mascot.jsx';
+import { ChronicleShare } from './chronicle-share.jsx';
 const games = [
   "Any tabletop game",
   "Savage Worlds",
@@ -67,6 +69,9 @@ function App() {
     return () => window.removeEventListener("beforeunload", warn);
   }, [draft.title, draft.body, tomeName, tomeDescription]);
   function changeView(v, id) {
+    if (new URLSearchParams(location.search).has('post')) {
+      const url = new URL(location.href); url.searchParams.delete('post'); history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
     setView(v);
     setTomeId(id);
     setCloseTome(false);
@@ -74,7 +79,9 @@ function App() {
     setBefore(null);
     setHistory([]);
   }
-  const feed = useQuery(ref("chronicles:feed"), {
+  const sharedId = new URLSearchParams(location.search).get('post');
+  const sharedPost = useQuery(ref('chronicles:post'), sharedId ? { id: sharedId } : 'skip');
+  const communityFeed = useQuery(ref("chronicles:feed"), sharedId ? 'skip' : {
       before,
       tomeId,
       following: view === "following",
@@ -83,6 +90,7 @@ function App() {
     toast = useMutation(ref("chronicles:toast")),
     remove = useMutation(ref("chronicles:remove")),
     flag = useMutation(ref("chronicles:report"));
+  const feed = sharedId ? sharedPost === undefined ? undefined : { posts: sharedPost ? [sharedPost] : [], next: null } : communityFeed;
   async function act(fn, success) {
     setBusy(true);
     setMessage("");
@@ -194,12 +202,14 @@ function App() {
         <nav className="chron-tabs" aria-label="Chronicles sections">
           <button
             className={view === "community" ? "" : "quiet"}
+            aria-pressed={view === "community"}
             onClick={() => changeView("community")}
           >
             Around the fire
           </button>
           <button
             className={view === "following" ? "" : "quiet"}
+            aria-pressed={view === "following"}
             disabled={!isAuthenticated}
             onClick={() => changeView("following")}
           >
@@ -207,12 +217,14 @@ function App() {
           </button>
           <button
             className={view === "tomes" ? "" : "quiet"}
+            aria-pressed={view === "tomes"}
             onClick={() => changeView("tomes", tomes[0]?._id)}
           >
             Tomes & groups
           </button>
           <button
             className={view === "market" ? "" : "quiet"}
+            aria-pressed={view === "market"}
             onClick={() => changeView("market")}
           >
             Market shelf
@@ -438,7 +450,7 @@ function App() {
         )}
         <div className="chron-layout">
           <section className="chron-feed" aria-label="Community tales">
-            <div id="chron-compose" className="chron-panel">
+            {!sharedId && <div id="chron-compose" className="chron-panel">
               <h2>
                 {selected
                   ? `Add a chapter to ${selected.name}`
@@ -560,10 +572,11 @@ function App() {
                   </button>
                 </>
               )}
-            </div>
+            </div>}
             <div className="chron-feed-heading">
+              {sharedId && <a href="/chronicles">Back to all Chronicles</a>}
               <h2>
-                {selected
+                {sharedId ? 'Shared update' : selected
                   ? selected.name
                   : view === "following"
                     ? "Tales you follow"
@@ -594,14 +607,14 @@ function App() {
                     : selected
                       ? "A new Tome awaits its first chapter."
                       : game === "All games"
-                        ? "The fire is lit. The first tale is yours."
+                        ? sharedId ? "This update is unavailable." : "The fire is lit. The first tale is yours."
                         : "No tales for this game on this page."}
                 </h3>
                 <p>
                   {view === "following"
                     ? "Follow a storyteller from their posts in Around the fire. You can always unfollow later."
                     : game === "All games"
-                      ? "Share a real moment from your table and begin the Chronicles."
+                      ? sharedId ? "It may have been removed or is unavailable to this account." : "Share a real moment from your table and begin the Chronicles."
                       : "Try another game or browse the next page of stories."}
                 </p>
               </div>
@@ -610,6 +623,7 @@ function App() {
                 .filter((p) => game === "All games" || p.game === game)
                 .map((p) => (
                   <article className="chron-post" key={p._id}>
+                    {p.sharedBy && <p className="chron-shared-by"><a href={`/profile?user=${encodeURIComponent(p.sharedBy.handle)}`}>{p.sharedBy.name}</a> shared Bug’s update</p>}
                     <header>
                       <a
                         className="chron-author"
@@ -626,6 +640,7 @@ function App() {
                         )}
                         <span>
                           <strong>{p.author.name}</strong>
+                          {p.author.official === 'bug' && <span className="bug-official">Official</span>}
                           <small>
                             {new Date(p.createdAt).toLocaleDateString(
                               undefined,
@@ -707,6 +722,7 @@ function App() {
                         )
                       )}
                     </footer>
+                    {p.author.official === 'bug' && <ChronicleShare post={p} />}
                     {removing === p._id && (
                       <div className="chron-panel">
                         <p>Remove this tale from the community?</p>
@@ -788,6 +804,7 @@ function App() {
             </div>
           </section>
           <aside>
+            <section className="chron-panel chron-bug-card"><BugMascot state="announce" size={78} /><span className="chron-eyebrow">Keeper of the code</span><h2>Meet Bug</h2><p>Follow our winged companion for official updates and setup tips. Share his posts with your table.</p><a href="/profile?user=bug">Visit Bug’s profile</a></section>
             {isAuthenticated && (
               <section className="chron-panel">
                 <h2>Your campfire</h2>
@@ -860,7 +877,10 @@ function App() {
   );
 }
 const url = import.meta.env.VITE_CONVEX_URL;
-createRoot(document.getElementById("chroniclesRoot")).render(
+const chronicleHost = document.getElementById('chroniclesRoot');
+const chronicleRoot = chronicleHost ? import.meta.hot?.data.chronicleRoot || createRoot(chronicleHost) : null;
+if (import.meta.hot && chronicleRoot) import.meta.hot.data.chronicleRoot = chronicleRoot;
+chronicleRoot?.render(
   url ? (
     <ConvexAuthProvider client={new ConvexReactClient(url)}>
       <App />

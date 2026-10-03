@@ -1940,7 +1940,7 @@ const app = {
     const c = this.character;
     // Update mobile header title
     const mobileTitle = document.getElementById('mobileTitle');
-    if (mobileTitle) mobileTitle.textContent = c.name || 'Savage Master';
+    if (mobileTitle) mobileTitle.textContent = c.name || 'Character workshop';
     const race = this.getSelectedRace();
     const stats = this.getDerivedStats();
 

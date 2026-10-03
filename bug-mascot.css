@@ -1,0 +1,26 @@
+.bug-mascot{position:relative;display:inline-block;width:var(--bug-size);height:var(--bug-size);flex:0 0 var(--bug-size);isolation:isolate;vertical-align:middle;pointer-events:none}
+.bug-mascot img{position:relative;z-index:1;display:block;width:100%;height:100%;object-fit:contain;transform-origin:50% 62%;filter:drop-shadow(0 4px 6px #0005)}
+.bug-book-light{position:absolute;inset:39% 23% 35% 37%;border-radius:50%;background:#f7b546;filter:blur(10px);opacity:.16;z-index:0}
+.bug-rune{position:absolute;z-index:2;font-family:monospace;color:#ffd583;text-shadow:0 0 6px #f4b346;opacity:0;font-size:clamp(10px,calc(var(--bug-size)*.12),19px)}
+.bug-rune-one{left:30%;top:46%}.bug-rune-two{right:20%;top:51%}
+.bug-seal{position:absolute;z-index:2;right:5%;top:4%;background:#183e36;border:1px solid #a7ceb5;border-radius:50%;color:#d8f8df;font-weight:bold;padding:0 .3em}
+.bug-motion-idle img{animation:bug-hover 6s ease-in-out 2}
+.bug-motion-inspect img{animation:bug-read 1.4s ease-in-out 2}.bug-motion-inspect .bug-book-light{animation:bug-glow 1.4s ease-in-out 2}
+.bug-motion-sending img{animation:bug-carry 1.5s ease-in-out infinite}.bug-motion-sending .bug-rune{animation:bug-code-trail 1.5s ease-out infinite}.bug-motion-sending .bug-rune-two{animation-delay:.65s}
+.bug-motion-success img{animation:bug-nod .8s ease-out}.bug-motion-success .bug-seal{animation:bug-seal-in .5s ease-out}
+.bug-motion-welcome img{animation:bug-arrive .85s ease-out}.bug-motion-welcome .bug-book-light{animation:bug-glow 1.6s ease-out 2}
+.bug-motion-guide img{animation:bug-read 1.2s ease-in-out}.bug-motion-guide .bug-book-light{animation:bug-glow 1.4s ease-out 2}
+.bug-motion-announce img{animation:bug-nod .8s ease-out}.bug-motion-announce .bug-rune{animation:bug-code-trail 1.8s ease-out 2}.bug-motion-announce .bug-rune-two{animation-delay:.4s}
+@keyframes bug-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px) rotate(-1deg)}}
+@keyframes bug-read{0%,100%{transform:rotate(0)}35%{transform:rotate(-4deg) translateY(2px)}65%{transform:rotate(3deg)}}
+@keyframes bug-carry{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes bug-glow{0%,100%{opacity:.16}50%{opacity:.6;transform:scale(1.35)}}
+@keyframes bug-code-trail{0%{opacity:0;transform:translateY(0)}25%{opacity:1}100%{opacity:0;transform:translateY(-28px)}}
+@keyframes bug-nod{0%,100%{transform:rotate(0)}45%{transform:translateY(4px) rotate(5deg)}75%{transform:translateY(-3px) rotate(-2deg)}}
+@keyframes bug-arrive{from{opacity:0;transform:translateY(12px) rotate(-7deg)}to{opacity:1;transform:translateY(0)}}
+@keyframes bug-seal-in{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.bug-guide{display:flex;align-items:center;gap:1rem;padding:.85rem 1rem;margin:1rem 0;border:1px solid var(--sm-border,#a992684d);border-radius:14px;background:var(--sm-surface,#192626);color:var(--sm-text,#ebdfc8)}
+.bug-guide p{margin:.35rem 0 .5rem;line-height:1.55}.bug-guide strong{color:var(--sm-accent,#d8ae64)}
+.bug-paths{display:flex;flex-wrap:wrap;gap:.65rem;margin:1rem 0}.bug-paths a{padding:.6rem .8rem;border:1px solid var(--sm-border,#a992684d);border-radius:9px}
+@media(prefers-reduced-motion:reduce){.bug-mascot *{animation:none!important}.bug-motion-sending .bug-book-light{opacity:.45}.bug-motion-sending .bug-rune{opacity:.8}}
+@media(max-width:480px){.bug-guide{gap:.55rem;padding:.65rem}.bug-guide .bug-mascot{--bug-size:64px!important}}
