@@ -6,7 +6,7 @@
       ['campaigns','Campaigns','/campaigns'],
       ['table','Gaming Table','/campaigns?view=table'],
       ['journal','Journals','/campaigns?view=journal'],
-      ['community','Chronicles','/chronicles'],
+      ['community','Around the Fire','/chronicles'],
       ['world','World Builder','/builder'],
       ['profile','My Profile','/profile'],
     ];
@@ -17,7 +17,7 @@
     shell.innerHTML = `<a class="sm-skip" href="#workspace-content">Skip to workspace</a>
       <a class="sm-brand" href="/" aria-label="Savage Master home"><span class="sm-emblem"><img src="/logo.png" width="48" height="48" alt=""></span><span>Savage Master<small>Your character. Your table. Your story.</small></span></a>
       <nav class="sm-desktop-nav" aria-label="Main workspace">${nav}</nav>
-      <div class="sm-shell-controls"><label class="sm-appearance"><span>Appearance</span><select aria-label="Appearance"><option value="auto">Follow device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <div class="sm-shell-controls"><details class="sm-settings"><summary>Settings</summary><div class="sm-settings-menu"><label class="sm-appearance"><span>Appearance</span><select aria-label="Appearance"><option value="auto">Follow device</option><option value="light">Light</option><option value="dark">Dark</option></select></label><a href="/settings#review">Profile review &amp; access</a><a href="/settings#security">Password &amp; account</a><a href="/settings#privacy">Privacy &amp; connections</a><a href="/settings#profile-data">Profile &amp; data</a><a href="/settings">All settings</a></div></details>
       <details class="sm-explore"><summary>Explore <span aria-hidden="true">⌄</span></summary><nav aria-label="Explore workspaces">${nav}<a href="/pricing">Account & billing</a><a href="/support">Support & the Bug</a></nav></details></div>`;
     document.body.prepend(shell);
     const select = shell.querySelector('select');
@@ -40,9 +40,9 @@
     }
     updateLinks();
     window.addEventListener('sm:workspace-change', updateLinks);
-    const explore = shell.querySelector('details');
-    shell.addEventListener('keydown', event => { if (event.key === 'Escape' && explore.open) { explore.open = false; explore.querySelector('summary').focus(); } });
-    document.addEventListener('click', event => { if (!explore.contains(event.target)) explore.open = false; });
+    const menus = [...shell.querySelectorAll('details')];
+    shell.addEventListener('keydown', event => { if (event.key === 'Escape') for (const menu of menus) if (menu.open) { menu.open = false; menu.querySelector('summary').focus(); } });
+    document.addEventListener('click', event => { for (const menu of menus) if (!menu.contains(event.target)) menu.open = false; });
     function markMain() {
       const main = document.querySelector('main:not([hidden])');
       if (!main) return false;

@@ -98,4 +98,4 @@ function Workspace(){
   </main>;
 }
 const url=import.meta.env.VITE_CONVEX_URL;
-if(document.getElementById('campaignRoot'))createRoot(document.getElementById('campaignRoot')).render(url?<ConvexAuthProvider client={new ConvexReactClient(url)}><Workspace/></ConvexAuthProvider>:<main><h1>Campaigns</h1><p>Campaign accounts are unavailable. You can still <a href="/?game=savage">open the character workshop</a>.</p></main>);
+if(document.getElementById('campaignRoot'))createRoot(document.getElementById('campaignRoot')).render(url?<ConvexAuthProvider client={new ConvexReactClient(url)}><Workspace/></ConvexAuthProvider>:<main><h1>Campaigns</h1><p>Campaign accounts are unavailable. You can still <a href="/create">create a character</a>.</p></main>);

@@ -8,7 +8,8 @@ vi.mock('convex/react', () => ({
   useConvexAuth: () => ({ isAuthenticated: state.authenticated, isLoading: state.loading }),
   useQuery: (reference, args) => {
     if (args === 'skip') return undefined;
-    return reference[Symbol.for('functionName')] === 'profiles:mine' ? state.profile : [];
+    const name=reference[Symbol.for('functionName')];
+    return name === 'profiles:mine' ? state.profile : name === 'chronicles:feed' ? {posts:[],next:null} : name === 'chronicles:eligibility' ? state.profile?.reviewStatus === 'approved' : name === 'profiles:canReview' ? false : [];
   },
   useMutation: () => vi.fn(),
   useAction: () => vi.fn(),
@@ -64,7 +65,7 @@ test('an authenticated member without a saved profile starts the guided wizard',
   const html = await renderApp('?entry=signUp');
   expect(html).toContain('Build your profile');
   expect(html).toContain('Step 1 of 5');
-  expect(html).toContain('Next: Appearance');
+  expect(html).toContain('Next: Background');
   expect(html).not.toContain('Create Account');
 });
 
@@ -80,7 +81,7 @@ test('saved accounts open their profile directly regardless of the entry button'
     const html = await renderApp('?entry=' + entry);
     expect(html).toContain('Saved Hero');
     expect(html).toContain('My saved story');
-    expect(html).toContain('Customize my profile');
+    expect(html).toContain('Edit profile &amp; background');
     expect(html).not.toContain('Step 1 of 5');
     expect(html).not.toContain('profile-settings');
     expect(html).not.toContain('Welcome to Savage Master /');
@@ -95,4 +96,23 @@ test('the welcome tour offers real workshops and can be skipped', async () => {
   expect(html).toContain('href="/dnd"');
   expect(html).toContain('href="/pathfinder"');
   expect(html).toContain('Skip tour');
+});
+
+test('profile status explains the review gate and shows the private change request', async () => {
+  const { ProfileReviewStatus } = await import('../profile.jsx');
+  const pending = renderToStaticMarkup(<ProfileReviewStatus profile={{ reviewStatus: 'pending' }} />);
+  expect(pending).toContain('Awaiting profile review');
+  expect(pending).toContain('Approval will enable your public profile and Chronicles posting');
+  const approved = renderToStaticMarkup(<ProfileReviewStatus profile={{ reviewStatus: 'approved' }} />);
+  expect(approved).toContain('You can post and share updates in Chronicles');
+  const rejected = renderToStaticMarkup(<ProfileReviewStatus profile={{ reviewStatus: 'rejected', reviewNote: 'Remove exposed personal details.' }} />);
+  expect(rejected).toContain('Remove exposed personal details.');
+  expect(rejected).toContain('Your profile needs changes');
+});
+
+test('a review link asks guests to sign in and does not show private profiles', async () => {
+  const html = await renderApp('?reviews=1');
+  expect(html).toContain('Profile review queue');
+  expect(html).toContain('Sign in with your authorized reviewer account');
+  expect(html).not.toContain('Approve profile');
 });

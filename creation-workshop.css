@@ -95,6 +95,7 @@ html[data-theme] .creation-workshop .creation-timeline nav button{border:0;box-s
 .creation-limit-notice{box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;margin:auto;padding:6px;border:0;background:transparent;color:var(--sm-text,#ece4d2);box-shadow:none;font-family:var(--font-body,serif);text-align:left;overflow-wrap:anywhere}
 .creation-limit-notice[open]{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:start}
 .creation-limit-notice::backdrop{background:#07141514}
+@media(max-width:768px){.creation-limit-notice{position:fixed;inset:0;margin:auto;height:fit-content}}
 .creation-notice-copy{min-width:0;padding:14px 16px 8px;border-radius:12px;background:color-mix(in srgb,var(--sm-surface,#1b2e30) 66%,transparent);backdrop-filter:blur(8px)}
 .creation-limit-notice h2{margin:0 0 6px;font-size:18px;line-height:1.3;color:var(--sm-gold)}
 .creation-limit-notice p{font-size:16px;line-height:1.5;margin:0 0 8px}

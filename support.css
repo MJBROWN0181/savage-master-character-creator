@@ -18,13 +18,12 @@
 .support-ticket p { white-space:pre-wrap; overflow-wrap:anywhere; }
 .support-ticket small { overflow-wrap:anywhere; }
 .support-ticket-state { border-radius:20px; padding:3px 10px; background:var(--sm-highlight,#e6eee7); font:12px system-ui,sans-serif; white-space:nowrap; }
-.bug-companion { position:fixed; right:max(16px,env(safe-area-inset-right)); bottom:max(12px,env(safe-area-inset-bottom)); z-index:900; display:flex; flex-direction:column; align-items:center; gap:0; padding:4px 7px 5px; border:0; border-radius:20px; background:transparent; box-shadow:none; cursor:pointer; width:80px; min-height:80px; }
-.bug-companion img { width:58px; height:58px; object-fit:contain; pointer-events:none; }
+.bug-companion { position:fixed; right:max(16px,env(safe-area-inset-right)); bottom:max(12px,env(safe-area-inset-bottom)); z-index:900; display:flex; flex-direction:column; align-items:center; gap:0; padding:4px 7px 5px; border:0; border-radius:20px; background:transparent; box-shadow:none; cursor:pointer; width:98px; min-height:108px; }
 .bug-companion>span:not(.bug-mascot) { font:600 12px system-ui,sans-serif; }
 .bug-error-dot { position:absolute;right:7px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--sm-gold,#b87d30); }
 .bug-delivery { display:flex;align-items:center;gap:10px;margin:10px 0; }
 .bug-companion:hover { background:transparent; box-shadow:none; }
-.bug-companion:hover .bug-mascot img { filter:drop-shadow(0 4px 8px #14232660); }
+.bug-companion:hover .bug-rig { filter:drop-shadow(0 4px 8px #14232660); }
 .bug-dialog { padding:24px; width:min(540px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); box-sizing:border-box; overflow:auto; background:var(--bug-bg); border:1px solid var(--bug-line); border-radius:18px; box-shadow:0 20px 70px #0004; }
 .bug-dialog::backdrop { background:#07131685; }
 .bug-dialog-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
@@ -48,7 +47,29 @@
 .bug-form button:disabled { opacity:.6; cursor:wait; }
 .bug-status { min-height:24px; font-size:14px; overflow-wrap:anywhere; }
 .bug-support-link { display:inline-block; margin-top:6px; font-size:14px; }
+.bug-companion-controls { display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:14px; }
+.bug-motion-toggle,.bug-size-toggle { display:block; padding:8px 0; min-height:44px; border:0; background:transparent; color:var(--bug-muted); font:13px var(--font-body,Georgia,serif); cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.bug-companion.bug-compact { width:56px; min-height:62px; padding-inline:4px; }
+.bug-companion.bug-compact .bug-mascot { --bug-size:38px!important; }
 .bug-dialog :focus-visible,.bug-companion:focus-visible,.support-page :focus-visible { outline:3px solid var(--sm-focus,#237a70); outline-offset:3px; }
-@media(max-width:700px) { .support-columns { grid-template-columns:1fr; } .support-hero { gap:12px; } .support-hero img { width:100px; height:100px; } .support-card { padding:18px; } .bug-dialog { padding:18px; } .bug-companion { right:10px; bottom:max(10px,env(safe-area-inset-bottom)); width:66px; min-height:68px; border-radius:16px; } .bug-companion img { width:46px; height:46px; } }
+@media(max-width:700px) { .support-columns { grid-template-columns:1fr; } .support-hero { gap:12px; } .support-hero img { width:100px; height:100px; } .support-card { padding:18px; } .bug-dialog { padding:18px; } .bug-companion { right:max(10px,env(safe-area-inset-right)); bottom:max(10px,env(safe-area-inset-bottom)); width:76px; min-height:87px; border-radius:16px; } }
 @media print { .bug-companion,.bug-dialog { display:none; } }
-@media(max-width:700px){.bug-companion .bug-mascot{--bug-size:46px!important}.support-hero>.bug-mascot{--bug-size:100px!important}}
+@media(max-width:700px){.bug-companion .bug-mascot{--bug-size:62px!important}.support-hero>.bug-mascot{--bug-size:100px!important}}
+
+/* Ordinary pointer input goes through Bug; a deliberate hover invites him. */
+.bug-companion{pointer-events:none;transform:translate(var(--bug-step,0px),var(--bug-rise,0px));transition:transform .42s cubic-bezier(.22,.7,.25,1)}
+.bug-companion.bug-layout-adjust,html[data-bug-motion="paused"] .bug-companion{transition:none}
+.bug-companion.bug-invited,.bug-companion:focus-visible{pointer-events:auto}
+.bug-companion.bug-invited{filter:drop-shadow(0 0 5px #d7b16b66)}
+@media(prefers-reduced-motion:reduce){.bug-companion{transition:none}}
+
+/* Free flight stays click-through; approaching Bug brings him to a hover. */
+.bug-companion.bug-airborne{transition:none}
+.bug-airborne .bug-wing{animation-duration:.22s!important;--wing-fold:.82;--wing-strength:1.4}
+.bug-airborne .bug-presence{animation:bug-presence 2.8s ease-in-out infinite}
+.bug-airborne .bug-gesture{display:none}
+.bug-airborne .bug-mascot .bug-rig{opacity:1!important}
+.bug-airborne .bug-tome{animation:bug-clutch 1.3s ease-in-out infinite}
+.bug-airborne::after{content:'';position:absolute;width:3px;height:3px;left:40%;top:72%;border-radius:50%;background:#e1b56c;box-shadow:-9px 7px 3px #e1b56c88,7px 14px 2px #e1b56c55;pointer-events:none;animation:bug-flight-motes .85s ease-out infinite}
+@keyframes bug-flight-motes{from{opacity:.5;transform:translateY(0)}to{opacity:0;transform:translateY(12px)}}
+@media(prefers-reduced-motion:reduce){.bug-airborne::after{display:none}}

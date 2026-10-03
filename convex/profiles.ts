@@ -6,6 +6,7 @@ import {
   internalQuery,
 } from "./_generated/server";
 import { v } from "convex/values";
+import { makeFunctionReference as ref } from "convex/server";
 
 const appearance = v.object({
   background: v.string(),
@@ -41,6 +42,7 @@ const details = {
   backgroundId: v.optional(v.id("_storage")),
   appearance,
   ageConfirmed: v.boolean(),
+  communityAccepted: v.optional(v.boolean()),
 };
 export const mine = query({
   args: {},
@@ -93,6 +95,8 @@ export const save = mutation({
       .unique();
     if (!old && !a.ageConfirmed)
       throw new Error("Confirm you are 18 or older to create a profile.");
+    if (!old && !a.communityAccepted)
+      throw new Error("Accept the community rules to submit your new profile for review.");
     const handle = a.handle.trim().toLowerCase();
     if (handle === 'bug' || old?.official === 'bug')
       throw new Error('Bug is the official site companion. Choose another profile address.');
@@ -193,7 +197,8 @@ export const save = mutation({
       if (!media || media.ownerId !== ownerId)
         throw new Error("Upload your own profile images.");
     }
-    const { ageConfirmed, ...draft } = a;
+    const { ageConfirmed, communityAccepted, ...draft } = a;
+    const now = Date.now();
     const data = {
       ...draft,
       avatarId: a.avatarId,
@@ -202,16 +207,19 @@ export const save = mutation({
       ownerId,
       ageConfirmedAt: old?.ageConfirmedAt || Date.now(),
       updatedAt: Math.max(Date.now(), (old?.updatedAt || 0) + 1),
-      reviewStatus:
-        old?.reviewStatus === "pending"
-          ? ("private" as const)
-          : old?.reviewStatus || ("private" as const),
+      reviewStatus: old?.reviewStatus || ("pending" as const),
     };
     if (old) {
       await ctx.db.patch(old._id, data);
       return old._id;
     }
-    return ctx.db.insert("profiles", data);
+    const profileId = await ctx.db.insert("profiles", {
+      ...data, reviewRequestedAt: now, reviewNotification: "pending",
+    });
+    await ctx.scheduler.runAfter(0, ref<"action", any>("profileReviewEmail:notify"), {
+      profileId, requestedAt: now, attempt: 0,
+    });
+    return profileId;
   },
 });
 export const uploadUrl = mutation({
@@ -276,9 +284,19 @@ export const requestReview = mutation({
       .withIndex("by_owner", (q) => q.eq("ownerId", id))
       .unique();
     if (!p) throw new Error("Save your profile first.");
+    if (p.reviewStatus === "pending") return p.handle;
+    if (p.reviewRequestedAt && Date.now() - p.reviewRequestedAt < 60000)
+      throw new Error("Please wait a minute before requesting another review.");
+    const requestedAt = Math.max(Date.now(), (p.reviewRequestedAt || 0) + 1);
     await ctx.db.patch(p._id, {
       reviewStatus: "pending",
       publicSnapshot: undefined,
+      reviewRequestedAt: requestedAt,
+      reviewNotification: "pending",
+      reviewNote: undefined,
+    });
+    await ctx.scheduler.runAfter(0, ref<"action", any>("profileReviewEmail:notify"), {
+      profileId: p._id, requestedAt, attempt: 0,
     });
     return p.handle;
   },
@@ -347,6 +365,17 @@ export const unpublish = mutation({
       });
   },
 });
+export const deleteProfile = mutation({
+  args: { confirmation: v.string() },
+  handler: async (ctx, { confirmation }) => {
+    const ownerId = await getAuthUserId(ctx);
+    if (!ownerId) throw new Error('Sign in to delete your profile.');
+    const p = await ctx.db.query('profiles').withIndex('by_owner', q => q.eq('ownerId', ownerId)).unique();
+    if (!p || p.official || confirmation !== p.handle) throw new Error('Type your exact profile handle to confirm deletion.');
+    await ctx.db.delete(p._id);
+    await ctx.scheduler.runAfter(0, ref<'mutation', any>('profileCleanup:run'), { ownerId, before: Date.now() });
+  },
+});
 export const reviewQueue = internalQuery({
   args: {},
   handler: async (ctx) =>
@@ -370,6 +399,70 @@ export const reviewQueue = internalQuery({
         ),
       })),
     ),
+});
+async function reviewer(ctx: any) {
+  const id = await getAuthUserId(ctx);
+  if (!id) return null;
+  const user = await ctx.db.get(id);
+  const allowed = (process.env.PROFILE_REVIEWER_EMAILS || process.env.BUG_EDITOR_EMAILS || "")
+    .split(",").map(email => email.trim().toLowerCase()).filter(Boolean);
+  return user?.emailVerificationTime && allowed.includes(user.email?.toLowerCase() || "") ? id : null;
+}
+export const canReview = query({ args: {}, handler: async ctx => !!await reviewer(ctx) });
+export const pendingReviews = query({
+  args: {},
+  handler: async ctx => {
+    if (!await reviewer(ctx)) throw new Error("Only verified profile reviewers can open this queue.");
+    const rows = await ctx.db.query("profiles")
+      .withIndex("by_review", q => q.eq("reviewStatus", "pending")).take(100);
+    return Promise.all(rows.map(async p => ({
+      ...await snapshot(ctx, p),
+      _id: p._id, updatedAt: p.updatedAt, reviewRequestedAt: p.reviewRequestedAt,
+      reviewNotification: p.reviewNotification,
+      avatarUrl: p.avatarId ? await ctx.storage.getUrl(p.avatarId) : null,
+      backgroundUrl: p.backgroundId ? await ctx.storage.getUrl(p.backgroundId) : null,
+      favorites: await Promise.all(p.favorites.map(async f => ({
+        name: (await ctx.db.get(f.characterId))?.name || "Character",
+        imageUrl: f.imageId ? await ctx.storage.getUrl(f.imageId) : null,
+      }))),
+    })));
+  },
+});
+export const decideReview = mutation({
+  args: { profileId: v.id("profiles"), expectedUpdatedAt: v.number(),
+    expectedRequestedAt: v.optional(v.number()), approve: v.boolean(), note: v.string() },
+  handler: async (ctx, a) => {
+    const reviewerId = await reviewer(ctx);
+    if (!reviewerId) throw new Error("Only verified profile reviewers can make this decision.");
+    const p = await ctx.db.get(a.profileId);
+    if (!p || p.reviewStatus !== "pending" || p.updatedAt !== a.expectedUpdatedAt || p.reviewRequestedAt !== a.expectedRequestedAt)
+      throw new Error("Profile changed; review the current draft.");
+    if (p.ownerId === reviewerId) throw new Error("Another reviewer must review your own profile.");
+    if (a.note.trim().length > 500 || (!a.approve && !a.note.trim()))
+      throw new Error("Explain the requested changes in up to 500 characters.");
+    await ctx.db.patch(p._id, {
+      reviewStatus: a.approve ? "approved" : "rejected",
+      publicSnapshot: a.approve ? await snapshot(ctx, p) : undefined,
+      reviewNote: a.approve ? undefined : a.note.trim(),
+    });
+  },
+});
+export const reviewNotificationInfo = internalQuery({
+  args: { profileId: v.id("profiles"), requestedAt: v.number() },
+  handler: async (ctx, a) => {
+    const p = await ctx.db.get(a.profileId);
+    if (!p || p.reviewStatus !== "pending" || p.reviewRequestedAt !== a.requestedAt || p.reviewNotification === "sent") return null;
+    return { handle: p.handle };
+  },
+});
+export const markReviewNotification = internalMutation({
+  args: { profileId: v.id("profiles"), requestedAt: v.number(),
+    status: v.union(v.literal("pending"), v.literal("sent"), v.literal("failed"), v.literal("unconfigured")) },
+  handler: async (ctx, a) => {
+    const p = await ctx.db.get(a.profileId);
+    if (p?.reviewRequestedAt === a.requestedAt && p.reviewNotification !== "sent")
+      await ctx.db.patch(p._id, { reviewNotification: a.status });
+  },
 });
 export const withdraw = internalMutation({
   args: { profileId: v.id("profiles") },

@@ -7,6 +7,7 @@ import {
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { publicPost, visiblePost } from './chronicleVisibility';
+import { memberIdentity, activeMember } from './communityAccess';
 const games = [
   "Any tabletop game",
   "Savage Worlds",
@@ -158,6 +159,7 @@ export const tomes = query({
       const links = (p.publicSnapshot.links || []).filter(
         (l: any) => l.kind === "shop" && /^https?:\/\//i.test(l.url),
       );
+      if (r.visibility === 'private' && (!member || member.status === 'invited')) continue;
       result.push({
         _id: r._id,
         name: r.name,
@@ -173,31 +175,8 @@ export const tomes = query({
 });
 export const createTome = mutation({
   args: { name: v.string(), description: v.string() },
-  handler: async (ctx, args) => {
-    const ownerId = await identity(ctx);
-    if (!(await author(ctx, ownerId)))
-      throw new Error("Complete public-profile review first.");
-    const name = args.name.trim(),
-      description = args.description.trim();
-    if (!name || name.length > 70 || description.length > 400)
-      throw new Error("Add a name and short description.");
-    if (
-      (
-        await ctx.db
-          .query("chronicleTomes")
-          .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-          .take(10)
-      ).length >= 10
-    )
-      throw new Error("You can create up to 10 Tomes.");
-    const tomeId = await ctx.db.insert("chronicleTomes", {
-      ownerId,
-      name,
-      description,
-      createdAt: Date.now(),
-    });
-    await ctx.db.insert("chronicleMembers", { tomeId, ownerId });
-    return tomeId;
+  handler: async () => {
+    throw new Error('Found a Guild from the Guilds page and invite three other reviewed profiles.');
   },
 });
 export const join = mutation({
@@ -213,12 +192,15 @@ export const join = mutation({
     )
       throw new Error("Tome unavailable.");
     if (t.ownerId === ownerId) return;
+    if (t.visibility) await memberIdentity(ctx);
     const old = await ctx.db
       .query("chronicleMembers")
       .withIndex("by_tome_owner", (q) =>
         q.eq("tomeId", id).eq("ownerId", ownerId),
       )
       .unique();
+    if (t.visibility === 'private' && !old) throw new Error("An invitation is required for this private Guild.");
+    if (enabled && old?.status === 'invited') throw new Error('Accept your invitation from the Guild page.');
     if (enabled && !old)
       await ctx.db.insert("chronicleMembers", { tomeId: id, ownerId });
     if (!enabled && old) await ctx.db.delete(old._id);
@@ -292,6 +274,33 @@ export const eligibility = query({
     return !!(id && (await author(ctx, id)));
   },
 });
+export const profileFollowing = query({ args: { handle: v.string() }, handler: async (ctx, { handle }) => {
+  const viewer = await getAuthUserId(ctx);
+  const p = await ctx.db.query('profiles').withIndex('by_handle',q => q.eq('handle',handle)).unique();
+  if (!p || (viewer !== p.ownerId && !await author(ctx,p.ownerId)) || await blocked(ctx,viewer,p.ownerId)) return [];
+  const rows = await ctx.db.query('chronicleFollows').withIndex('by_owner',q => q.eq('ownerId',p.ownerId)).take(200), result = [];
+  for (const row of rows) {
+    const target = await author(ctx,row.targetId);
+    if (!target || (await preferences(ctx,row.targetId))?.allowFollowers === false || await blocked(ctx,viewer,row.targetId) || await blocked(ctx,p.ownerId,row.targetId)) continue;
+    result.push({ handle: target.handle, name: target.publicSnapshot.displayName || target.handle, official: target.official === 'bug' });
+  }
+  return result;
+} });
+export const share = mutation({ args: { id: v.id('chroniclePosts') }, handler: async (ctx, { id }) => {
+  const ownerId = await identity(ctx);
+  if (!await author(ctx, ownerId)) throw new Error('Complete profile review before sharing to Around the Fire.');
+  const row = await ctx.db.get(id), publicData = row ? await publicPost(ctx, row, ownerId) : null;
+  if (!publicData?.public) throw new Error('Only available public posts can be shared.');
+  const originalId = row!.originalPostId || id;
+  const original = await ctx.db.get(originalId);
+  if (!original || !await publicPost(ctx, original, null)) throw new Error('This public post is unavailable.');
+  const old = await ctx.db.query('chroniclePosts').withIndex('by_original_owner', q => q.eq('originalPostId', originalId).eq('ownerId', ownerId)).unique();
+  if (old && !old.hidden) return old._id;
+  const recent = await ctx.db.query('chroniclePosts').withIndex('by_owner', q => q.eq('ownerId', ownerId)).order('desc').take(20);
+  if (recent.some(p => Date.now()-p.createdAt < 30000) || recent.filter(p => Date.now()-p.createdAt < 86400000).length >= 20) throw new Error('Please wait between public posts.');
+  if (old) { await ctx.db.patch(old._id,{hidden:false,createdAt:Date.now()}); return old._id; }
+  return ctx.db.insert('chroniclePosts',{ownerId,originalPostId:originalId,title:'',body:'',game:original.game,kind:'Shared update',toastCount:0,hidden:false,createdAt:Date.now()});
+} });
 export const publish = mutation({
   args: {
     title: v.string(),
@@ -321,20 +330,17 @@ export const publish = mutation({
     )
       throw new Error("Check your title, story, and category.");
     if (args.tomeId) {
+      const membership = await ctx.db.query('chronicleMembers').withIndex('by_tome_owner', q => q.eq('tomeId', args.tomeId!).eq('ownerId', ownerId)).unique();
       const t = await ctx.db.get(args.tomeId);
       if (
         !t ||
         t.hidden ||
         !(await author(ctx, t.ownerId)) ||
         (await blocked(ctx, ownerId, t.ownerId)) ||
-        !(await ctx.db
-          .query("chronicleMembers")
-          .withIndex("by_tome_owner", (q) =>
-            q.eq("tomeId", args.tomeId!).eq("ownerId", ownerId),
-          )
-          .unique())
+        !membership || membership.status === 'invited'
       )
-        throw new Error("Join this Tome before posting.");
+        throw new Error("Join this Guild before posting.");
+      if (t.visibility) await activeMember(ctx, args.tomeId);
     }
     const latest = await ctx.db
       .query("chroniclePosts")

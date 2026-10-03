@@ -34,4 +34,6 @@ test('invalid or inaccessible storage does not prevent rendering or local overri
 test('HTML and clean routes resolve to the correct workspace',()=>{
   for(const [path,workspace] of [['/profile.html','profile'],['/chronicles','community'],['/builder/','world'],['/support','support'],['/pathfinder','characters']]) assert.equal(boot({path}).root.dataset.workspace,workspace);
   assert.equal(boot({path:'/',search:'?game=savage'}).root.dataset.workspace,'characters');
+  assert.equal(boot({path:'/settings.html'}).root.dataset.workspace,'settings');
+  assert.equal(boot({path:'/p/a-public-post'}).root.dataset.workspace,'community');
 });

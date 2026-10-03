@@ -3,6 +3,7 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [{ "source": "/p/:post", "destination": "/api/share?post=:post" }],
   "headers": [
     {
       "source": "/sw.js",

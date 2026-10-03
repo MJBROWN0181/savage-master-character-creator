@@ -15,6 +15,8 @@ import "./profile.css";
 import {FriendsArea,FriendActions} from "./profile-friends.jsx";
 import { BugGuide } from './bug-mascot.jsx';
 import { BugProfile } from './bug-profile.jsx';
+import { FollowingList, ProfilePosts, PostComposer } from './community-ui.jsx';
+import './community.css';
 const blank = {
   handle: `table-${crypto.randomUUID().slice(0, 8)}`,
   displayName: "",
@@ -73,7 +75,7 @@ function ProfileCard({ p, characters = [] }) {
   };
   return (
     <div
-      className={`profile-card bg-${p.appearance.background} accent-${p.appearance.accent} font-${p.appearance.font} layout-${p.appearance.layout}`}
+      className="profile-card bg-midnight accent-gold font-classic layout-balanced"
       style={
         p.backgroundUrl
           ? {
@@ -107,7 +109,7 @@ function ProfileCard({ p, characters = [] }) {
         </div>
       </div>
       <div className="profile-sections">
-        {p.appearance.sections.map(
+        {blank.appearance.sections.map(
           (s) =>
             content[s] && (
               <section key={s}>
@@ -149,7 +151,7 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
     [guided, setGuided] = useState(!initial);
   const steps = [
     ["about", "About you"],
-    ["style", "Appearance"],
+    ["style", "Background"],
     ["showcase", "Showcase"],
     ["links", "Links"],
     ["share", "Review & save"],
@@ -263,18 +265,9 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
     }));
     for (const k of ["avatarId", "backgroundId"])
       if (draft[k]) payload[k] = draft[k];
-    await save({ ...payload, ageConfirmed: age });
+    await save({ ...payload, ageConfirmed: age, communityAccepted: policy });
     setSavedFingerprint(fingerprint(draft));
     if (!initial) onCreated();
-  }
-  const appearance = (k, value) =>
-    field("appearance", { ...draft.appearance, [k]: value });
-  function move(i, step) {
-    const sections = [...draft.appearance.sections],
-      j = i + step;
-    if (j < 0 || j >= sections.length) return;
-    [sections[i], sections[j]] = [sections[j], sections[i]];
-    appearance("sections", sections);
   }
   return (
     <>
@@ -338,10 +331,10 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
               {
                 [
                   "Start with a name and picture, or leave them for later. Your Player and GM roles share this profile.",
-                  "Choose your colors, font, and layout. Upload your own background to make this page yours.",
+                  "Upload a background of your choice. Your personal page keeps the same welcoming Savage Master theme.",
                   "Choose the characters and player memories you want visitors to see. Private GM notes stay private.",
                   "Add your social pages, artwork shop, or marketplace listings. These are optional.",
-                  "Preview your page, confirm your age, and save privately. Request sharing only when you are ready.",
+                  initial ? "Preview your changes and save your draft. Submit for review when you want to update your public page." : "Preview your page, confirm your age, and accept the community rules. I'll submit your profile for review when you finish setup.",
                 ][step]
               }
           </BugGuide>
@@ -448,87 +441,7 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
             </label>
           </div>
         )}
-        {tab === "style" && (
-          <div
-            role="tabpanel"
-            id="panel-style"
-            aria-labelledby="tab-style"
-            className="profile-tab-panel"
-          >
-            {" "}
-            <fieldset>
-              <legend>Your page style</legend>
-              {Object.entries({
-                background: ["midnight", "forest", "parchment"],
-                accent: ["gold", "teal", "rose"],
-                font: ["classic", "modern", "book"],
-                layout: ["balanced", "stacked", "showcase"],
-              }).map(([k, options]) => (
-                <label key={k}>
-                  {k[0].toUpperCase() + k.slice(1)}
-                  <select
-                    value={draft.appearance[k]}
-                    onChange={(e) => appearance(k, e.target.value)}
-                  >
-                    {options.map((o) => (
-                      <option key={o}>{o}</option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-              <p className="upload-hint">
-                Use your own art, a favorite landscape, or a tabletop photo.
-                PNG, JPEG, or WebP · up to 4 MB. Your picture is softened behind
-                the page so your story stays readable.
-              </p>
-              <label>
-                Upload your own background
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  disabled={busy}
-                  onChange={(e) => upload(e.target.files[0], "background")}
-                />
-              </label>
-              {draft.backgroundId && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraft((d) => ({
-                      ...d,
-                      backgroundId: undefined,
-                      backgroundUrl: null,
-                    }))
-                  }
-                >
-                  Remove background
-                </button>
-              )}
-              <p>Arrange your sections</p>
-              {draft.appearance.sections.map((s, i) => (
-                <div className="order-row" key={s}>
-                  <span>{titles[s]}</span>
-                  <button
-                    type="button"
-                    disabled={i === 0}
-                    onClick={() => move(i, -1)}
-                    aria-label={`Move ${titles[s]} up`}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    disabled={i === 4}
-                    onClick={() => move(i, 1)}
-                    aria-label={`Move ${titles[s]} down`}
-                  >
-                    ↓
-                  </button>
-                </div>
-              ))}
-            </fieldset>
-          </div>
-        )}
+        {tab === "style" && <div role="tabpanel" id="panel-style" aria-labelledby="tab-style" className="profile-tab-panel"><h3>Your personal background</h3><p>Use your own art, a favorite landscape, or a tabletop photo. PNG, JPEG, or WebP up to 4 MB. Your picture is softened so your page stays readable.</p><label>Upload your background<input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e=>upload(e.target.files[0],"background")}/></label>{draft.backgroundId && <button type="button" onClick={()=>setDraft(d=>({...d,backgroundId:undefined,backgroundUrl:null}))}>Remove background</button>}<p>Change the site's light or dark appearance in <a href="/settings#appearance">Settings</a>.</p></div>}
         {tab === "showcase" && (
           <div
             role="tabpanel"
@@ -775,23 +688,23 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
               after approval.
             </label>
             <button
-              disabled={busy || !policy}
+              disabled={busy || !policy || (!initial && !age)}
               onClick={() =>
                 run(async () => {
                   await persist();
-                  await review({});
+                  if (initial) await review({});
                   onStatus(
                     "Submitted for review. Your profile is private until approved.",
                   );
                 })
               }
             >
-              Save & request public sharing
+              {initial ? "Save & request public sharing" : "Create profile & submit for review"}
             </button>
             {initial && (
               <>
                 <p>
-                  Sharing status: {initial.reviewStatus}. Editing an approved
+                  Sharing status: {initial.reviewStatus}. Editing a pending profile keeps it in the review queue. Editing an approved
                   profile leaves its previously reviewed version public until
                   another review.
                 </p>
@@ -849,16 +762,21 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
                     );
                     return;
                   }
+                  if (!initial && !policy) {
+                    setTab("share");
+                    onStatus("Accept the community rules in Review & save to submit your profile for review.");
+                    return;
+                  }
                   run(async () => {
                     await persist();
                     setGuided(false);
                     onStatus(
-                      initial ? "Private draft saved. Your profile is ready to preview." : "Your profile is saved. Let's show you around.",
+                      initial ? initial.reviewStatus === "pending" ? "Changes saved. Your profile is still awaiting review." : "Private draft saved. Your profile is ready to preview." : "Profile submitted for review. You can post in Chronicles after approval. Let's show you around.",
                     );
                   });
                 }}
               >
-                {busy ? "Saving..." : initial ? "Save private draft" : "Save profile & show me around"}
+                {busy ? "Saving..." : initial ? "Save draft" : "Finish setup & submit for review"}
               </button>
             )}
           </div>
@@ -869,6 +787,52 @@ function Editor({ initial, characters, journals, onStatus, onCreated }) {
     </>
   );
 }
+export function ProfileReviewStatus({ profile }) {
+  return <section className="profile-review-status" aria-label="Chronicles access">
+    <h2>{profile.reviewStatus === 'approved' ? 'Your profile is approved' : profile.reviewStatus === 'pending' ? 'Awaiting profile review' : profile.reviewStatus === 'rejected' ? 'Your profile needs changes' : 'Your profile is private'}</h2>
+    <p>{profile.reviewStatus === 'approved' ? 'You can post and share updates in Chronicles.' : profile.reviewStatus === 'pending' ? 'Bug has placed your profile in the review queue. Approval will enable your public profile and Chronicles posting. You can explore the site while you wait.' : profile.reviewStatus === 'rejected' ? 'Update your profile, then request another review from Review & save in your settings.' : 'Request review from Review & save in your profile settings to enable public sharing and Chronicles posting.'}</p>
+    {profile.reviewStatus === 'rejected' && profile.reviewNote && <blockquote>{profile.reviewNote}</blockquote>}
+    <a href="/chronicles">{profile.reviewStatus === 'approved' ? 'Open Chronicles' : 'Browse public Chronicles'}</a>
+  </section>;
+}
+function ReviewCard({ profile, onStatus }) {
+  const [note, setNote] = useState(''), [checked, setChecked] = useState(false), [busy, setBusy] = useState(false);
+  const decide = useMutation(ref('profiles:decideReview'));
+  async function decision(approve) {
+    setBusy(true);
+    try {
+      await decide({ profileId: profile._id, expectedUpdatedAt: profile.updatedAt, expectedRequestedAt: profile.reviewRequestedAt, approve, note });
+      onStatus(approve ? `@${profile.handle} approved. Chronicles posting is enabled.` : `Changes requested from @${profile.handle}.`);
+    } catch (error) {
+      onStatus(error.message.includes('Profile changed') ? 'This profile changed. Review the refreshed draft before deciding.' : error.message.includes('own profile') ? 'Another reviewer must review your own profile.' : 'Unable to save this decision. Check your reviewer access and try again.');
+    } finally { setBusy(false); }
+  }
+  return <article className="profile-review-item">
+    <p className="profile-eyebrow">@{profile.handle} / Requested {new Date(profile.reviewRequestedAt || profile.updatedAt).toLocaleString()}</p>
+    <ProfileCard p={profile} />
+    <p className="profile-review-delivery">Email notice: {profile.reviewNotification || 'No notice recorded'}</p>
+    <label className="check"><input type="checkbox" checked={checked} disabled={busy} onChange={e => setChecked(e.target.checked)} />I reviewed all profile text, images, links, and selected excerpts for the community rules.</label>
+    <label>Note to the player when requesting changes<textarea maxLength={500} value={note} disabled={busy} onChange={e => setNote(e.target.value)} /></label>
+    <div className="profile-owner-actions">
+      <button type="button" disabled={busy || !checked} onClick={() => decision(true)}>Approve profile</button>
+      <button type="button" className="secondary" disabled={busy || !checked || !note.trim()} onClick={() => decision(false)}>Request changes</button>
+    </div>
+  </article>;
+}
+function ProfileReviews({ onStatus }) {
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  const allowed = useQuery(ref('profiles:canReview'), isAuthenticated ? {} : 'skip');
+  const rows = useQuery(ref('profiles:pendingReviews'), allowed === true ? {} : 'skip');
+  return <section className="profile-reviews">
+    <a href="/profile">Back to my profile</a>
+    <h1>Profile review queue</h1>
+    <p>Review each player's chosen public details before enabling Chronicles posting. Check for explicit imagery, hate, harassment, threats, scams, exposed private information, and rights to uploaded material.</p>
+    {isLoading ? <p>Checking account.</p> : !isAuthenticated ? <><p>Sign in with your authorized reviewer account.</p><CharacterAccount accountOnly /></> : allowed === undefined ? <p>Checking reviewer access.</p> : !allowed ? <p>This queue is available to authorized, verified reviewers.</p> : rows === undefined ? <p>Opening the review queue.</p> : <>
+      <p>{rows.length ? `${rows.length} ${rows.length === 1 ? 'profile' : 'profiles'} awaiting review${rows.length === 100 ? ' (showing the first 100)' : ''}.` : 'No profiles are waiting for review.'}</p>
+      {rows.map(profile => <ReviewCard key={`${profile._id}:${profile.updatedAt}:${profile.reviewRequestedAt}`} profile={profile} onStatus={onStatus} />)}
+    </>}
+  </section>;
+}
 export function WelcomeTour({ onFinish, guest = false }) {
   const [step, setStep] = useState(0);
   const heading = React.useRef(null);
@@ -877,7 +841,7 @@ export function WelcomeTour({ onFinish, guest = false }) {
     ["Your heroes start here", "Create and save characters for Savage Worlds, Dungeons & Dragons 5e, and Pathfinder 2e. Your account keeps them together.", [["Savage Worlds", "/?game=savage"], ["Dungeons & Dragons 5e", "/dnd"], ["Pathfinder 2e", "/pathfinder"]]],
     ["Bring your table together", "Create a campaign, invite your party, and prepare your next adventure. Keep scenes, party details, and private Game Master notes together.", [["Campaigns", "/campaigns"]]],
     ["Keep the memories", "Write player journals in your campaigns and revisit your adventures in Chronicles. Choose favorite characters and journal excerpts to showcase on your profile.", [["Chronicles", "/chronicles"]]],
-    ["Make yourself at home", "Your profile is your starting point. Customize your page and use Friends below to connect with the people at your table.", [["Bug's official updates", "/profile?user=bug"], ["Support", "/support"]]],
+    ["Make yourself at home", "Your profile is your starting point. Upload your own background, connect your social accounts, and use Friends below to connect with the people at your table.", [["Bug's official updates", "/profile?user=bug"], ["Support", "/support"]]],
   ];
   const [title, description, links] = stops[step];
   return <section className="profile-tour" aria-labelledby="tour-title">
@@ -902,10 +866,11 @@ export function WelcomeTour({ onFinish, guest = false }) {
 export function App() {
   const { isAuthenticated, isLoading } = useConvexAuth(),
     [status, setStatus] = useState("");
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(() => new URLSearchParams(location.search).get("edit") === "1");
   const [tour, setTour] = useState(() => new URLSearchParams(location.search).get('tour') === '1');
   const [entry, setEntry] = useState(() => new URLSearchParams(location.search).get("entry") === "signUp" ? "signUp" : "signIn");
   const handle = new URLSearchParams(location.search).get("user");
+  const reviews = new URLSearchParams(location.search).get('reviews') === '1';
   useEffect(() => {
     if (!isAuthenticated) { setEditing(false); return; }
     const cleanUrl = new URL(location.href);
@@ -914,7 +879,7 @@ export function App() {
   }, [isAuthenticated]);
   const mine = useQuery(
       ref("profiles:mine"),
-      isAuthenticated && !handle ? {} : "skip",
+      isAuthenticated && !handle && !reviews ? {} : "skip",
     ),
     publicProfile = useQuery(
       ref("profiles:publicProfile"),
@@ -922,13 +887,14 @@ export function App() {
     ),
     characters = useQuery(
       ref("characters:list"),
-      isAuthenticated && !handle ? {} : "skip",
+      isAuthenticated && !handle && !reviews ? {} : "skip",
     ),
     journals = useQuery(
       ref("profiles:journalChoices"),
-      isAuthenticated && !handle ? {} : "skip",
+      isAuthenticated && !handle && !reviews ? {} : "skip",
     ),
     report = useMutation(ref("profiles:report"));
+  const canReview = useQuery(ref('profiles:canReview'), isAuthenticated ? {} : 'skip');
   const tourRequested = React.useRef(new URLSearchParams(location.search).get('tour') === '1');
   useEffect(() => {
     if (!tourRequested.current || !isAuthenticated || !mine) return;
@@ -942,15 +908,17 @@ export function App() {
   }
   return (
     <main>
-{(handle || isAuthenticated) && <><nav className="game-switch" aria-label="Game system"><a href="/?game=savage">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/?game=savage">Characters</a><a href="/campaigns">Campaigns</a><a href="/builder">Master Builder</a><a href="/chronicles">Chronicles</a><a href="/profile" aria-current="page">My Profile</a></nav></>}
-      {handle === 'bug' ? <BugProfile /> : handle ? (
+{(handle || isAuthenticated) && <><nav className="game-switch" aria-label="Game system"><a href="/?game=savage">Savage Worlds</a><a href="/dnd">Dungeons &amp; Dragons 5e</a><a href="/pathfinder">Pathfinder 2e</a></nav><nav className="workspace-nav" aria-label="Workspace"><a href="/">Home</a><a href="/create">Create a character</a><a href="/campaigns">Campaigns</a><a href="/builder">Master Builder</a><a href="/chronicles">Around the Fire</a><a href="/profile" aria-current="page">My Profile</a></nav></>}
+      {reviews ? <ProfileReviews onStatus={setStatus} /> : handle === 'bug' ? <BugProfile /> : handle ? (
         <>
           {publicProfile === undefined ? (
             <p>Opening profile…</p>
           ) : publicProfile ? (
             <>
               <ProfileCard p={publicProfile} />
+              <FollowingList handle={handle} />
               <FriendActions handle={handle}/>
+              <ProfilePosts handle={handle} />
               <section>
                 <h2>Keep our tables welcoming</h2>
                 <p>
@@ -1007,19 +975,24 @@ export function App() {
             ) : (
               <>
                 {tour && <WelcomeTour onFinish={finishTour} />}
+                {mine && <ProfileReviewStatus profile={mine} />}
+                {canReview === true && <p><a href="/profile?reviews=1">Open profile review queue</a></p>}
                 {mine && !editing ? <>
                   <div id="my-profile" tabIndex={-1}>
                     <ProfileCard p={mine} characters={characters} />
                   </div>
                   <nav className="sm-profile-paths" aria-label="Your adventure">
-                    <a href="/?game=savage"><strong>Your heroes</strong><small>Create a character or return to a sheet.</small></a>
+                    <a href="/create"><strong>Your heroes</strong><small>Create a character or return to a sheet.</small></a>
                     <a href="/campaigns?view=journal"><strong>Your journal</strong><small>Keep the moments that make your story.</small></a>
-                    <a href="/chronicles"><strong>Meet at Chronicles</strong><small>Find friends, shared stories, and community tomes.</small></a>
+                    <a href="/chronicles"><strong>Meet Around the Fire</strong><small>Find friends, shared stories, and community tomes.</small></a>
                   </nav>
                   <div className="profile-owner-actions">
-                    <button type="button" onClick={() => setEditing(true)}>Customize my profile</button>
+                    <button type="button" onClick={() => setEditing(true)}>Edit profile & background</button>
                     <button type="button" className="secondary" onClick={() => setTour(true)}>Show me around</button>
                   </div>
+                  <FollowingList handle={mine.handle} />
+                  <PostComposer />
+                  <ProfilePosts handle={mine.handle} />
                 </> : <>
                   {mine && <button type="button" className="secondary" onClick={() => {
                     if (!confirm("Close profile settings? Any unsaved edits will be discarded.")) return;
@@ -1033,7 +1006,7 @@ export function App() {
                     onCreated={() => { setEditing(false); setTour(true); }}
                   />
                 </>}
-                {mine && <FriendsArea />}
+                {mine && <div id="friends"><FriendsArea /></div>}
                 <CharacterAccount accountOnly />
               </>
             )

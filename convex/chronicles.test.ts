@@ -165,12 +165,13 @@ test("following can be disabled by the storyteller; mutual blocks hide posts and
     b.mutation(ref<"mutation">("chronicles:toast"), { id }),
   ).rejects.toThrow("unavailable");
 });
-test("Tomes require membership to post; leaving removes posting access and closing a Tome hides its tales", async () => {
-  const { t, a, b } = await fixture(),
-    tomeId: any = await a.mutation(ref<"mutation">("chronicles:createTome"), {
-      name: "The Silver Lantern",
-      description: "Our tabletop group",
-    });
+test("existing Tomes retain membership checks; new groups must use Guild founding invitations", async () => {
+  const { t, a, b, ids } = await fixture();
+  await expect(a.mutation(ref<'mutation'>('chronicles:createTome'),{name:'New group',description:''})).rejects.toThrow('invite three');
+  const tomeId: any = await t.run(async ctx => {
+    const id = await ctx.db.insert('chronicleTomes',{ownerId:ids[0],name:'The Silver Lantern',description:'Our tabletop group',createdAt:Date.now()});
+    await ctx.db.insert('chronicleMembers',{tomeId:id,ownerId:ids[0]});return id;
+  });
   await expect(
     b.mutation(ref<"mutation">("chronicles:publish"), { ...post, tomeId }),
   ).rejects.toThrow("Join");

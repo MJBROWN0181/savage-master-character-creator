@@ -68,7 +68,7 @@ const draft = {
     layout: "balanced",
     sections: ["about", "games", "memory", "characters", "journal"],
   },
-  ageConfirmed: true,
+  ageConfirmed: true, communityAccepted: true,
 };
 const save = ref<"mutation">("profiles:save"),
   mine = ref<"query">("profiles:mine"),
@@ -160,6 +160,7 @@ test("review gates public sharing and freezes approved excerpts without exposing
   expect(JSON.stringify(publicData)).not.toContain("private@test.example");
   await owner.mutation(save, { ...draft, bio: "Unreviewed change" });
   expect((await t.query(read, { handle: draft.handle })).bio).toBe("Hello");
+  await t.run(ctx => ctx.db.patch(profileId, { reviewRequestedAt: Date.now() - 61000 }));
   await owner.mutation(review, {});
   p = await owner.query(mine, {});
   await owner.mutation(save, { ...draft, bio: "Changed after submission" });

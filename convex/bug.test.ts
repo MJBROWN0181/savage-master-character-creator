@@ -3,7 +3,7 @@ import { test, expect, vi, afterEach } from 'vitest';
 import { makeFunctionReference as ref } from 'convex/server';
 import schema from './schema';
 const modules = import.meta.glob('./**/*.ts');
-const draft = { handle: 'player', displayName: 'Player', bio: 'Hello', games: [], memory: '', roles: [], links: [], favorites: [], highlights: [], appearance: { background: 'midnight', accent: 'gold', font: 'classic', layout: 'balanced', sections: ['about', 'games', 'memory', 'characters', 'journal'] }, ageConfirmed: true };
+const draft = { handle: 'player', displayName: 'Player', bio: 'Hello', games: [], memory: '', roles: [], links: [], favorites: [], highlights: [], appearance: { background: 'midnight', accent: 'gold', font: 'classic', layout: 'balanced', sections: ['about', 'games', 'memory', 'characters', 'journal'] }, ageConfirmed: true, communityAccepted: true };
 afterEach(() => vi.unstubAllEnvs());
 async function fixture() {
   const t = convexTest(schema, modules);

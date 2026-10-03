@@ -37,7 +37,7 @@ async function editor(ctx: any) {
 function text(title: string, body: string, key: string) {
   if (!title.trim() || title.trim().length > 100 || !body.trim() || body.trim().length > 2000 || !/^[\w-]{8,100}$/.test(key)) throw new ConvexError('Use a title up to 100 characters and an update up to 2,000 characters.');
 }
-async function publish(ctx: any, title: string, body: string, key: string, publishedBy?: any) {
+export async function publishAsBug(ctx: any, title: string, body: string, key: string, publishedBy?: any, game = 'Any tabletop game', kind = 'Official update') {
   text(title, body, key);
   const bug = await ensure(ctx);
   const old = await ctx.db.query('chroniclePosts').withIndex('by_publication', (q: any) => q.eq('publicationKey', key)).unique();
@@ -46,12 +46,12 @@ async function publish(ctx: any, title: string, body: string, key: string, publi
     if (old.ownerId !== bug.ownerId || (!/^github-[a-f0-9]{64}$/.test(key) && (old.title !== title.trim() || old.body !== body.trim()))) throw new ConvexError('This update key already belongs to another post.');
     return old._id;
   }
-  return ctx.db.insert('chroniclePosts', { ownerId: bug.ownerId, title: title.trim(), body: body.trim(), game: 'Any tabletop game', kind: 'Official update', createdAt: Date.now(), toastCount: 0, hidden: false, publicationKey: key, publishedBy });
+  return ctx.db.insert('chroniclePosts', { ownerId: bug.ownerId, title: title.trim(), body: body.trim(), game, kind, createdAt: Date.now(), toastCount: 0, hidden: false, publicationKey: key, publishedBy });
 }
 export const ensureProfile = internalMutation({
   args: {}, handler: async ctx => {
     const bug = await ensure(ctx);
-    await publish(ctx, 'Meet Bug, keeper of the code', 'I’m Bug. Follow my Chronicles for official Savage Master updates and helpful tips. If something goes wrong, use the Bug button to reach support. Share these public updates with your table; your support tickets and private journals stay private.', 'bug-welcome-v1');
+    await publishAsBug(ctx, 'Meet Bug, keeper of the code', 'I’m Bug. Follow my Chronicles for official Savage Master updates and helpful tips. If something goes wrong, use the Bug button to reach support. Share these public updates with your table; your support tickets and private journals stay private.', 'bug-welcome-v1');
     return { handle: bug.handle, profileId: bug._id };
   },
 });
@@ -66,12 +66,12 @@ export const publishUpdate = mutation({
   handler: async (ctx, args) => {
     const id = await editor(ctx);
     if (!id) throw new ConvexError('Only verified site editors can publish as Bug.');
-    return publish(ctx, args.title, args.body, 'bug-' + args.requestId, id);
+    return publishAsBug(ctx, args.title, args.body, 'bug-' + args.requestId, id);
   },
 });
 export const publishInternal = internalMutation({
   args: { title: v.string(), body: v.string(), publicationKey: v.string() },
-  handler: (ctx, args) => publish(ctx, args.title, args.body, args.publicationKey),
+  handler: (ctx, args) => publishAsBug(ctx, args.title, args.body, args.publicationKey),
 });
 export const shareUpdate = mutation({
   args: { id: v.id('chroniclePosts') },

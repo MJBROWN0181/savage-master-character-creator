@@ -17,13 +17,19 @@ export async function visiblePost(ctx: any, post: any, viewer: any): Promise<any
   if (post.tomeId) {
     const tome = await ctx.db.get(post.tomeId);
     if (!tome || tome.hidden || !await reviewedAuthor(ctx, tome.ownerId) || await mutuallyBlocked(ctx, viewer, tome.ownerId)) return null;
+    if (tome.visibility === 'private') {
+      if (!viewer) return null;
+      const member = await ctx.db.query('chronicleMembers').withIndex('by_tome_owner', (q: any) => q.eq('tomeId', tome._id).eq('ownerId', viewer)).unique();
+      if (!member || member.status === 'invited') return null;
+    }
   }
   if (post.originalPostId) {
     const original = await ctx.db.get(post.originalPostId);
-    // Reposts point only to original Bug updates, never chains or arbitrary drafts.
+    // Reposts always refer directly to an original visible public post.
     if (!original || original.originalPostId) return null;
     const source = await visiblePost(ctx, original, viewer);
-    if (!source || source.author.official !== 'bug') return null;
+    if (!source) return null;
+    if (original.tomeId && (await ctx.db.get(original.tomeId))?.visibility === 'private') return null;
     return { post, author, source };
   }
   return { post, author, source: null };
@@ -34,9 +40,10 @@ export async function publicPost(ctx: any, row: any, viewer: any) {
   const { author: sharer, source } = visible;
   const post = source?.post || row, author = source?.author || sharer;
   const preferences = await ctx.db.query('chroniclePreferences').withIndex('by_owner', (q: any) => q.eq('ownerId', author.ownerId)).unique();
+  const tome = post.tomeId ? await ctx.db.get(post.tomeId) : null;
   return {
     _id: row._id, createdAt: row.createdAt, title: post.title, body: post.body, game: post.game, kind: post.kind,
-    toastCount: row.toastCount, originalPostId: row.originalPostId,
+    toastCount: row.toastCount, originalPostId: row.originalPostId, public: tome?.visibility !== 'private',
     author: { name: author.publicSnapshot.displayName || author.handle, handle: author.handle,
       official: author.official === 'bug' ? 'bug' : undefined,
       avatar: author.official === 'bug' ? '/images/art/the-bug.png' : author.publicSnapshot.avatarId ? await ctx.storage.getUrl(author.publicSnapshot.avatarId) : null },

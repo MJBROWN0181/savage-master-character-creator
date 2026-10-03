@@ -1,0 +1,11 @@
+# Bug realism pass
+
+The 3D study currently has no book or book light, and its reading control is removed. Upper arms have been rebuilt in a relaxed empty-handed pose. The previously rendered tome is preserved in `character-with-tome.js` for later work.
+
+The generated source texture is `material-atlas.png`, created with the built-in image-generation tool. Its four quadrants supply chitin, woven cloak, wing membrane and aged metal materials. The atlas is sampled into render-time GPU texture tiles; the original file is preserved. These are diffuse textures with subtle bump relief, not a scanned PBR material set. The model now has studio reflections, self-shadowing, less spherical facial geometry, smaller eyes with radial iris detail, and less prominent mouth and nose geometry.
+
+This remains a procedural 3D interpretation of the approved artwork. A high-fidelity cinematic replica would require a dedicated sculpt and hand-authored character textures.
+
+## Generation prompt
+
+Asset type: one square 2 by 2 material texture atlas for a realistic dark fantasy insect fairy 3D model. Four equal square quadrants, perfectly filling the entire image edge to edge, absolutely no gutters, labels, borders, objects, faces, limbs, diagrams or text. Each quadrant is a flat seamless repeating albedo material swatch under perfectly even neutral diffuse illumination, no directional shadows, no perspective, no shiny highlights baked in. TOP LEFT: organic dark petrol teal insect chitin with overlapping very fine irregular scales, natural pores, subtle olive patina and sparse worn brown flecks; realistic macro creature skin, muted and dark, not geometric chainmail. TOP RIGHT: worn charcoal teal woven wool cloak fabric, fine visible fibers, weathered uneven dye, soft frayed microscopic fibers, no broad folds. BOTTOM LEFT: delicate translucent pale smoky blue dragonfly wing membrane with tiny organic cellular texture and subtle amber mottling, NO thick veins because these are separate geometry; flat diffuse texture. BOTTOM RIGHT: aged dark antique bronze with softly tarnished gold worn edges and subtle scratches, realistic metal albedo. Natural restrained palette, physically plausible detail, cinematic practical creature materials, NOT cartoon, NOT illustration, NOT plastic or glitter. Texture material sheet only, no actual character or rendered spheres.
