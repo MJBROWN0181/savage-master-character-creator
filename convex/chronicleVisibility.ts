@@ -19,7 +19,7 @@ export async function visiblePost(ctx: any, post: any, viewer: any): Promise<any
     const tome = await ctx.db.get(post.tomeId);
     if (!tome || tome.hidden || !await reviewedAuthor(ctx, tome.ownerId) || await mutuallyBlocked(ctx, viewer, tome.ownerId)) return null;
     if (tome.visibility === 'private') {
-      if (!viewer) return null;
+      if (!viewer || (await ctx.db.get(viewer))?.communityPausedAt !== undefined) return null;
       const member = await ctx.db.query('chronicleMembers').withIndex('by_tome_owner', (q: any) => q.eq('tomeId', tome._id).eq('ownerId', viewer)).unique();
       if (!member || member.status === 'invited') return null;
     }

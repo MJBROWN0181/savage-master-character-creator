@@ -68,6 +68,8 @@ test('community pauses hide public profiles and block posting without deleting p
   await admin.mutation(ref<'mutation'>('moderation:setCommunityAccess'), { memberId: ids.member, paused: true });
   expect(await t.query(ref<'query'>('profiles:publicProfile'), { handle: 'member' })).toBeNull();
   expect(await member.query(ref<'query'>('chronicles:eligibility'), {})).toBe(false);
+  await expect(member.mutation(ref<'mutation'>('friends:request'), { handle: 'helper' })).rejects.toThrow('paused');
+  await expect(admin.mutation(ref<'mutation'>('friends:request'), { handle: 'member' })).rejects.toThrow('unavailable');
   await expect(member.mutation(ref<'mutation'>('chronicles:publish'), { title: 'Tale', body: 'Story', game: 'Any tabletop game', kind: 'Session tale', consent: true })).rejects.toThrow('review');
   expect((await member.query(ref<'query'>('profiles:mine'), {}) as any).bio).toBe('Hello');
   expect(await t.run(ctx => ctx.db.get(ids.member))).not.toBeNull();

@@ -11,6 +11,7 @@ export async function memberIdentity(ctx: any) {
   return id;
 }
 export async function guildState(ctx: any, guildId: any, viewer: any) {
+  if (viewer && (await ctx.db.get(viewer))?.communityPausedAt !== undefined) return null;
   const guild = await ctx.db.get(guildId);
   if (!guild || guild.hidden || !await reviewedAuthor(ctx, guild.ownerId) || await mutuallyBlocked(ctx, viewer, guild.ownerId)) return null;
   const members = await ctx.db.query('chronicleMembers').withIndex('by_tome_owner', (q: any) => q.eq('tomeId', guildId)).take(200);
