@@ -37,4 +37,6 @@ export function InstallPage() {
   </main>;
 }
 const host = document.getElementById('installRoot');
-if (host) createRoot(host).render(<InstallPage />);
+const root = host ? (import.meta.hot?.data.installRoot || createRoot(host)) : null;
+if (import.meta.hot && root) import.meta.hot.data.installRoot = root;
+root?.render(<InstallPage />);
