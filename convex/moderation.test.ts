@@ -37,6 +37,25 @@ test('owner initialization is internal and permanent; owner appoints admins by h
   expect(await admin.query(ref<'query'>('profiles:canReview'), {})).toBe(false);
   expect((await admin.query(ref<'query'>('profileFrames:mine'), {}) as any).available).not.toContain('admin');
 });
+test('only the protected owner can review their own profile; current revision and audit rules still apply', async () => {
+  const { t, owner, admin, member, ids } = await fixture();
+  await owner.mutation(ref<'mutation'>('profiles:setReviewerAccess'), { handle: 'helper', enabled: true, role: 'admin' });
+  const queue = ref<'query'>('profiles:pendingReviews'), decide = ref<'mutation'>('profiles:decideReview');
+  const ownerRows: any = await owner.query(queue, {});
+  const own = ownerRows.find((p: any) => p.handle === 'owner');
+  expect(own).toMatchObject({ isOwnProfile: true, canReviewOwnProfile: true });
+  const helperRows: any = await admin.query(queue, {});
+  const helper = helperRows.find((p: any) => p.handle === 'helper');
+  expect(helper).toMatchObject({ isOwnProfile: true, canReviewOwnProfile: false });
+  const args = (p: any) => ({ profileId: p._id, expectedUpdatedAt: p.updatedAt, expectedRequestedAt: p.reviewRequestedAt, approve: true, note: '' });
+  await expect(admin.mutation(decide, args(helper))).rejects.toThrow('own profile');
+  await expect(member.mutation(decide, args(own))).rejects.toThrow('verified profile reviewers');
+  await expect(owner.mutation(decide, { ...args(own), expectedUpdatedAt: own.updatedAt - 1 })).rejects.toThrow('changed');
+  await owner.mutation(decide, args(own));
+  expect(await t.query(ref<'query'>('profiles:publicProfile'), { handle: 'owner' })).toMatchObject({ handle: 'owner', bio: 'Hello' });
+  expect(await owner.query(ref<'query'>('chronicles:eligibility'), {})).toBe(true);
+  expect(await t.run(ctx => ctx.db.query('profileModerationLog').first())).toMatchObject({ reviewerId: ids.owner, action: 'approved' });
+});
 test('member and bug queues return only safe fields; guests and ordinary members have no access', async () => {
   const { t, ids, owner, admin, member } = await fixture();
   await owner.mutation(ref<'mutation'>('profiles:setReviewerAccess'), { handle: 'helper', enabled: true });

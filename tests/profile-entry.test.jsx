@@ -158,3 +158,10 @@ test('frame controls show only earned options, default on, and preserve the awar
   expect(hidden).not.toContain('founding-100-v1.webp');
   expect(hidden).toContain('<option value="founding-100">');
 });
+test('the protected owner can acknowledge and review their own profile', async () => {
+  const { ReviewCard } = await import('../profile.jsx');
+  const html = renderToStaticMarkup(<ReviewCard profile={{ _id: 'own', handle: 'owner', displayName: 'Owner', bio: '', games: [], roles: [], links: [], favorites: [], highlights: [], appearance: { sections: [] }, isOwnProfile: true, canReviewOwnProfile: true }} onStatus={() => {}} />);
+  expect(html).toContain('As the site owner, you can review and approve your own profile');
+  expect(html).not.toContain('Another authorized reviewer must review it');
+  expect(html).not.toMatch(/<input(?=[^>]*type="checkbox")(?=[^>]*disabled)[^>]*>/);
+});

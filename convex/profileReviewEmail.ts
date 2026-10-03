@@ -24,8 +24,8 @@ export const notify = internalAction({
       const { error } = await new Resend(key).emails.send({
         from, to: recipients,
         subject: `[Savage Master Profile review] @${info.handle}`,
-        text: `A player profile is waiting for review: @${info.handle}.\n\nReview this profile:\n${reviewUrl.href}\n\nSign in with your authorized reviewer account, check the profile, and approve it or request changes. Approval enables public sharing and Chronicles posting. The profile remains private until approved. Another reviewer must review your own profile.`,
-        html: `<h1>A profile is ready for your review</h1><p>@${safeHandle} submitted a profile for public sharing.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 20px;background:#23302d;color:#fff;border-radius:6px;text-decoration:none">Review profile</a></p><p>Sign in with your authorized reviewer account, check the profile, and approve it or request changes. The profile stays private until approved.</p><p>Another reviewer must review your own profile.</p>`,
+        text: `A player profile is waiting for review: @${info.handle}.\n\nReview this profile:\n${reviewUrl.href}\n\nSign in with your authorized reviewer account, check the profile, and approve it or request changes. Approval enables public sharing and Chronicles posting. The profile remains private until approved. Staff need another reviewer for their own profile; the protected site owner can review their own.`,
+        html: `<h1>A profile is ready for your review</h1><p>@${safeHandle} submitted a profile for public sharing.</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 20px;background:#23302d;color:#fff;border-radius:6px;text-decoration:none">Review profile</a></p><p>Sign in with your authorized reviewer account, check the profile, and approve it or request changes. The profile stays private until approved.</p><p>Staff need another reviewer for their own profile; the protected site owner can review their own.</p>`,
       }, { idempotencyKey: `profile-review-${profileId}-${requestedAt}` });
       if (error) throw new Error("Delivery failed");
       await mark("sent");

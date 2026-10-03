@@ -8,7 +8,7 @@ import {
 import { v, ConvexError } from "convex/values";
 import { makeFunctionReference as ref } from "convex/server";
 import { profileFrame, isProfileAdmin } from './profileFrames';
-import { moderatorId, moderationOwnerId, isModerationOwner, staffHandle } from './moderationAccess';
+import { moderatorId, moderationOwnerId, isModerationOwner, staffHandle, canReviewOwnProfile } from './moderationAccess';
 
 const appearance = v.object({
   background: v.string(),
@@ -454,6 +454,7 @@ export const pendingReviews = query({
   handler: async (ctx, { profileId }) => {
     const reviewerId = await reviewer(ctx);
     if (!reviewerId) throw new ConvexError("Only verified profile reviewers can open this queue.");
+    const selfReviewAllowed = await canReviewOwnProfile(ctx, reviewerId);
     const id = profileId ? ctx.db.normalizeId("profiles", profileId) : null;
     const selected = id ? await ctx.db.get(id) : null;
     const rows = profileId ? selected?.reviewStatus === "pending" ? [selected] : [] : await ctx.db.query("profiles")
@@ -463,6 +464,7 @@ export const pendingReviews = query({
       _id: p._id, updatedAt: p.updatedAt, reviewRequestedAt: p.reviewRequestedAt,
       reviewNotification: p.reviewNotification,
       isOwnProfile: p.ownerId === reviewerId,
+      canReviewOwnProfile: p.ownerId === reviewerId && selfReviewAllowed,
       avatarUrl: p.avatarId ? await ctx.storage.getUrl(p.avatarId) : null,
       backgroundUrl: p.backgroundId ? await ctx.storage.getUrl(p.backgroundId) : null,
       favorites: await Promise.all(p.favorites.map(async f => ({
@@ -481,7 +483,7 @@ export const decideReview = mutation({
     const p = await ctx.db.get(a.profileId);
     if (!p || p.reviewStatus !== "pending" || p.updatedAt !== a.expectedUpdatedAt || p.reviewRequestedAt !== a.expectedRequestedAt)
       throw new ConvexError("Profile changed; review the current draft.");
-    if (p.ownerId === reviewerId) throw new ConvexError("Another reviewer must review your own profile.");
+    if (p.ownerId === reviewerId && !await canReviewOwnProfile(ctx, reviewerId)) throw new ConvexError("Another reviewer must review your own profile.");
     if (a.note.trim().length > 500 || (!a.approve && !a.note.trim()))
       throw new ConvexError("Explain the requested changes in up to 500 characters.");
     await ctx.db.patch(p._id, {

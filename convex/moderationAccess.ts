@@ -32,6 +32,10 @@ export async function moderationOwnerId(ctx: QueryCtx) {
   const id = await getAuthUserId(ctx);
   return id && await isModerationOwner(ctx, id) ? id : null;
 }
+export async function canReviewOwnProfile(ctx: QueryCtx, id: Id<'users'>) {
+  const owner = await ctx.db.query('moderationOwners').withIndex('by_key', q => q.eq('key', 'primary')).unique();
+  return owner?.userId === id && await isModerationOwner(ctx, id);
+}
 export async function staffHandle(ctx: QueryCtx, id: Id<'users'>) {
   return (await ctx.db.query('profiles').withIndex('by_owner', q => q.eq('ownerId', id)).unique())?.handle || 'Staff member';
 }

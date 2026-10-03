@@ -790,6 +790,7 @@ export function ProfileReviewStatus({ profile }) {
   </section>;
 }
 export function ReviewCard({ profile, onStatus }) {
+  const selfReviewBlocked = profile.isOwnProfile && !profile.canReviewOwnProfile;
   const [note, setNote] = useState(''), [checked, setChecked] = useState(false), [busy, setBusy] = useState(false);
   const decide = useMutation(ref('profiles:decideReview'));
   const resend = useMutation(ref('profiles:resendReviewNotice'));
@@ -809,12 +810,12 @@ export function ReviewCard({ profile, onStatus }) {
     {profile.reviewNotification !== 'sent' && <button type="button" className="secondary" disabled={busy} onClick={async () => {
       setBusy(true); try { await resend({ profileId: profile._id }); onStatus('Review email queued. The delivery status will update here.'); } catch (error) { onStatus(reviewError(error)); } finally { setBusy(false); }
     }}>Send review email</button>}
-    {profile.isOwnProfile && <p role="note">This is your own profile. Another authorized reviewer must review it; you cannot approve it yourself.</p>}
-    <label className="check"><input type="checkbox" checked={checked} disabled={busy || profile.isOwnProfile} onChange={e => setChecked(e.target.checked)} />I reviewed all profile text, images, links, and selected excerpts for the community rules.</label>
+    {profile.isOwnProfile && <p role="note">{selfReviewBlocked ? 'This is your own profile. Another authorized reviewer must review it; you cannot approve it yourself.' : 'As the site owner, you can review and approve your own profile.'}</p>}
+    <label className="check"><input type="checkbox" checked={checked} disabled={busy || selfReviewBlocked} onChange={e => setChecked(e.target.checked)} />I reviewed all profile text, images, links, and selected excerpts for the community rules.</label>
     <label>Note to the player when requesting changes<textarea maxLength={500} value={note} disabled={busy} onChange={e => setNote(e.target.value)} /></label>
     <div className="profile-owner-actions">
-      <button type="button" disabled={busy || !checked || profile.isOwnProfile} onClick={() => decision(true)}>Approve profile</button>
-      <button type="button" className="secondary" disabled={busy || !checked || !note.trim() || profile.isOwnProfile} onClick={() => decision(false)}>Request changes</button>
+      <button type="button" disabled={busy || !checked || selfReviewBlocked} onClick={() => decision(true)}>Approve profile</button>
+      <button type="button" className="secondary" disabled={busy || !checked || !note.trim() || selfReviewBlocked} onClick={() => decision(false)}>Request changes</button>
     </div>
   </article>;
 }
