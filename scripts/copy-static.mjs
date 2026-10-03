@@ -1,6 +1,7 @@
 import { cp, readFile, writeFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 const files = ['bug-capture.js', 'appearance.js', 'workspace-shell.js', 'app-design.css', 'app.js', 'data.js', 'settings.js', 'style.css', 'workspace-nav.css', 'theme-motion.css', 'typography.css', 'sw.js', 'manifest.json', 'logo.png', 'robots.txt', 'sitemap.xml'];
+files.push('creation-workshop.css', 'character-cards.css', 'character-art.json', 'story-help.js', 'creation-notice.js');
 for (const file of files) {
   await cp(file, `dist/${file}`);
 }

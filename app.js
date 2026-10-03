@@ -10,9 +10,9 @@ const STEPS = [
   { id: 'edges', label: 'Edges', icon: '3' },
   { id: 'attributes', label: 'Attributes', icon: '4' },
   { id: 'skills', label: 'Skills', icon: '5' },
-  { id: 'concept', label: 'Concept', icon: '6' },
   { id: 'powers', label: 'Powers', icon: '7' },
-  { id: 'gear', label: 'Gear', icon: '8' },
+  { id: 'gear', label: 'Equipment shop', icon: '8' },
+  { id: 'concept', label: 'Name & story', icon: '9' },
   { id: 'summary', label: 'Review', icon: '9' },
 ];
 
@@ -159,6 +159,7 @@ function createDefaultCharacter() {
 // ============================================================
 const app = {
   currentStep: 0,
+  completedSteps: [],
   character: createDefaultCharacter(),
   gearTab: 'melee',
   edgeFilter: 'All',
@@ -171,12 +172,18 @@ const app = {
   init() {
     try {
       const saved = JSON.parse(localStorage.getItem('savage-master-character-v1'));
-      if (saved && saved.version === 1) this.character = this.parseCharacterBackup(saved);
+      if (saved && saved.version === 1) {
+        this.character = this.parseCharacterBackup(saved);
+        this.completedSteps=Array.isArray(saved.completedSteps)?saved.completedSteps.filter(n=>Number.isInteger(n)&&n>=0&&n<STEPS.length):[];
+        if (Number.isInteger(saved.step) && saved.step >= 0 && saved.step < STEPS.length) this.currentStep = saved.stepVersion === 2 ? saved.step : ({7:9,8:7,9:8}[saved.step] ?? saved.step);
+      }
     } catch (error) {
       console.warn('Could not restore character:', error);
     }
+    if (new URLSearchParams(location.search).has('create')) this.currentStep=0;
+    fetch('/character-art.json').then(r=>r.ok?r.json():{}).then(art=>{this.cardArt=art;this.renderContent();}).catch(()=>{});
     this.renderNav();
-    this.goToStep(0);
+    this.goToStep(this.currentStep);
   },
 
   // ----------------------------------------------------------
@@ -190,6 +197,8 @@ const app = {
         <span>${s.label}</span>
       </li>
     `).join('');
+    const journey=document.getElementById('savageJourney');
+    if(journey)journey.innerHTML=STEPS.map((chapter,i)=>`<button aria-current="${i===this.currentStep?'step':'false'}" onclick="app.goToStep(${i})"><span>${this.completedSteps.includes(i)&&this.validateStep(i).valid?'&#10003;':i+1}</span>${this.escHtml(chapter.label)}</button>`).join('');
     this.renderMobileNav();
   },
 
@@ -231,7 +240,6 @@ const app = {
 
       case 'concept':
         if (!c.name || !c.name.trim()) errors.push('Enter a character name');
-        if (!c.concept || !c.concept.trim()) errors.push('Enter a character concept');
         break;
 
       case 'race': {
@@ -296,6 +304,7 @@ const app = {
 
       case 'hindrances': {
         const hp = this.getHindrancePoints();
+        const total=c.hindrances.reduce((sum,id)=>{const h=this.getHindrances().find(h=>h.id===id);return sum+(h?.type==='Major'?2:h?1:0);},0);if(total>4)errors.push('Remove Hindrances beyond the four-point creation limit');
         if (hp.remaining > 0) errors.push(`Allocate all hindrance points (${hp.remaining} unspent)`);
         if (hp.remaining < 0) errors.push(`Over hindrance budget by ${Math.abs(hp.remaining)} point(s)`);
         break;
@@ -334,6 +343,7 @@ const app = {
   },
 
   showValidationErrors(errors) {
+    if(window.showCreationNotice){window.showCreationNotice({title:`Complete ${STEPS[this.currentStep].label}`,message:errors.slice(0,3).join(' ')+(errors.length>3?' Open the Creation book for the full checklist.':'')});return;}
     document.getElementById('stepValidation')?.remove();
     const message = document.createElement('div');
     message.id = 'stepValidation';
@@ -345,6 +355,43 @@ const app = {
     main.querySelector('.step-content').prepend(message);
     main.scrollTop = 0;
     message.focus({ preventScroll: true });
+    this.showCreationBook();
+  },
+
+  showCreationBook(chapter = this.currentStep) {
+    document.getElementById('savageCreationBook')?.remove();
+    const hints = {
+      setting: 'Choose your campaign setting. Core SWADE is ready for a homebrew campaign; setting options change ancestry, Edges, gear, and starting funds.',
+      bonusRules: 'These house rules are optional. Use them only if your GM agrees.',
+      race: 'Choose an ancestry and any required heritage. Its bonuses are included in your traits.',
+      hindrances: 'Hindrances are your flaws. You may choose none. Allocate any points you earn to Edges, attributes, skills, or wealth.',
+      edges: 'Choose your available Novice Edges. You will meet their trait requirements in Attributes and Skills next.',
+      attributes: 'Spend your attribute points and meet the attribute requirements of your Edges. Each die starts at your ancestry minimum.',
+      skills: 'Spend your skill points. Raising a skill above its linked attribute costs more. Meet your Edge requirements and any language choices.',
+      concept: 'Give your finished hero a name. Biography and personality are optional. The ChatGPT helper can prepare a story or portrait prompt.',
+      powers: 'Choose the powers granted by your Arcane Background. Heroes without one can continue without powers.',
+      gear: 'Buy gear using your setting’s starting funds. Additional wealth from Hindrances or Edges is included. Keep unspent money if you wish; removing gear refunds its creation cost.',
+      summary: 'Review your character, download an editable backup, or sign in and save to your account. Check any table-specific rules with your GM.'
+    };
+    const dialog = document.createElement('dialog');
+    dialog.id = 'savageCreationBook';
+    dialog.className = 'creation-book';
+    dialog.setAttribute('aria-labelledby', 'savageBookTitle');
+    const current = STEPS[chapter], errors = this.validateStep(chapter).errors;
+    dialog.innerHTML = `<div class="creation-book-top"><div><small>YOUR CHARACTER CREATION BOOK</small><h2 id="savageBookTitle">${this.escHtml(current.label)}</h2></div><button data-book-close autofocus>Close book</button></div><div class="creation-book-spread"><div><small>THIS CHAPTER</small><p>${this.escHtml(hints[current.id])}</p><h3>${errors.length ? 'Before moving on' : 'This chapter is ready'}</h3>${errors.length ? `<ul>${errors.map(error=>`<li>${this.escHtml(error)}</li>`).join('')}</ul>` : '<p>You can continue. Optional choices and GM rules are yours to review.</p>'}<button data-book-return>Return to ${this.escHtml(current.label)}</button></div><div><small>THE WHOLE JOURNEY</small>${STEPS.map((step,i)=>{const missing=this.validateStep(i).errors;return `<div class="creation-book-chapter"><button data-book-chapter="${i}" aria-pressed="${i===chapter}">${i+1}. ${this.escHtml(step.label)} · ${missing.length?`${missing.length} remaining`:'Ready'}</button>${missing.length?`<ul>${missing.map(error=>`<li>${this.escHtml(error)}</li>`).join('')}</ul>`:''}</div>`;}).join('')}</div></div>`;
+    dialog.querySelector('[data-book-close]').onclick = () => dialog.close();
+    dialog.querySelector('[data-book-return]').onclick = () => { dialog.close(); this.goToStep(chapter); };
+    dialog.querySelectorAll('[data-book-chapter]').forEach(button => button.onclick = () => { dialog.close(); this.showCreationBook(Number(button.dataset.bookChapter)); });
+    dialog.addEventListener('close', () => dialog.remove(), {once:true});
+    document.body.append(dialog);
+    dialog.showModal();
+  },
+
+  scrollCreationTop() {
+    document.getElementById('mainContent').scrollTop = 0;
+    window.scrollTo({top: 0, left: 0, behavior: 'instant'});
+    const heading=document.getElementById('mainContent')?.querySelector?.('h2');
+    if(heading){heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});}
   },
 
   goToStep(i) {
@@ -352,7 +399,7 @@ const app = {
     // Allow backward navigation freely; validate on forward moves
     if (i > this.currentStep) {
       // Validate every step from current up to (but not including) target
-      for (let s = this.currentStep; s < i; s++) {
+      for (let s = 0; s < i; s++) {
         const result = this.validateStep(s);
         if (!result.valid) {
           // Jump to the failing step so the player can see what's wrong
@@ -361,18 +408,21 @@ const app = {
             this.renderNav();
             this.renderContent();
             this.renderSummary();
-            document.getElementById('mainContent').scrollTop = 0;
+            this.scrollCreationTop();
           }
           this.showValidationErrors(result.errors);
+          this.scrollCreationTop();
           return;
         }
       }
     }
+    if(i>this.currentStep)this.completedSteps=[...new Set([...this.completedSteps,...Array.from({length:i},(_,n)=>n)])];
+    this.completedSteps=this.completedSteps.filter(n=>this.validateStep(n).valid);
     this.currentStep = i;
     this.renderNav();
     this.renderContent();
     this.renderSummary();
-    document.getElementById('mainContent').scrollTop = 0;
+    this.scrollCreationTop();
   },
 
   nextStep() { if (this.currentStep < STEPS.length - 1) this.goToStep(this.currentStep + 1); },
@@ -687,7 +737,15 @@ const app = {
     const summary = document.getElementById('summaryPanel');
     if (summary) summary.style.display = '';
     const step = STEPS[this.currentStep].id;
-    main.innerHTML = `<div class="step-content"><p class="step-progress">Step ${this.currentStep + 1} of ${STEPS.length} &middot; ${STEPS[this.currentStep].label}</p>${this.getTipHtml()}${this['render_' + step]()}</div>`;
+    main.innerHTML = `<div class="step-content"><div class="creation-quiet-nav"><a href="/create">&larr; Choose a game</a><div><details class="creation-journey"><summary>Your journey</summary><nav aria-label="Character creation steps">${STEPS.map((chapter,i)=>`<button aria-current="${i===this.currentStep?'step':'false'}" onclick="app.goToStep(${i})">${this.completedSteps.includes(i)&&this.validateStep(i).valid?'&#10003;':i+1}. ${this.escHtml(chapter.label)}</button>`).join('')}</nav></details><button class="btn btn-sm" onclick="app.showCreationBook()">Creation book</button><button class="btn btn-sm" onclick="document.querySelector('.sidebar').classList.toggle('account-open')">Draft tools</button></div></div><p class="step-progress">Step ${this.currentStep+1} of ${STEPS.length}</p>${this['render_'+step]()}${this.getTipHtml()?`<details class="sw-setting-guidance"><summary>Greater Detail: setting guidance</summary>${this.getTipHtml()}</details>`:''}</div>`;
+    main.querySelectorAll('.card').forEach(card=>{
+      const description=card.querySelector('.card-desc');if(!description)return;
+      const full=description.textContent.trim();const details=document.createElement('details');details.className='sw-card-details';
+      details.innerHTML='<summary>Greater Detail</summary>';
+      const copy=document.createElement('p');copy.textContent=full;details.append(copy);
+      if(full.length>180)description.textContent=full.slice(0,180).replace(/\s+\S*$/,'')+'…';
+      details.onclick=event=>event.stopPropagation();card.append(details);
+    });
     main.querySelectorAll('.card[onclick]:not(.race-locked), .heritage-choice[onclick]').forEach(card => {
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
@@ -791,46 +849,29 @@ const app = {
   // ----------------------------------------------------------
   // Step 0: Setting Selection
   // ----------------------------------------------------------
+  classicCard(type,id,name,index,sigil='&#10022;') {
+    if(type==='settings'&&id==='pathfinder')name='Pathfinder for Savage Worlds';
+    const source=this.cardArt?.savage?.[type]?.[id];
+    const art=source?`<img src="${this.escHtml(source)}" alt="" onerror="this.remove()">`:`<span class="tarot-orbit"></span><span class="tarot-sigil">${sigil}</span><span class="tarot-star">&#10022;</span>`;
+    return `<article class="tarot-card"><button class="tarot-face" aria-label="Meet ${this.escHtml(name)}" onclick="app.previewChoice('${type}','${id}')"><div class="tarot-art" aria-hidden="true">${art}</div><span class="tarot-caption"><small>${String(index+1).padStart(2,'0')}</small><strong>${this.escHtml(name)}</strong></span></button><button class="tarot-detail-link" aria-label="Greater Detail about ${this.escHtml(name)}" onclick="app.previewChoice('${type}','${id}',true)">Greater Detail</button></article>`;
+  },
+  previewChoice(type,id,expanded=false) {
+    const setting=type==='settings'?(SETTINGS[id]||{name:'Core SWADE / Homebrew',description:'Use core Savage Worlds options for your own campaign.',subtitle:'Savage Worlds Adventure Edition'}):null;
+    const race=type==='species'?this.getRaces().find(r=>r.id===id):null;
+    const choice=setting||race;if(!choice)return;const choiceName=type==='settings'&&id==='pathfinder'?'Pathfinder for Savage Worlds':choice.name;
+    const existing=document.getElementById('savageChoicePreview');if(existing)existing.remove();
+    const dialog=document.createElement('dialog');dialog.id='savageChoicePreview';dialog.className='choice-preview';dialog.setAttribute('aria-labelledby','savageChoiceTitle');
+    const cardSource=this.cardArt?.savage?.[type]?.[id];
+    const cardIllustration=cardSource?`<div class="choice-preview-art"><div class="tarot-art" aria-hidden="true"><img src="${this.escHtml(cardSource)}" alt="" decoding="async" onerror="this.remove()"></div></div>`:'';
+    const abilities=race?race.abilities.filter(a=>a.label||a.description):[];
+    const rules=race?`<ul>${abilities.map(a=>`<li><strong>${this.escHtml(a.label||'Ability')}:</strong> ${this.escHtml(a.description||'')}</li>`).join('')}</ul>`:`<p>${this.escHtml(choice.description)}</p><p>${this.escHtml(choice.subtitle||'')}</p>${setting.RACES?`<p>${setting.RACES.length} ancestries · ${setting.EDGES.length} Edges · Setting equipment included.</p>`:''}${id==='pathfinder'?'<p>This setting uses Savage Worlds rules. For Pathfinder Second Edition, return to Choose a game.</p>':''}`;
+    dialog.innerHTML=`<button class="choice-close" aria-label="Close card" autofocus>×</button>${cardIllustration}<div class="choice-preview-copy" ${cardSource?'':'style="grid-column:1/-1"'}><small>SAVAGE WORLDS</small><h2 id="savageChoiceTitle">${this.escHtml(choiceName)}</h2><p>${this.escHtml(choice.description)}</p>${race?`<ul>${abilities.slice(0,2).map(a=>`<li>${this.escHtml(a.label||'')}: ${this.escHtml(a.description||'')}</li>`).join('')}</ul>`:''}<details class="choice-full-details" ${expanded?'open':''}><summary>Greater Detail</summary>${rules}</details><p class="choice-gm-note">Check with your GM before using additional options or setting rules.</p></div><footer class="choice-preview-actions"><button class="choice-confirm">My choice: ${this.escHtml(choiceName)}</button></footer>`;
+    dialog.querySelector('.choice-close').onclick=()=>dialog.close();
+    dialog.querySelector('.choice-confirm').onclick=()=>{dialog.close();if(type==='settings'){this.selectSetting(id==='core'?null:id);this.choiceNotice('Setting selected','Your setting determines which ancestries, Edges, powers, and equipment are available.');}else{this.selectRace(id);this.choiceNotice('Ancestry selected',race.abilities.some(a=>a.type==='heritage_choice')?'Choose your heritage below before continuing.':'Your ancestry choice is ready. Continue or change it here.');}};
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+  },
   render_setting() {
-    const selected = this.character.setting;
-    const settingKeys = Object.keys(SETTINGS);
-    return `
-      <h2>Choose Your Setting</h2>
-      <div class="form-group"><label for="startingName">Character name <span class="field-hint">(you can change it later)</span></label><input id="startingName" type="text" value="${this.escHtml(this.character.name)}" placeholder="Name your hero to save a draft" oninput="app.character.name = this.value; app.renderSummary();"></div>
-      <div class="getting-started art-intro"><img class="hero-kit-art" src="images/art/hero-kit.webp" alt="" width="720" height="480" decoding="async"><div><strong>Build a hero. Bring them to your table.</strong><p>Choose a setting, follow the steps, then review and export your sheet. Your draft saves on this device as you work. Sign in and select Save Character to keep a copy across devices.</p><button class="btn btn-sm" onclick="app.showCommunityPage()">Find Players &amp; Help</button></div></div>
-      <p class="step-desc">Select the world your character inhabits. Each setting provides unique ancestries, edges, hindrances, and gear alongside the core Savage Worlds options.</p>
-      <div class="setting-grid">
-        <div class="card setting-card ${selected === null ? 'selected' : ''}" onclick="app.selectSetting(null)">
-          <div class="setting-card-body"><div class="card-header"><span class="card-title">Core SWADE / Homebrew</span>${selected === null ? '<span class="card-badge">Selected</span>' : ''}</div><p class="card-desc">Use the core Savage Worlds options for your own campaign. Choose a published setting below if your group uses one.</p></div>
-        </div>
-        ${settingKeys.map(key => {
-          const s = SETTINGS[key];
-          const isSel = selected === key;
-          return `
-            <div class="card setting-card ${isSel ? 'selected' : ''}" onclick="app.selectSetting('${key}')" style="cursor:pointer; border-color: ${isSel ? s.color : 'var(--border)'};">
-              <div class="setting-card-body">
-                <div class="card-header">
-                  <span class="card-title" style="font-size:1.15rem;">
-                    <span style="font-size:1.3rem; margin-right:0.4rem;">${s.icon}</span>
-                    ${s.name}
-                  </span>
-                  ${isSel ? `<span class="card-badge" style="background:${s.color};">Selected</span>` : ''}
-                </div>
-                <p style="color:${s.color}; font-size:0.8rem; font-weight:600; margin-bottom:0.4rem; text-transform:uppercase; letter-spacing:0.5px;">${s.subtitle}</p>
-                <p class="card-desc">${s.description}</p>
-                <div style="margin-top:0.8rem; display:flex; gap:0.8rem; flex-wrap:wrap;">
-                  <span style="font-size:0.72rem; color:var(--text-dim); background:var(--bg-input); padding:2px 8px; border-radius:4px;">${s.RACES.length} Ancestries</span>
-                  <span style="font-size:0.72rem; color:var(--text-dim); background:var(--bg-input); padding:2px 8px; border-radius:4px;">${s.EDGES.length} Edges</span>
-                  <span style="font-size:0.72rem; color:var(--text-dim); background:var(--bg-input); padding:2px 8px; border-radius:4px;">${s.HINDRANCES.length} Hindrances</span>
-                  <span style="font-size:0.72rem; color:var(--text-dim); background:var(--bg-input); padding:2px 8px; border-radius:4px;">Unique Gear</span>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-      ${this.navButtons()}
-    `;
+    return `<h2>Choose your setting</h2><p class="step-desc">Choose the world for your Savage Worlds hero. Open a card to meet the setting.</p><div class="choice-deck">${this.classicCard('settings','core','Core SWADE / Homebrew',0)}${Object.keys(SETTINGS).map((id,i)=>this.classicCard('settings',id,SETTINGS[id].name,i+1,SETTINGS[id].icon)).join('')}</div>`;
   },
 
   selectSetting(key) {
@@ -942,13 +983,22 @@ const app = {
     return Math.floor(this.character.attributes.smarts / 2);
   },
 
+  choiceNotice(title,message) {
+    if(!window.showCreationNotice)return;
+    window.showCreationNotice({title,message,onContinue:()=>this.nextStep(),continueLabel:'Continue to next selection'});
+  },
+
+  checkChoiceBudget(title,budget) {
+    if(budget.remaining===0)this.choiceNotice(title+' choices complete',`All ${budget.total} ${title.toLowerCase()} points or slots are used. Edit these choices or continue.`);
+  },
+
   toggleLanguage(id) {
     const idx = this.character.languages.indexOf(id);
     if (idx >= 0) {
       this.character.languages.splice(idx, 1);
     } else {
-      if (this.character.languages.length >= this.getLanguageSlots()) return;
-      this.character.languages.push(id);
+      if (this.character.languages.length >= this.getLanguageSlots()) {this.choiceNotice('Language limit reached',`You can choose ${this.getLanguageSlots()} languages with your current Smarts.`);return;}
+      this.character.languages.push(id);if(this.character.languages.length===this.getLanguageSlots())this.choiceNotice('Language choices complete','You have used all language choices granted by your current Smarts.');
     }
     this.renderContent();
     this.renderSummary();
@@ -957,27 +1007,30 @@ const app = {
   // Step 1: Concept
   render_concept() {
     return `
-      <h2>Character Concept</h2>
-      <p class="step-desc">Define who your character is. Give them a name and a brief concept that captures their essence.</p>
+      <h2>Name &amp; story</h2>
+      <p class="step-desc">Give your finished hero a name. Add a biography or personality if you want.</p>
       <div class="form-group">
         <label for="characterName">Character Name</label>
-        <input id="characterName" type="text" value="${this.escHtml(this.character.name)}"
+        <input id="characterName" type="text" maxlength="120" value="${this.escHtml(this.character.name)}"
                oninput="app.character.name = this.value; app.renderSummary();"
                placeholder="Enter your character's name...">
       </div>
       <div class="form-group">
-        <label for="characterConcept">Concept / Background</label>
-        <textarea id="characterConcept" oninput="app.character.concept = this.value; app.renderSummary();"
+        <label for="characterConcept">Biography &amp; personality (optional)</label>
+        <textarea maxlength="10000" id="characterConcept" oninput="app.character.concept = this.value; app.renderSummary();"
                   placeholder="Grizzled bounty hunter, wandering healer, cunning thief...">${this.escHtml(this.character.concept)}</textarea>
       </div>
-      <div class="form-group">
+      <button class="btn" onclick="app.storyHelp()">ChatGPT: help with bio &amp; portrait</button><p class="step-desc">Review a prompt, then copy it into your own ChatGPT chat.</p>
+      <details><summary>Journal &amp; table notes</summary><div class="form-group">
         <label for="characterNotes">Notes</label>
         <textarea id="characterNotes" oninput="app.character.notes = this.value; app.saveCharacter();"
                   placeholder="Any additional notes about your character...">${this.escHtml(this.character.notes)}</textarea>
-      </div>
+      </div></details>
       ${this.navButtons()}
     `;
   },
+
+  storyHelp(){window.smStory?.open({system:'savage',name:this.character.name,setting:this.getSettingData()?.name||'Core SWADE',species:this.getSelectedRace()?.name||'',bio:this.character.concept});},
 
   // Step 7: Powers (Placeholder)
   render_powers() {
@@ -1110,8 +1163,9 @@ const app = {
       this.character.powers.splice(idx, 1);
     } else {
       const budget = this.getPowerBudget();
-      if (budget.remaining <= 0) return;
-      this.character.powers.push({ id, trapping: '' });
+      if(!this.getAvailablePowers().some(p=>p.id===id)){this.choiceNotice('Power unavailable','Choose a power available to your Arcane Background at your starting rank.');return;}
+      if (budget.remaining <= 0) {this.choiceNotice('Power limit reached',`Your Arcane Background and Edges allow ${budget.total} powers.`);return;}
+      this.character.powers.push({ id, trapping: '' });this.checkChoiceBudget('Power',this.getPowerBudget());
     }
     this.renderContent();
     this.renderSummary();
@@ -1126,42 +1180,8 @@ const app = {
 
   // Ancestry
   render_race() {
-    const selected = this.character.race;
-    const settingData = this.getSettingData();
-    const settingRaceIds = settingData ? settingData.RACES.map(r => r.id) : [];
-    const hasSettingRaces = settingRaceIds.length > 0;
-
-    let html = `
-      <h2>Ancestry</h2>
-      <p class="step-desc">Choose your character's ancestry. Each has unique abilities and traits that shape gameplay.</p>
-      <div class="selection-grid">
-    `;
-    this.getRaces().forEach(race => {
-      const isSel = selected === race.id;
-      const isSettingRace = settingRaceIds.includes(race.id);
-      const isLocked = hasSettingRaces && !isSettingRace;
-      html += `
-        <div class="card ${isSel ? 'selected' : ''} ${isLocked ? 'race-locked' : ''}"
-             ${isLocked ? '' : `onclick="app.selectRace('${race.id}')"`}
-             style="${isLocked ? 'cursor:not-allowed; opacity:0.4; pointer-events:none;' : 'cursor:pointer;'}">
-          <div class="card-header">
-            <span class="card-title">${race.name}</span>
-            ${isSel ? '<span class="card-badge">Selected</span>' : ''}
-            ${isLocked ? '<span class="card-badge" style="background:#666;">Locked</span>' : ''}
-          </div>
-          <p class="card-desc">${race.description}</p>
-          ${isLocked ? `<p style="font-size:0.78rem; color:#999; font-style:italic; margin-top:0.3rem;">Not available in ${settingData.name}</p>` : ''}
-          <ul class="ability-list">
-            ${race.abilities.map(ab => `
-              <li><span class="ability-label">${ab.label || ''}:</span> <span class="ability-desc">${ab.description || ''}</span></li>
-            `).join('')}
-          </ul>
-          ${isSel && this.renderHeritageChoice(race) || ''}
-        </div>
-      `;
-    });
-    html += `</div>${this.navButtons()}`;
-    return html;
+    const setting=this.getSettingData(),races=setting?.RACES.length?setting.RACES:this.getRaces(),chosen=this.getSelectedRace();
+    return `<h2>Ancestry</h2><p class="step-desc">Open a card to see its abilities, then make your choice.</p><div class="choice-deck">${races.map((race,i)=>this.classicCard('species',race.id,race.name,i)).join('')}</div>${chosen?this.renderHeritageChoice(chosen):''}<details class="choice-expansion"><summary>More ancestries &amp; table options</summary><p>There is room for future ancestries here. Additional options may not be accepted in every game. Check with your GM. This gallery follows your selected setting.</p></details>${this.navButtons()}`;
   },
 
   renderHeritageChoice(race) {
@@ -1199,6 +1219,7 @@ const app = {
     this.applyRace(previousMinimums);
     this.renderContent();
     this.renderSummary();
+    this.choiceNotice('Heritage selected','Your heritage choice is ready. Edit it or continue.');
   },
 
   applyRace(previousMinimums = null) {
@@ -1246,12 +1267,12 @@ const app = {
         <div class="trait-row">
           <div class="trait-name">
             ${attr.name}
-            <br><small>${attr.description}</small>
+            <details class="sw-trait-detail"><summary>Greater Detail</summary><p>${this.escHtml(attr.description)}</p><p>Each purchased die increase uses one attribute point.</p></details>
           </div>
           <div class="die-selector">
-            <button class="die-btn" onclick="app.changeAttribute('${attr.id}', -1)" ${!canDecrease ? 'disabled' : ''}>&#9664;</button>
+            <button class="die-btn" aria-label="Decrease ${attr.name}" onclick="app.changeAttribute('${attr.id}', -1)" ${!canDecrease ? 'disabled' : ''}>&#9664;</button>
             <span class="die-value ${val === raceMin && val === 4 ? 'base' : ''}">${dieDisplay(val)}</span>
-            <button class="die-btn" onclick="app.changeAttribute('${attr.id}', 1)" ${!canIncrease ? 'disabled' : ''}>&#9654;</button>
+            <button class="die-btn" aria-label="Increase ${attr.name}" onclick="app.changeAttribute('${attr.id}', 1)" ${!canIncrease ? 'disabled' : ''}>&#9654;</button>
           </div>
           <span class="trait-cost">${val > raceMin ? ((val - raceMin) / 2) + ' pts' : 'Base'}</span>
         </div>
@@ -1266,8 +1287,8 @@ const app = {
     const val = this.character.attributes[id];
     const newVal = val + dir * 2;
     if (newVal < this.getRaceAttributeMinimum(id) || newVal > 12) return;
-    if (dir > 0 && this.getAttributePoints().remaining <= 0) return;
-    this.character.attributes[id] = newVal;
+    if (dir > 0 && this.getAttributePoints().remaining <= 0) {this.choiceNotice('Attribute limit reached','You have used every attribute point. Lower an attribute before raising another.');return;}
+    this.character.attributes[id] = newVal;if(dir>0)this.checkChoiceBudget('Attribute',this.getAttributePoints());
     // Trim languages if Smarts decreased and Polyglot Frontier is active
     if (id === 'smarts' && this.character.bonusRules.includes('polyglotFrontier')) {
       const maxLangs = this.getLanguageSlots();
@@ -1317,20 +1338,20 @@ const app = {
       const attrName = SWADE.ATTRIBUTES.find(a => a.id === skill.attribute)?.name || '';
       const minVal = skill.core ? 4 : 0;
       const canDecrease = val > minVal;
-      const canIncrease = val < 12 && budget.remaining > 0;
       const costNext = val === 0 ? 1 : ((val + 2) > linkedAttr ? 2 : 1);
+      const canIncrease = val < 12 && budget.remaining >= costNext;
 
       html += `
         <div class="trait-row">
           <div class="trait-name">
             ${skill.name}
             ${skill.core ? '<span class="core-badge">CORE</span>' : ''}
-            <br><small>${attrName}${val > 0 && val > linkedAttr ? ' <span style="color:var(--danger);">(above linked)</span>' : ''}</small>
+            <br><small>${attrName}${val > 0 && val > linkedAttr ? ' <span style="color:var(--danger);">(above linked)</span>' : ''}</small><details class="sw-trait-detail"><summary>Greater Detail</summary><p>${this.escHtml(skill.description)}</p><p>Raises above the linked attribute cost two skill points; other raises cost one.</p></details>
           </div>
           <div class="die-selector">
-            <button class="die-btn" onclick="app.changeSkill('${skill.id}', -1)" ${!canDecrease ? 'disabled' : ''}>&#9664;</button>
+            <button class="die-btn" aria-label="Decrease ${skill.name}" onclick="app.changeSkill('${skill.id}', -1)" ${!canDecrease ? 'disabled' : ''}>&#9664;</button>
             <span class="die-value ${val === 0 ? 'base' : ''}">${dieDisplay(val)}</span>
-            <button class="die-btn" onclick="app.changeSkill('${skill.id}', 1)" ${!canIncrease ? 'disabled' : ''}>&#9654;</button>
+            <button class="die-btn" aria-label="Increase ${skill.name}" onclick="app.changeSkill('${skill.id}', 1)" ${!canIncrease ? 'disabled' : ''}>&#9654;</button>
           </div>
           <span class="trait-cost">${canIncrease ? 'Next: ' + costNext + 'pt' : (val === 12 ? 'MAX' : '')}</span>
         </div>
@@ -1389,8 +1410,9 @@ const app = {
       newVal = val === 0 ? 4 : val + 2;
     }
     if (newVal < minVal || newVal > 12) return;
-    if (dir > 0 && this.getSkillPoints().remaining <= 0) return;
-    this.character.skills[id] = newVal;
+    const costNext = val === 0 ? 1 : (newVal > this.character.attributes[skill.attribute] ? 2 : 1);
+    if (dir > 0 && this.getSkillPoints().remaining < costNext) {this.choiceNotice('Skill limit reached',`This raise costs ${costNext} points; ${this.getSkillPoints().remaining} remain. Lower a skill or continue.`);return;}
+    this.character.skills[id] = newVal;if(dir>0)this.checkChoiceBudget('Skill',this.getSkillPoints());
     this.renderContent();
     this.renderSummary();
   },
@@ -1407,7 +1429,7 @@ const app = {
 
     let html = `
       <h2>Hindrances</h2>
-      <p class="step-desc">Take as many Hindrances as you like. Major Hindrances earn 2 pts, Minor earn 1 pt (max 4 pts count). Spend points on extra Edges, attributes, or skills.</p>
+      <p class="step-desc">Choose up to four points of Hindrances. Major Hindrances earn 2 points; Minor earn 1 point. Spend points on extra Edges, attributes, or skills.</p>
       <div class="point-tracker">
         <div class="pt-item">
           <span class="pt-label">Hindrance Points</span>
@@ -1448,7 +1470,7 @@ const app = {
     sorted.forEach(h => {
       const isSel = selected.includes(h.id);
       const isMajor = h.type === 'Major';
-      const maxed = isMajor ? majorCount >= 1 : minorCount >= 2;
+      const maxed = hp.earned + (isMajor?2:1) > 4;
       const disabled = !isSel && (maxed || hp.earned >= 4);
 
       html += `
@@ -1504,9 +1526,9 @@ const app = {
   adjustHP(type, dir) {
     const hp = this.getHindrancePoints();
     const cost = type === 'skills' ? 1 : 2;
-    if (dir > 0 && hp.remaining < cost) return;
+    if (dir > 0 && hp.remaining < cost) {this.choiceNotice('Hindrance point limit reached',`This choice costs ${cost} points; ${hp.remaining} remain.`);return;}
     if (dir < 0 && this.character.hindrancePointsSpent[type] <= 0) return;
-    this.character.hindrancePointsSpent[type] += dir;
+    this.character.hindrancePointsSpent[type] += dir;if(dir>0&&this.getHindrancePoints().remaining===0)this.choiceNotice('Hindrance points assigned','All earned Hindrance points are assigned to extra Edges, attributes, or skills.');
     this.renderContent();
     this.renderSummary();
   },
@@ -1518,7 +1540,7 @@ const app = {
       // Reset hindrance point spending if we now have fewer points
       this.clampHindranceSpending();
     } else {
-      this.character.hindrances.push(id);
+      const h=this.getHindrances().find(x=>x.id===id);if(!h)return;const cost=h.type==='Major'?2:1;if(this.getHindrancePoints().earned+cost>4){this.choiceNotice('Hindrance limit reached','Creation allows up to four points of Hindrances. Remove a Hindrance to choose another.');return;}this.character.hindrances.push(id);if(this.getHindrancePoints().earned===4)this.choiceNotice('Hindrance choices complete','You have four points of Hindrances. Assign these points below before continuing.');
     }
     this.renderContent();
     this.renderSummary();
@@ -1632,8 +1654,8 @@ const app = {
     } else {
       const edge = this.getEdges().find(e => e.id === id);
       if (!edge || !this.meetsEdgeRequirements(edge, { ignoreStats: true })) return;
-      if (this.getEdgeBudget().remaining <= 0) return;
-      this.character.edges.push(id);
+      if (this.getEdgeBudget().remaining <= 0) {this.choiceNotice('Edge limit reached','Your ancestry and Hindrance allocation have no Edge slots remaining. Remove an Edge to choose another.');return;}
+      this.character.edges.push(id);this.checkChoiceBudget('Edge',this.getEdgeBudget());
     }
     this.renderContent();
     this.renderSummary();
@@ -1654,8 +1676,8 @@ const app = {
     ];
 
     let html = `
-      <h2>Gear & Equipment</h2>
-      <p class="step-desc">Outfit your character. Starting funds: $${total}.</p>
+      <h2>${this.escHtml(this.getSettingData()?.name || 'SWADE')} Equipment Shop</h2>
+      <p class="step-desc">Outfit your character with game currency. Starting funds: $${total}. You may keep unspent funds. Drop an item to refund its creation cost.</p>
       <div class="point-tracker">
         <div class="pt-item">
           <span class="pt-label">Funds Remaining</span>
@@ -1672,21 +1694,21 @@ const app = {
     if (this.character.gear.length > 0) {
       html += `<div class="card" style="margin-bottom:1.5rem;">
         <div class="card-header"><span class="card-title">Owned Equipment</span></div>
-        <div class="table-scroll"><table class="gear-table">
-          <thead><tr><th>Item</th><th>Cost</th><th>Qty</th><th></th></tr></thead>
-          <tbody>`;
+        <div class="table-scroll"><table class="gear-table" role="table">
+          <thead role="rowgroup"><tr role="row"><th>Item</th><th>Cost</th><th>Qty</th><th></th></tr></thead>
+          <tbody role="rowgroup">`;
       this.character.gear.forEach((g, i) => {
-        html += `<tr>
-          <td>${this.escHtml(g.name)}</td>
-          <td class="cost">\$${this.escHtml(g.cost)}</td>
-          <td>
+        html += `<tr role="row">
+          <td role="cell">${this.escHtml(g.name)}</td>
+          <td role="cell" class="cost" data-label="Cost">\$${this.escHtml(g.cost)}</td>
+          <td role="cell" data-label="Quantity">
             <div class="qty-controls">
               <button onclick="app.changeGearQty(${i}, -1)">-</button>
               <span class="qty-val">${g.qty || 1}</span>
               <button onclick="app.changeGearQty(${i}, 1)">+</button>
             </div>
           </td>
-          <td><button class="btn btn-danger btn-sm" onclick="app.removeGear(${i})">Drop</button></td>
+          <td role="cell"><button class="btn btn-danger btn-sm" onclick="app.removeGear(${i})">Drop</button></td>
         </tr>`;
       });
       html += `</tbody></table></div></div>`;
@@ -1697,8 +1719,10 @@ const app = {
       ${tabs.map(t => `<button class="tab ${tab === t.id ? 'active' : ''}" onclick="app.gearTab='${t.id}'; app.renderContent();">${t.label}</button>`).join('')}
     </div>`;
 
-    const items = this.getGearCategories()[tab] || [];
-    html += `<div class="table-scroll"><table class="gear-table"><thead><tr>`;
+    html += `<label class="creation-gear-search">Find gear<input id="gearSearch" type="search" value="${this.escHtml(this.gearSearch || '')}" placeholder="Search this category" oninput="app.searchGear(this.value)"></label>`;
+    const items = (this.getGearCategories()[tab] || []).filter(item => (item.name+' '+(item.notes || '')).toLowerCase().includes((this.gearSearch || '').toLowerCase()));
+    if (!items.length) html += '<p>No gear matches this search. Try another name or category.</p>';
+    html += `<div class="table-scroll"><table class="gear-table" role="table"><thead role="rowgroup"><tr role="row">`;
     if (tab === 'armor') {
       html += '<th>Name</th><th>Armor</th><th>Coverage</th><th>Cost</th><th>Weight</th><th></th>';
     } else if (tab === 'shields') {
@@ -1710,7 +1734,7 @@ const app = {
     } else {
       html += '<th>Name</th><th>Cost</th><th>Weight</th><th>Notes</th><th></th>';
     }
-    html += '</tr></thead><tbody>';
+    html += '</tr></thead><tbody role="rowgroup">';
 
     const settingData = this.getSettingData();
     const blockedGear = (settingData && settingData.blockedCoreGear) || [];
@@ -1718,22 +1742,22 @@ const app = {
     items.forEach(item => {
       const owned = this.character.gear.find(g => g.id === item.id);
       const isBlocked = blockedGear.includes(item.id);
-      html += `<tr class="${owned ? 'selected' : ''} ${isBlocked ? 'gear-locked' : ''}">`;
+      html += `<tr role="row" class="${owned ? 'selected' : ''} ${isBlocked ? 'gear-locked' : ''}">`;
       if (tab === 'armor') {
-        html += `<td>${item.name}</td><td>+${item.armor}</td><td>${item.coverage}</td><td class="cost">\$${item.cost}</td><td>${item.weight}</td>`;
+        html += `<td role="cell">${this.escHtml(item.name)}<button class="sw-item-detail" aria-label="Greater Detail about ${this.escHtml(item.name)}" onclick="app.previewGear('${tab}','${item.id}')">Greater Detail</button></td><td role="cell" data-label="Armor">+${item.armor}</td><td role="cell" data-label="Coverage">${item.coverage}</td><td role="cell" class="cost" data-label="Cost">\$${item.cost}</td><td role="cell" data-label="Weight">${item.weight}</td>`;
       } else if (tab === 'shields') {
-        html += `<td>${item.name}</td><td>+${item.parryBonus}</td><td class="cost">\$${item.cost}</td><td>${item.weight}</td><td>${item.notes}</td>`;
+        html += `<td role="cell">${this.escHtml(item.name)}<button class="sw-item-detail" aria-label="Greater Detail about ${this.escHtml(item.name)}" onclick="app.previewGear('${tab}','${item.id}')">Greater Detail</button></td><td role="cell" data-label="Parry">+${item.parryBonus}</td><td role="cell" class="cost" data-label="Cost">\$${item.cost}</td><td role="cell" data-label="Weight">${item.weight}</td><td role="cell" data-label="Notes">${item.notes}</td>`;
       } else if (tab === 'melee') {
-        html += `<td>${item.name}</td><td>${item.damage}</td><td class="cost">\$${item.cost}</td><td>${item.weight}</td><td>${item.notes}</td>`;
+        html += `<td role="cell">${this.escHtml(item.name)}<button class="sw-item-detail" aria-label="Greater Detail about ${this.escHtml(item.name)}" onclick="app.previewGear('${tab}','${item.id}')">Greater Detail</button></td><td role="cell" data-label="Damage">${item.damage}</td><td role="cell" class="cost" data-label="Cost">\$${item.cost}</td><td role="cell" data-label="Weight">${item.weight}</td><td role="cell" data-label="Notes">${item.notes}</td>`;
       } else if (tab === 'ranged' || tab === 'firearms') {
-        html += `<td>${item.name}</td><td>${item.damage}</td><td>${item.range}</td><td class="cost">\$${item.cost}</td><td>${item.weight}</td><td>${item.notes}</td>`;
+        html += `<td role="cell">${this.escHtml(item.name)}<button class="sw-item-detail" aria-label="Greater Detail about ${this.escHtml(item.name)}" onclick="app.previewGear('${tab}','${item.id}')">Greater Detail</button></td><td role="cell" data-label="Damage">${item.damage}</td><td role="cell" data-label="Range">${item.range}</td><td role="cell" class="cost" data-label="Cost">\$${item.cost}</td><td role="cell" data-label="Weight">${item.weight}</td><td role="cell" data-label="Notes">${item.notes}</td>`;
       } else {
-        html += `<td>${item.name}</td><td class="cost">\$${item.cost}</td><td>${item.weight}</td><td>${item.notes}</td>`;
+        html += `<td role="cell">${this.escHtml(item.name)}<button class="sw-item-detail" aria-label="Greater Detail about ${this.escHtml(item.name)}" onclick="app.previewGear('${tab}','${item.id}')">Greater Detail</button></td><td role="cell" class="cost" data-label="Cost">\$${item.cost}</td><td role="cell" data-label="Weight">${item.weight}</td><td role="cell" data-label="Notes">${item.notes}</td>`;
       }
       if (isBlocked) {
-        html += `<td><span style="font-size:0.72rem; color:#666; font-style:italic;">N/A</span></td>`;
+        html += `<td role="cell"><span style="font-size:0.72rem; color:#666; font-style:italic;">N/A</span></td>`;
       } else {
-        html += `<td><button class="btn btn-sm" onclick="app.addGear('${tab}','${item.id}')" ${funds < item.cost && !owned ? 'disabled' : ''}>${owned ? '+1' : 'Buy'}</button></td>`;
+        html += `<td role="cell"><button class="btn btn-sm" onclick="app.addGear('${tab}','${item.id}')" ${funds < item.cost || (owned?.qty || 0) >= 999 ? 'disabled' : ''}>${owned ? '+1' : 'Buy'}</button></td>`;
       }
       html += '</tr>';
     });
@@ -1742,11 +1766,23 @@ const app = {
     return html;
   },
 
+  previewGear(category,id){
+    const item=(this.getGearCategories()[category]||[]).find(r=>r.id===id);if(!item)return;
+    document.getElementById('savageGearDetail')?.remove();
+    const dialog=document.createElement('dialog');dialog.id='savageGearDetail';dialog.className='choice-preview';dialog.setAttribute('aria-labelledby','savageGearTitle');
+    const blocked=this.getSettingData()?.blockedCoreGear?.includes(id),owned=this.character.gear.find(g=>g.id===id),canBuy=!blocked&&this.getRemainingFunds()>=item.cost&&(owned?.qty||0)<999;
+    const rows=Object.entries(item).filter(([key,v])=>!['id','name'].includes(key)&&['string','number'].includes(typeof v));
+    dialog.innerHTML=`<button class="choice-close" aria-label="Close item details" autofocus>×</button><div class="choice-preview-copy" style="grid-column:1/-1"><small>SAVAGE WORLDS · ${this.escHtml(this.getSettingData()?.name||'Core SWADE')}</small><h2 id="savageGearTitle">${this.escHtml(item.name)}</h2><dl class="sw-item-statistics">${rows.map(([key,value])=>`<dt>${this.escHtml(({parryBonus:'Parry bonus',minStrength:'Minimum Strength',ap:'Armor penetration',rof:'Rate of fire'})[key]||key)}</dt><dd>${this.escHtml(String(value))}</dd>`).join('')}</dl><p>Available funds: $${this.getRemainingFunds()}. Check additional or restricted items with your GM.</p></div><footer class="choice-preview-actions"><button class="choice-confirm" ${canBuy?'':'disabled'}>Buy ${this.escHtml(item.name)} · $${item.cost}</button></footer>`;
+    dialog.querySelector('.choice-close').onclick=()=>dialog.close();dialog.querySelector('.choice-confirm').onclick=()=>{if(canBuy){dialog.close();this.addGear(category,id);}};
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+  },
+
   addGear(category, itemId) {
-    const items = this.getGearCategories()[category];
+    const items = this.getGearCategories()[category] || [];
     const item = items.find(i => i.id === itemId);
-    if (!item) return;
+    if (!item || this.getRemainingFunds() < item.cost || this.getSettingData()?.blockedCoreGear?.includes(itemId)) return;
     const existing = this.character.gear.find(g => g.id === itemId);
+    if ((existing?.qty || 0) >= 999) return;
     if (existing) {
       existing.qty = (existing.qty || 1) + 1;
     } else {
@@ -1764,10 +1800,18 @@ const app = {
 
   changeGearQty(index, dir) {
     const g = this.character.gear[index];
+    if (!g || (dir > 0 && (this.getRemainingFunds() < g.cost || (g.qty || 1) >= 999))) return;
     g.qty = (g.qty || 1) + dir;
     if (g.qty <= 0) this.character.gear.splice(index, 1);
     this.renderContent();
     this.renderSummary();
+  },
+
+  searchGear(value) {
+    this.gearSearch = value;
+    this.renderContent();
+    const input = document.getElementById('gearSearch');
+    input?.focus();
   },
 
   // Step 8: Summary / Review
@@ -1935,6 +1979,8 @@ const app = {
   // SIDEBAR SUMMARY PANEL
   // ----------------------------------------------------------
   renderSummary() {
+    this.completedSteps=this.completedSteps.filter(n=>this.validateStep(n).valid);
+    this.renderNav();
     this.saveCharacter();
     const panel = document.getElementById('summaryPanel');
     const c = this.character;
@@ -1945,9 +1991,10 @@ const app = {
     const stats = this.getDerivedStats();
 
     panel.innerHTML = `
+      <small class="sw-game-label">SAVAGE WORLDS</small>
       ${this.getSettingData() ? `<div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:${this.getSettingData().color}; font-weight:600; margin-bottom:0.3rem;">${this.getSettingData().icon} ${this.getSettingData().name}</div>` : ''}
-      <div class="summary-name">${c.name || 'Unnamed'}</div>
-      <div class="summary-concept">${c.concept || 'No concept'}</div>
+      <div class="summary-name">${this.escHtml(c.name || 'Unnamed hero')}</div>
+      <div class="summary-concept">${this.escHtml(c.concept?.slice(0,140)||'Your story takes shape with every choice.')}</div>
       ${race ? `<div class="summary-race">${race.name}</div>` : ''}
 
       ${c.bonusRules.length > 0 ? `
@@ -2292,7 +2339,7 @@ const app = {
   // ----------------------------------------------------------
   saveCharacter() {
     try {
-      localStorage.setItem('savage-master-character-v1', JSON.stringify({ version: 1, character: this.character }));
+      localStorage.setItem('savage-master-character-v1', JSON.stringify({ version: 1, character: this.character, step: this.currentStep, stepVersion: 2, completedSteps: this.completedSteps }));
     } catch (error) {
       console.warn('Could not save character:', error);
     }
@@ -2341,6 +2388,7 @@ const app = {
       if (!confirm('Load this backup and replace the current character?')) return;
       this.character = restored;
       this.currentStep = 0;
+      this.completedSteps = [];
       this.renderNav();
       this.renderContent();
       this.renderSummary();
@@ -2847,6 +2895,7 @@ const app = {
   resetCharacter() {
     if (!confirm('Start a new character? All current progress will be lost.')) return false;
     this.character = createDefaultCharacter();
+    this.completedSteps = [];
     window.characterCloud?.clearSelection();
     this.currentStep = 0;
     this.goToStep(0);
@@ -4305,6 +4354,7 @@ window.savageMasterBridge = {
   getCharacter: () => app.character,
   loadBackup: backup => {
     app.character = app.parseCharacterBackup(backup);
+    app.completedSteps = [];
     app.currentStep = 0;
     app.renderNav();
     app.renderContent();

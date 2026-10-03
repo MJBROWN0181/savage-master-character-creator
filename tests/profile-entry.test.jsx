@@ -35,11 +35,12 @@ async function renderApp(search = '') {
   return renderToStaticMarkup(<App />);
 }
 
-test('landing contains only the logo, two entry buttons, and slogan', async () => {
+test('landing offers account entry and the separate character journey', async () => {
   const { Home } = await import('../home.jsx');
   const html = renderToStaticMarkup(<Home />);
   expect(html).toContain('src="/logo.png"');
-  expect(html.match(/<a /g)).toHaveLength(2);
+  expect(html.match(/<a /g)).toHaveLength(3);
+  expect(html).toContain('href="/create"');
   expect(html).toContain('href="/profile?entry=signUp"');
   expect(html).toContain('href="/profile?entry=signIn"');
   expect(html).toContain('Your character. Your table. Your story.');

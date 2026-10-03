@@ -22,7 +22,7 @@ test('spell slots distinguish full casters, revised half casters and Pact Magic'
 });
 test('old characters remain valid and new play data survives backups with bounds enforced',()=>{
  const c=newDndCharacter();c.name='Keeper';for(const k of ['weapons','armor','shield','defense','acBonus','spellbook','slotsUsed'])delete c[k];validateDndCharacter(c);assert.equal(dndStats(c).ac,12);
- c.weapons=[weapon('Longsword')];c.spellbook=[{name:'Cure Wounds',prepared:true}];c.slotTotals=[2,0,0,0,0,0,0,0,0];c.slotsUsed=[1,0,0,0,0,0,0,0,0];validateDndCharacter(JSON.parse(JSON.stringify(c)));c.weapons[0].attackBonus=Infinity;assert.throws(()=>validateDndCharacter(c));c.weapons=[];c.spellbook.push(c.spellbook[0]);assert.throws(()=>validateDndCharacter(c));
+ c.className='Paladin';c.weapons=[weapon('Longsword')];c.spellbook=[{name:'Cure Wounds',prepared:true}];c.slotTotals=[2,0,0,0,0,0,0,0,0];c.slotsUsed=[1,0,0,0,0,0,0,0,0];validateDndCharacter(JSON.parse(JSON.stringify(c)));c.weapons[0].attackBonus=Infinity;assert.throws(()=>validateDndCharacter(c));c.weapons=[];c.spellbook.push(c.spellbook[0]);assert.throws(()=>validateDndCharacter(c));
 });
 test('personal spell book retains full effects and high-level scaling beyond excerpts',()=>{
  const spells=JSON.parse(fs.readFileSync(new URL('../dnd-rules-data/spells.json',import.meta.url)));

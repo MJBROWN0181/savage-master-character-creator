@@ -1,12 +1,13 @@
 import {gear} from './dnd-combat-data.mjs';
+import {classLevels,classLevel,thirdCaster} from './dnd-multiclass.mjs';
 export const weapons=gear.filter(r=>r.page===91);
 export const armors=gear.filter(r=>r.page===92&&r.name!=='Shield');
 export function combatStats(c,s){
  const armor=armors.find(r=>r.name===c.armor),dex=s.mods[1];
  let base=10+dex,label='Unarmored';
  if(armor){const rule=armor.details['Armor Class'];base=parseInt(rule)+(rule.includes('Dex')?(rule.includes('max 2')?Math.min(2,dex):dex):0);label=armor.name;}
- else if(c.className==='Monk'&&c.defense==='monk'&&!c.shield){base+=s.mods[4];label='Monk Unarmored Defense';}
- else if(c.className==='Barbarian'&&c.defense==='barbarian'){base+=s.mods[2];label='Barbarian Unarmored Defense';}
+ else if(classLevel(c,'Monk')>0&&c.defense==='monk'&&!c.shield){base+=s.mods[4];label='Monk Unarmored Defense';}
+ else if(classLevel(c,'Barbarian')>0&&c.defense==='barbarian'){base+=s.mods[2];label='Barbarian Unarmored Defense';}
  const shield=c.shield?2:0,bonus=c.acBonus||0;
  return {ac:c.ac??base+shield+bonus,base,shield,bonus,label,armor,overridden:c.ac!==null,attacks:(c.weapons||[]).map(w=>{
   const item=weapons.find(r=>r.name===w.name);if(!item)return null;
@@ -19,4 +20,9 @@ export function combatStats(c,s){
  }).filter(Boolean)};
 }
 const slots=[[],[2],[3],[4,2],[4,3],[4,3,2],[4,3,3],[4,3,3,1],[4,3,3,2],[4,3,3,3,1],[4,3,3,3,2],[4,3,3,3,2,1],[4,3,3,3,2,1],[4,3,3,3,2,1,1],[4,3,3,3,2,1,1],[4,3,3,3,2,1,1,1],[4,3,3,3,2,1,1,1],[4,3,3,3,2,1,1,1,1],[4,3,3,3,3,1,1,1,1],[4,3,3,3,3,2,1,1,1],[4,3,3,3,3,2,2,1,1]];
-export function spellSlots(c){if(c.className==='Warlock')return Array.from({length:9},(_,i)=>i===Math.min(4,Math.floor((c.level-1)/2))?(c.level===1?1:c.level<11?2:c.level<17?3:4):0);const level=['Paladin','Ranger'].includes(c.className)?Math.ceil(c.level/2):['Bard','Cleric','Druid','Sorcerer','Wizard'].includes(c.className)?c.level:0;return Array.from({length:9},(_,i)=>slots[level][i]||0);}
+export function spellSlotPools(c){
+ const classes=classLevels(c),casters=classes.filter(r=>['Paladin','Ranger','Bard','Cleric','Druid','Sorcerer','Wizard'].includes(r.className)||thirdCaster(r)),level=casters.reduce((n,r)=>n+(['Paladin','Ranger'].includes(r.className)?Math.ceil(r.level/2):thirdCaster(r)?(casters.length===1?Math.ceil(r.level/3):Math.floor(r.level/3)):r.level),0),warlock=classes.find(r=>r.className==='Warlock')?.level||0;
+ return {regular:Array.from({length:9},(_,i)=>slots[level]?.[i]||0),pact:Array.from({length:9},(_,i)=>warlock&&i===Math.min(4,Math.floor((warlock-1)/2))?(warlock===1?1:warlock<11?2:warlock<17?3:4):0)};
+}
+// Keep legacy single-Warlock consumers and saved slot uses compatible.
+export function spellSlots(c){const pools=spellSlotPools(c);return pools.regular.some(Boolean)?pools.regular:pools.pact;}

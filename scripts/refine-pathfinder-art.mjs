@@ -1,0 +1,12 @@
+import {readFile,writeFile} from 'node:fs/promises';
+const path='design/CHARACTER-CARD-ART-QUEUE.json';
+const queue=JSON.parse(await readFile(path,'utf8'));
+const anatomy={Tripkee:'Small frog-like humanoid with a broad short frog face, large round amphibian eyes, smooth green skin and webbed hands and feet. Absolutely no trunk, tusks, fur or mammalian ears.',Kholo:'Hyena-like humanoid with spotted coarse fur, a broad hyena muzzle, rounded upright hyena ears and a bristly mane. Exactly two arms and two legs. Use the specific heritage variation when requested, such as the dog-like features of Dog Kholo.',Tengu:'Bird-like humanoid with black raven plumage, a black corvid beak and two taloned feet. Exactly two arms with feathered hands. No human face. Preserve specific heritage variation.',Goblin:'Small green-skinned humanoid with an oversized broad rounded head, very large pointed ears, wide expressive mouth and small wiry body. Adult goblin, not a human child.',Kobold:'Small reptilian humanoid with a compact lizard-like face, scales, short stature and a long tail. Not a tall muscular dragonborn.',Leshy:'Small animated plant-bodied person. Use the plant named by the heritage for its body: cactus, root, vine, fungus, lotus, seaweed, gourd, leaf or fruit. No human skin. An adult nature spirit, not a human child.'};
+const tripkee=queue.jobs.find(j=>j.system==='pathfinder2e'&&j.name==='Tripkee'&&j.type==='species');
+if(tripkee.status==='installed'){tripkee.previousWeb=tripkee.web;tripkee.version=2;tripkee.status='pending';tripkee.prompt='Create a unique Pathfinder Tripkee ancestry tarot illustration for Savage Master. One small adult green frog-like humanoid traveler with a broad flat frog face, protruding amphibian eyes, webbed hands and feet, wearing a complete forest-teal travel coat, trousers and a brown satchel. Crouched on a mossy log beside a quiet wetland pool, holding a small brass lantern. No elephant trunk, no tusks, no mammalian ears, no fur. Premium ink-and-watercolor storybook art, etched linework, paper texture, forest teal, antique gold, ivory and warm amber. Vertical 4:5, no text, lettering, border, logos or watermark. Fully clothed family-friendly adventure art, original character.';}
+for(const job of queue.jobs.filter(j=>j.status==='pending'&&j.system==='pathfinder2e')){
+ if(job.anatomyDirection)continue;
+ const key=job.ancestry||job.name;
+ if(anatomy[key]){job.anatomyDirection=anatomy[key];job.prompt+=' Essential anatomy: '+anatomy[key];}
+}
+await writeFile(path,JSON.stringify(queue,null,2)+'\n');

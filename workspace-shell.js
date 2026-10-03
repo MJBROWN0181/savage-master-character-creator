@@ -2,7 +2,7 @@
   function mount() {
     if (document.getElementById('sm-shell')) return;
     const links = [
-      ['characters','Characters','/?game=savage'],
+      ['characters','Create a character','/create'],
       ['campaigns','Campaigns','/campaigns'],
       ['table','Gaming Table','/campaigns?view=table'],
       ['journal','Journals','/campaigns?view=journal'],

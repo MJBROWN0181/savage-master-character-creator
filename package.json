@@ -16,13 +16,15 @@
     "convex-test": "^0.0.60",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "happy-dom": "^20.14.5",
+    "sharp": "0.35.5"
   },
   "scripts": {
     "test:vtt": "node scripts/verify-vtt.mjs",
     "build": "vite build && node scripts/copy-static.mjs",
     "dev": "vite --host 0.0.0.0",
     "check": "tsc -p convex/tsconfig.json --noEmit",
-    "test": "vitest run convex tests/profile-entry.test.jsx tests/workspace-ui.test.jsx tests/bug-ui.test.jsx && node --test tests/*.test.mjs"
+    "test": "vitest run convex tests/profile-entry.test.jsx tests/workspace-ui.test.jsx tests/bug-ui.test.jsx tests/character-journey.test.jsx tests/character-interaction.test.jsx && node --test tests/*.test.mjs"
   }
 }

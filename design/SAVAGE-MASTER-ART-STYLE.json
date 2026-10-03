@@ -1,0 +1,20 @@
+{
+  "id": "savage-master-gilded-storybook",
+  "name": "Savage Master — Gilded Storybook",
+  "version": 1,
+  "approvedDate": "2026-10-03",
+  "guide": "design/SAVAGE-MASTER-ART-STYLE.md",
+  "corePrompt": "Original premium hand-painted ink-and-watercolor storybook illustration with crisp etched linework and subtle paper texture. Forest teal, antique gold, warm ivory parchment, worn brown leather, restrained burgundy and warm amber highlights. Vertical 4:5 tarot artwork only, no border, no text, no lettering, no numerals, no logos, no watermark or UI. Clear centered silhouette, meaningful subject visible at 180 pixels. Keep faces around the upper third and important features inside the central 75 percent. Refined and inviting, not childish, not photorealistic. No existing named or recognizable franchise characters. This card needs its own completely new artwork; do not duplicate another composition.",
+  "policy": "Unique original artwork for game, setting, species, class and heritage cards, with distinct game content. References are for style only. Background choices use titles with subtle CSS decoration, as requested on 2026-10-03.",
+  "references": [
+    "images/art/cards/game-savage-v1.webp",
+    "images/art/cards/game-dnd-v1.webp",
+    "images/art/cards/game-pathfinder-v1.webp",
+    "images/art/cards/savage-settings-deadlands-deadlands-v1.webp",
+    "images/art/cards/savage-species-grackle-tooth-rf-grackletooth-v2.webp",
+    "images/art/cards/dnd5e-species-dragonborn-dragonborn-v1.webp"
+  ],
+  "export": {"format": "webp", "width": 640, "quality": 84, "withoutEnlargement": true},
+  "originals": "design/art-source/cards/",
+  "promptHistory": "design/CHARACTER-CARD-ART-PROMPTS.json"
+}

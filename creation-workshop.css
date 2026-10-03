@@ -1,0 +1,144 @@
+/* The three-column workshop follows the Savage Worlds page, with the hero on the left. */
+.creation-workshop{display:grid;grid-template-columns:280px minmax(0,1fr) 250px;grid-template-areas:"hero page timeline";align-items:start;min-height:calc(100dvh - var(--sm-shell-height,84px));background:var(--sm-bg)}
+.creation-summary{grid-area:hero;border-right:1px solid var(--sm-line)}
+.creation-rail{grid-area:timeline;border-left:1px solid var(--sm-line)}
+.creation-summary,.creation-rail{min-width:0;position:sticky;top:var(--sm-shell-height,84px);max-height:calc(100dvh - var(--sm-shell-height,84px));overflow-y:auto;padding:28px 24px;background:var(--sm-surface);border-radius:0;scrollbar-gutter:stable;overscroll-behavior:contain}
+.creation-page{grid-area:page;min-width:0;padding:34px clamp(24px,3vw,48px);overflow-wrap:anywhere}
+.creation-brand{display:none}
+.creation-rail>small,.creation-summary>small,.creation-step-heading small,.creation-book small{font-size:11px;letter-spacing:1.4px;color:var(--sm-gold)}
+.creation-rail h2{font-size:23px;margin:12px 0 24px;line-height:1.5;color:var(--sm-gold)}
+html[data-theme] .creation-rail>.creation-progress{padding:0 0 18px;margin:0;border:0;border-bottom:1px solid var(--sm-line);border-radius:0;background:transparent}
+.creation-rail nav{display:grid;gap:0;margin:18px -24px}
+html[data-theme] .creation-rail nav button{display:flex;align-items:center;text-align:left;gap:14px;background:transparent;color:var(--sm-text);border:0;border-left:3px solid transparent;border-radius:0;min-height:70px;padding:14px 21px;font-size:16px;line-height:1.4;width:100%;box-shadow:none}
+html[data-theme] .creation-rail nav button[aria-current=step]{background:color-mix(in srgb,var(--sm-gold) 9%,var(--sm-surface));border-left-color:var(--sm-gold);color:var(--sm-gold)}
+.creation-number{display:grid;place-items:center;border:1px solid var(--sm-line);border-radius:50%;width:32px;height:32px;flex:none;font-size:14px}
+.creation-rail nav button[aria-current=step] .creation-number{background:var(--sm-gold);color:var(--sm-on-action)}
+.creation-rail nav button[data-completed=true] .creation-number{background:var(--sm-teal);color:var(--sm-on-action);border-color:var(--sm-teal)}
+.creation-rail nav small{display:block;font-size:11px;color:var(--sm-muted);margin-top:3px;font-weight:400}
+.creation-rail>p,.creation-summary p,.creation-summary details{font-size:13px;margin:16px 0 0}
+.creation-book-button{margin-top:12px;width:100%}
+.creation-step-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.creation-step-heading h2:focus{outline:none}.creation-step-heading h2{margin:10px 0 0;font-size:34px;color:var(--sm-gold)}
+.creation-heading-actions{display:flex;gap:8px;flex-wrap:wrap}
+.creation-intro{color:var(--sm-muted);font-size:17px;line-height:1.8;margin:0 0 24px}
+.creation-inline{border:1px solid var(--sm-gold);border-left:3px solid var(--sm-gold);border-radius:8px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 28px;background:color-mix(in srgb,var(--sm-gold) 6%,transparent);font-size:14px}
+.creation-inline button{font-size:13px}
+.creation-summary h3{font-size:27px;margin:14px 0 8px;overflow-wrap:anywhere;color:var(--sm-text)}
+.creation-summary .creation-concept{font-style:italic;color:var(--sm-muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.creation-summary .creation-identity{font-size:16px;color:var(--sm-teal);line-height:1.7}
+.creation-character-section{margin-top:26px;overflow-wrap:anywhere}
+.creation-character-section h4{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:var(--sm-gold);border-bottom:1px solid var(--sm-line);padding-bottom:8px;margin:0 0 14px}
+.creation-summary dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 12px;font-size:15px;margin:0}
+.creation-summary dt{text-transform:capitalize}
+.creation-summary dd{margin:0;font-weight:bold;color:var(--sm-text);font-variant-numeric:tabular-nums;text-align:right}
+.creation-character-section ul{padding:0;margin:0;list-style:none;font-size:14px}
+.creation-character-section li{margin:9px 0;white-space:pre-wrap}
+.creation-character-section p{color:var(--sm-muted)}
+.creation-summary button{margin-top:18px;width:100%}
+.creation-summary summary{cursor:pointer}
+.creation-footer{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--sm-line);padding-top:24px;margin-top:32px}
+.creation-workshop button{min-height:44px}
+html[data-theme] main:has(.creation-workshop){max-width:none;padding:0;margin:0}
+html[data-theme] main:has(.creation-workshop)>.workspace-hero,html[data-theme] main:has(.creation-workshop)>.game-switch{display:none}
+html[data-theme] main:has(.creation-workshop)>section:has(.creation-workshop){padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:transparent}
+main:has(.creation-workshop)>section>.creation-reference{margin:0;padding:4px 24px;border-bottom:1px solid var(--sm-line);background:var(--sm-surface)}
+.creation-reference>summary{cursor:pointer;color:var(--sm-gold);padding:8px 0}
+main:has(.creation-workshop)>.official-products,main:has(.creation-workshop)>section:not(:has(.creation-workshop)){margin:24px}
+.creation-page>.dnd-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.creation-page .dnd-start-options,.creation-page .dnd-wallet,.creation-page .dnd-book-cards{grid-template-columns:1fr}
+.creation-page .dnd-grid article{padding:18px}
+.creation-page .dnd-import{max-width:220px}
+.creation-gear-search{display:block;margin:16px 0}
+.creation-gear-search input{display:block;width:100%;max-width:420px;padding:12px;border:1px solid var(--sm-line);border-radius:8px;background:var(--sm-surface);color:var(--sm-text)}
+.creation-book{padding:0;width:min(920px,calc(100vw - 28px));max-height:85dvh;border:1px solid var(--sm-gold);border-radius:16px;background:var(--sm-surface);color:var(--sm-text);box-shadow:0 24px 80px #0008;font-family:var(--font-body,serif)}.creation-book::backdrop{background:#0009;backdrop-filter:blur(3px)}.creation-book-top{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 26px;border-bottom:1px solid var(--sm-line)}.creation-book-top h2{margin:4px 0 0;color:var(--sm-gold)}.creation-book-top button{flex:none}.creation-book-spread{display:grid;grid-template-columns:1fr 1fr;background:linear-gradient(90deg,transparent 49.5%,color-mix(in srgb,var(--sm-gold) 10%,transparent) 50%,transparent 50.5%)}.creation-book-spread>div{padding:26px;min-width:0}.creation-book-spread p,.creation-book-spread li{font-size:15px;line-height:1.65}.creation-book li{margin-bottom:10px}.creation-book-chapter{border-bottom:1px solid var(--sm-line);padding:12px 0}.creation-book-chapter button{background:transparent;color:var(--sm-gold);text-align:left}.creation-book button{min-height:44px;cursor:pointer;border:1px solid var(--sm-line);border-radius:7px;padding:9px 14px;background:var(--sm-surface-raised,var(--sm-surface));color:var(--sm-text);font:inherit}.creation-book button:focus-visible{outline:2px solid var(--sm-gold);outline-offset:3px}
+.creation-book{margin:auto}.creation-book p{margin:0 0 16px}.creation-book ul{padding-left:22px;margin:12px 0 18px}.creation-book h3{margin:18px 0 10px}
+@media(max-width:1200px) and (min-width:901px){.creation-workshop{grid-template-columns:230px minmax(0,1fr) 210px}.creation-summary,.creation-rail{padding:24px 18px}.creation-rail nav{margin-inline:-18px}.creation-page{padding:28px 24px}.creation-page .dnd-training-intro{grid-template-columns:1fr}}
+@media(max-width:900px){.creation-workshop{grid-template-columns:minmax(0,1fr);grid-template-areas:"timeline" "hero" "page"}.creation-rail,.creation-summary{position:static;max-height:none;border:0;overflow:visible;padding:20px}.creation-rail h2{margin:6px 0 12px}.creation-rail nav{grid-template-columns:repeat(3,minmax(0,1fr));margin:12px 0;gap:4px}html[data-theme] .creation-rail nav button{font-size:13px;padding:10px;gap:8px;border:1px solid var(--sm-line);border-radius:6px}.creation-rail>p:not(.creation-progress),.creation-rail>small{display:none}.creation-progress{padding-bottom:10px}.creation-book-button{width:auto}.creation-summary{border-block:1px solid var(--sm-line)}.creation-summary{max-height:320px;overflow-y:auto}.creation-summary dl{grid-template-columns:1fr auto 1fr auto}.creation-summary button{width:auto}.creation-summary details{display:none}.creation-page{padding:24px 20px}}
+@media(max-width:600px){.creation-rail nav{grid-template-columns:repeat(2,minmax(0,1fr))}.creation-summary dl{grid-template-columns:1fr auto}.creation-book-spread{grid-template-columns:1fr;background:none}.creation-book-spread>div+div{border-top:1px solid var(--sm-line)}.creation-book-top,.creation-book-spread>div{padding:18px}.creation-book-top h2{font-size:23px}.creation-footer{flex-wrap:wrap}.creation-footer button{flex:1}.creation-page .dnd-import{max-width:100%}.creation-step-heading h2{font-size:30px}}
+@media print{.creation-workshop{display:block}.creation-page{padding:0}.creation-rail,.creation-summary,.creation-step-heading,.creation-intro,.creation-inline,.creation-footer,.creation-book,.creation-reference{display:none!important}}
+
+.creation-tools{margin:0 0 24px;padding:10px 14px;border:1px solid var(--sm-line);border-radius:6px}.creation-tools>summary{font-size:13px;padding:4px 0;cursor:pointer}.creation-tools[open]>summary{margin-bottom:16px}
+
+.creation-preview-toggle{display:none}
+@media(max-width:900px){.creation-rail{padding:14px 20px}.creation-rail h2{font-size:20px;margin:0 0 4px}html[data-theme] .creation-rail>.creation-progress{padding:0;margin:0;font-size:12px;border:0}.creation-rail nav{position:relative;display:flex;overflow-x:auto;gap:6px;margin:12px 0;scrollbar-width:thin}html[data-theme] .creation-rail nav button{flex:0 0 155px;width:auto;min-height:60px}.creation-book-button{margin-top:0;font-size:12px;min-height:36px!important}.creation-summary{padding:14px 20px;max-height:none;overflow:visible}.creation-summary[data-expanded=false] #creation-preview-details{display:none}.creation-summary[data-expanded=true] #creation-preview-details{max-height:300px;overflow-y:auto;padding-right:12px}.creation-summary h3{font-size:23px;margin:6px 0}.creation-summary .creation-concept{display:none}.creation-summary .creation-identity{font-size:13px;margin:4px 0}.creation-summary>p[role=status],.creation-summary>button:not(.creation-preview-toggle){display:none}.creation-summary .creation-preview-toggle{display:block;margin-top:10px;font-size:12px;min-height:36px;width:auto}.creation-summary .creation-character-section{margin-top:18px}}
+
+/* Calm creation: one decision beside the growing hero. */
+.creation-calm{grid-template-columns:270px minmax(0,1fr);grid-template-areas:"hero page"}
+.creation-calm .creation-page{padding:26px clamp(24px,4vw,62px) 42px;max-width:1200px;width:100%}
+.creation-quiet-nav{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:34px;font-size:13px;color:var(--sm-muted)}.creation-quiet-nav>a{color:var(--sm-muted);text-decoration:none}.creation-quiet-nav>div{display:flex;gap:16px;align-items:center}.creation-quiet-nav button{border:0!important;padding:6px 0!important;min-height:40px;background:none!important;color:var(--sm-muted)!important;font-size:13px;font-weight:400}
+.creation-journey{position:relative}.creation-journey>summary{font-size:13px;color:var(--sm-muted);padding:10px 0;list-style:none;min-height:40px}.creation-journey nav{position:absolute;top:44px;right:0;z-index:10;width:250px;max-height:60dvh;overflow:auto;display:grid;padding:12px;border:1px solid var(--sm-line);border-radius:8px;background:var(--sm-surface);box-shadow:var(--sm-shadow)}.creation-journey nav button{display:flex;gap:12px;align-items:center;padding:10px!important;text-align:left;width:100%;color:var(--sm-text)!important}.creation-journey nav button[aria-current=step]{color:var(--sm-gold)!important}.creation-journey nav button[data-completed=true] span{color:var(--sm-teal)}.creation-journey nav button span{min-width:20px}
+.creation-calm .creation-step-heading{margin:0 0 14px}.creation-calm .creation-step-heading h2{font-size:38px}.creation-calm .creation-intro{margin-bottom:30px;font-size:17px}.creation-calm .creation-tools{margin-top:24px;border:0;border-top:1px solid var(--sm-line);border-radius:0;padding:18px 0}.creation-calm .creation-tools>summary{color:var(--sm-muted);font-size:12px}.creation-calm .creation-summary{padding:30px 24px}.creation-calm .creation-summary h3{font-size:25px}.creation-extra{margin-top:22px}.creation-extra>summary{font-size:13px;color:var(--sm-gold);padding:8px 0;border-bottom:1px solid var(--sm-line)}.creation-extra .creation-character-section{margin-top:14px}.creation-extra .creation-character-section>h4{display:none}.creation-calm .creation-summary .creation-concept{font-size:13px}
+.creation-calm .dnd-library-banner{display:none}.creation-calm .dnd-training-intro{display:none}.creation-calm .dnd-skill-cards article p{display:none}.creation-calm .dnd-skill-cards article{padding:14px}.creation-calm .dnd-skill-cards h3{font-size:18px}
+html[data-theme] main:has(.creation-calm) .creation-reference{display:none}
+@media(max-width:900px){.creation-calm{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "page"}.creation-calm .creation-summary{position:static;padding:14px 20px}.creation-calm .creation-page{padding:20px}.creation-quiet-nav{margin-bottom:24px}.creation-quiet-nav>div{gap:12px}.creation-calm .creation-step-heading h2{font-size:32px}.creation-calm .creation-summary .creation-concept{display:none}}
+
+/* Savage Worlds uses its own rules and the same quiet card journey. */
+@media(min-width:769px){html[data-workspace="characters"] .app{max-width:1440px;margin:0 auto;display:flex}html[data-workspace="characters"] .app>.summary-panel{order:-1;flex:0 0 270px;border-right:1px solid var(--sm-line);border-left:0}html[data-workspace="characters"] .app>.content{flex:1;min-width:0;padding:26px clamp(24px,4vw,62px) 42px}html[data-workspace="characters"] .sidebar{display:none}}
+html[data-workspace="characters"] .sidebar.account-open{display:block!important;position:fixed;top:var(--sm-shell-height,84px);right:0;left:auto;width:min(360px,100vw);height:calc(100dvh - var(--sm-shell-height,84px));max-height:none;overflow-y:auto;z-index:100;border-left:1px solid var(--sm-line);box-shadow:var(--sm-shadow);padding:20px}html[data-workspace="characters"] .sidebar.account-open .account-close{display:block}html[data-workspace="characters"] .sidebar.account-open #stepNav{display:none}html[data-workspace="characters"] .sidebar.account-open .sm-builder-title{display:none}
+.sw-setting-guidance{margin-top:26px;color:var(--sm-muted);font-size:13px}.sw-setting-guidance>summary{padding:12px 0}html[data-workspace="characters"] .content>.step-content>h2{font-size:38px}html[data-workspace="characters"] .step-progress{font-size:12px;color:var(--sm-gold)}
+@media(max-width:768px){.creation-quiet-nav{flex-wrap:wrap}.creation-quiet-nav>div{flex-wrap:wrap;gap:12px}html[data-workspace="characters"] .content>.step-content>h2{font-size:32px}}
+@media print{.creation-quiet-nav,.sw-setting-guidance,.creation-journey{display:none!important}}
+
+.sw-game-label{display:block;font-size:11px;letter-spacing:1.4px;color:var(--sm-gold);margin-bottom:16px}.sw-card-details{font-size:13px;margin-top:16px}.sw-card-details>summary{color:var(--sm-gold);text-decoration:underline;text-underline-offset:3px;min-height:40px;padding:8px 0}
+
+/* A quiet right-hand timeline keeps the user's chosen workshop layout. */
+@media(min-width:1101px){.creation-calm{grid-template-columns:240px minmax(0,1fr) 180px;grid-template-areas:"hero page timeline"}.creation-calm .creation-page{padding-left:36px;padding-right:36px}.creation-calm .creation-quiet-nav .creation-journey,html[data-workspace="characters"] .content .creation-quiet-nav .creation-journey{display:none}}
+.creation-timeline{grid-area:timeline;position:sticky;top:var(--sm-shell-height,84px);max-height:calc(100dvh - var(--sm-shell-height,84px));overflow:auto;padding:30px 14px;border-left:1px solid var(--sm-line);background:var(--sm-surface)}.creation-timeline>small{font-size:11px;letter-spacing:1.5px;color:var(--sm-gold)}.creation-timeline nav{display:grid;margin-top:18px;gap:4px}html[data-theme] .creation-timeline nav button{display:flex;align-items:center;gap:10px;text-align:left;background:transparent;border:0;box-shadow:none;border-radius:6px;font-size:13px;font-weight:400;min-height:42px;padding:8px;width:100%;color:var(--sm-muted)}.creation-timeline nav button>span{min-width:16px;font-size:12px;color:var(--sm-gold)}html[data-theme] .creation-timeline nav button[aria-current=step]{background:var(--sm-highlight);color:var(--sm-text)}.creation-timeline nav button[data-completed=true]>span{color:var(--sm-teal)}
+html[data-workspace="characters"] .sw-journey-rail{flex:0 0 180px;order:2;position:sticky;top:var(--sm-shell-height,84px);max-height:calc(100dvh - var(--sm-shell-height,84px));overflow:auto;padding:30px 14px;border-left:1px solid var(--sm-line);background:var(--sm-surface)}html[data-workspace="characters"] .sw-journey-rail>small{font-size:11px;letter-spacing:1.5px;color:var(--sm-gold)}.sw-journey-rail nav{display:grid;gap:4px;margin-top:18px}.sw-journey-rail nav button{display:flex;gap:10px;align-items:center;text-align:left;font-size:13px;border:0!important;min-height:42px;background:transparent!important;padding:8px;font-weight:400}.sw-journey-rail nav button[aria-current=step]{color:var(--sm-gold)!important;background:var(--sm-highlight)!important}
+@media(max-width:1100px){.creation-timeline,html[data-workspace="characters"] .sw-journey-rail{display:none}}
+@media print{.creation-timeline,.sw-journey-rail{display:none!important}}
+
+html[data-theme] .creation-workshop .creation-timeline nav button{border:0;box-shadow:none}html[data-theme] .creation-workshop .creation-timeline nav button:hover{border:0;background:var(--sm-highlight)}
+
+.creation-sources{margin:24px!important;padding:12px 0;color:var(--sm-muted);font-size:13px}.creation-sources>summary{cursor:pointer;min-height:40px}.creation-sources>section{padding:20px!important;border:0!important}.creation-sources .official-products{margin:20px 0}
+
+.creation-limit-notice{box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;margin:auto;padding:6px;border:0;background:transparent;color:var(--sm-text,#ece4d2);box-shadow:none;font-family:var(--font-body,serif);text-align:left;overflow-wrap:anywhere}
+.creation-limit-notice[open]{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:start}
+.creation-limit-notice::backdrop{background:#07141514}
+.creation-notice-copy{min-width:0;padding:14px 16px 8px;border-radius:12px;background:color-mix(in srgb,var(--sm-surface,#1b2e30) 66%,transparent);backdrop-filter:blur(8px)}
+.creation-limit-notice h2{margin:0 0 6px;font-size:18px;line-height:1.3;color:var(--sm-gold)}
+.creation-limit-notice p{font-size:16px;line-height:1.5;margin:0 0 8px}
+.creation-notice-actions{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:center}
+html[data-theme] .creation-notice-actions button{min-height:44px;max-width:100%;padding:6px 0;border:0;border-radius:3px;background:transparent;box-shadow:none;color:var(--sm-text);font:inherit;font-size:14px;line-height:1.4;text-align:left;text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px;white-space:normal;cursor:pointer}
+.creation-limit-notice button:focus-visible{outline:2px solid var(--sm-gold);outline-offset:3px}
+
+.sw-trait-detail{font-size:12px;font-weight:400;margin-top:8px}.sw-trait-detail>summary{color:var(--sm-gold);text-decoration:underline;cursor:pointer}.sw-trait-detail p{margin:8px 0;color:var(--sm-muted);line-height:1.6}html[data-theme] .content .sw-item-detail{display:block;border:0;background:transparent;box-shadow:none;padding:5px 0;color:var(--sm-gold);font-weight:400;font-size:12px;min-height:36px;text-decoration:underline;text-underline-offset:3px}.sw-item-statistics{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px;font-size:14px}.sw-item-statistics dt{text-transform:capitalize;color:var(--sm-gold)}.sw-item-statistics dd{margin:0;overflow-wrap:anywhere}
+
+.creation-bug-portrait{display:block;position:relative;overflow:hidden;width:64px;height:56px;margin:12px 0 0;border:0;background:transparent;clip-path:ellipse(49% 43% at 50% 45%)}.creation-bug-portrait img{position:absolute;width:260px;height:260px;max-width:none;left:-99px;top:-54px;object-fit:contain}
+@media(max-width:380px){.creation-limit-notice[open]{grid-template-columns:52px minmax(0,1fr);gap:6px}.creation-bug-portrait{transform:scale(.82);transform-origin:top left}.creation-notice-copy{padding-inline:12px}}
+@media(forced-colors:active){.creation-notice-copy{background:Canvas;border:1px solid CanvasText}.creation-limit-notice h2{color:CanvasText}}
+
+/* Keep readable type and intrinsic table sizes inside the creation workspace. */
+.creation-workshop small,.creation-workshop .dnd-training-title small,.creation-workshop .dnd-training-actions small{font-size:12px}
+.creation-workshop .dnd-casting-details dt,.creation-workshop .dnd-sheet-nav a{font-size:12px}
+.creation-workshop .dnd-sheet-nav a{white-space:normal;line-height:1.4;min-width:0}
+.creation-calm .creation-step-heading h2,html[data-workspace="characters"] .content>.step-content>h2{font-size:clamp(28px,2.5vw,34px);line-height:1.2}
+.creation-workshop .creation-page label{font-size:15px;line-height:1.5}
+.creation-workshop input,.creation-workshop select,.creation-workshop textarea{font-size:16px}
+.creation-summary dd{max-width:100%;overflow-wrap:anywhere}.creation-summary dl{grid-template-columns:minmax(0,1fr) minmax(0,auto)}
+.creation-book,.story-assistant,.choice-preview{box-sizing:border-box;overflow-wrap:anywhere;scrollbar-gutter:stable}
+.creation-book small,.choice-preview-copy>small{font-size:12px}
+.creation-book-top h2,.choice-preview-copy h2,.story-assistant h2{font-size:clamp(24px,2.5vw,30px);line-height:1.2;overflow-wrap:anywhere}
+.creation-book-top,.story-assistant header{align-items:flex-start;flex-wrap:wrap}
+.creation-book-top{position:sticky;top:0;z-index:2;background:var(--sm-surface)}
+.creation-workshop .dnd-abilities small{font-size:14px}
+.creation-book-top button,.story-assistant header button{flex:none}
+html[data-workspace="characters"] .content .step-content{min-width:0;max-width:100%;overflow-wrap:anywhere}
+html[data-workspace="characters"] .content label{font-size:14px;line-height:1.5}
+html[data-workspace="characters"] .content :is(.tab,.pt-label,.card-header small,.gear-table th){font-size:12px}
+html[data-workspace="characters"] .content :is(small,.card-tag,.bonus-rule-badge,.bonus-rule-category,.trait-cost){font-size:12px}
+html[data-workspace="characters"] .content .step-desc{font-size:16px;line-height:1.6;white-space:normal}
+html[data-workspace="characters"] .content .table-scroll{max-width:100%;min-width:0}
+@media(max-width:768px){html[data-workspace="characters"] .app>.content{width:100%;max-width:100%;box-sizing:border-box}.creation-quiet-nav>div{min-width:0}.creation-calm .creation-page{padding-inline:16px}.creation-footer button,html[data-workspace="characters"] .nav-buttons .btn{white-space:normal;max-width:100%;line-height:1.4}.creation-calm .creation-step-heading h2{font-size:30px}html[data-workspace="characters"] .mobile-header{height:auto;min-height:52px;align-items:center}html[data-workspace="characters"] .mobile-title{min-width:0;white-space:normal;overflow:visible;text-overflow:clip;font-size:14px;line-height:1.3;overflow-wrap:anywhere}}
+@media(max-width:650px){
+ html[data-workspace="characters"] .content .gear-table{display:block;width:100%;font-size:15px}
+ html[data-workspace="characters"] .content .gear-table thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ html[data-workspace="characters"] .content .gear-table tbody{display:grid;gap:12px}
+ html[data-workspace="characters"] .content .gear-table tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;padding:14px;border:1px solid var(--sm-line);border-radius:8px;background:var(--sm-surface)}
+ html[data-workspace="characters"] .content .gear-table td{display:block;min-width:0;padding:0;border:0;white-space:normal;overflow-wrap:anywhere}
+ html[data-workspace="characters"] .content .gear-table td[data-label]::before{content:attr(data-label);display:block;color:var(--sm-muted);font-size:12px;font-weight:400;margin-bottom:2px}
+ html[data-workspace="characters"] .content .gear-table td:first-child{grid-column:1/-1;font-weight:600}
+ html[data-workspace="characters"] .content .gear-table td:is(:last-child,[data-label="Notes"]),html[data-workspace="characters"] .content .gear-table td:has(.qty-controls){grid-column:1/-1}
+ html[data-workspace="characters"] .content .gear-table td:last-child .btn{width:100%;min-height:44px;font-size:14px}
+ html[data-workspace="characters"] .content .gear-table .qty-controls button{min-width:44px;min-height:44px}
+}
