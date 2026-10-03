@@ -70,7 +70,7 @@
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="document.getElementById('characterBackupInput').click()">Load character backup</button>
         <input id="characterBackupInput" type="file" accept=".json,application/json" hidden onchange="app.importBackup(this)">
         <button class="btn btn-sm" style="width:100%; margin-bottom:0.4rem;" onclick="app.resetCharacter()">Reset current draft</button></details>
-        <button class="btn btn-sm" id="installAppBtn" style="width:100%; margin-bottom:0.4rem; display:none;" onclick="openInstallModal()">Get the App</button>
+        <a class="btn btn-sm" href="/install" data-install-app style="width:100%; margin-bottom:0.4rem;">Install App</a>
         <button class="btn btn-sm btn-store" style="width:100%;" onclick="app.showStorePage()">Official Content</button>
         <button class="btn btn-sm" style="width:100%; margin-top:0.4rem;" onclick="app.showCommunityPage()">Find Players &amp; Help</button>
         <div class="sidebar-credit">
@@ -94,50 +94,6 @@
     <div class="summary-overlay" id="summaryOverlay" onclick="app.toggleMobileSummary()"></div>
   </div>
 
-  <!-- Install Modal -->
-  <div class="install-overlay" id="installOverlay" onclick="closeInstallModal()">
-    <div class="install-modal" onclick="event.stopPropagation()">
-      <button class="install-close" onclick="closeInstallModal()">&times;</button>
-      <div class="install-header">
-        <img src="logo.png" alt="Savage Master" class="install-logo">
-        <h2>Install Savage Master</h2>
-        <p>Add to your home screen. Build offline after your first visit; account saving needs internet.</p>
-      </div>
-
-      <!-- Platform tabs -->
-      <div class="install-tabs" id="installTabs">
-        <button class="install-tab active" data-platform="android" onclick="switchInstallTab('android')">Android</button>
-        <button class="install-tab" data-platform="ios" onclick="switchInstallTab('ios')">iPhone / iPad</button>
-      </div>
-
-      <!-- Android instructions -->
-      <div class="install-content" id="installAndroid">
-        <button class="btn install-native-btn" id="installNativeBtn" style="display:none;" onclick="triggerNativeInstall()">
-          Install Savage Master
-        </button>
-        <div id="installAndroidManual">
-          <p class="install-subtitle">In Chrome:</p>
-          <ol class="install-steps">
-            <li>Tap the <strong>menu</strong> button <span class="install-icon">&#8942;</span> in the top-right corner</li>
-            <li>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
-            <li>Tap <strong>Install</strong> to confirm</li>
-          </ol>
-        </div>
-      </div>
-
-      <!-- iOS instructions -->
-      <div class="install-content" id="installIOS" style="display:none;">
-        <p class="install-subtitle">In Safari:</p>
-        <ol class="install-steps">
-          <li>Tap the <strong>Share</strong> button <svg class="install-icon" style="width:18px;height:18px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> at the bottom of the screen</li>
-          <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
-          <li>Tap <strong>Add</strong> in the top-right corner</li>
-        </ol>
-        <p class="install-note">Note: Must use Safari — other browsers on iOS don't support installation.</p>
-      </div>
-    </div>
-  </div>
-
   <script src="data.js"></script>
   <script src="settings.js"></script>
   <script src="/story-help.js"></script>
@@ -146,107 +102,5 @@
   <link rel="stylesheet" href="/character-cards.css">
   <link rel="stylesheet" href="/creation-workshop.css">
   <script type="module" src="/account.jsx"></script>
-  <script>
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('SW registered:', reg.scope))
-          .catch(err => console.log('SW registration failed:', err));
-      });
-    }
-
-    // --- PWA Install Prompt ---
-    let deferredInstallPrompt = null;
-
-    // Capture the native install prompt (Chrome/Edge on Android & desktop)
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredInstallPrompt = e;
-      showInstallButton();
-    });
-
-    // Detect platform
-    function detectPlatform() {
-      const ua = navigator.userAgent || '';
-      if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
-      if (/Android/i.test(ua)) return 'android';
-      return 'desktop';
-    }
-
-    // Show the install button if not already installed
-    function showInstallButton() {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-      if (isStandalone) return;
-      const btn = document.getElementById('installAppBtn');
-      if (btn) btn.style.display = '';
-    }
-
-    // Also show button on iOS (no beforeinstallprompt, but still installable)
-    if (detectPlatform() === 'ios') {
-      showInstallButton();
-    }
-
-    // Also show on desktop browsers that support install
-    window.addEventListener('load', () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-      if (!isStandalone) {
-        const btn = document.getElementById('installAppBtn');
-        if (btn) btn.style.display = '';
-      }
-    });
-
-    function openInstallModal() {
-      const overlay = document.getElementById('installOverlay');
-      overlay.classList.add('active');
-      document.body.style.overflow = 'hidden';
-
-      // Auto-detect platform and set correct tab
-      const platform = detectPlatform();
-      if (platform === 'ios') {
-        switchInstallTab('ios');
-      } else {
-        switchInstallTab('android');
-        // Show native install button if available
-        if (deferredInstallPrompt) {
-          document.getElementById('installNativeBtn').style.display = '';
-          document.getElementById('installAndroidManual').style.display = 'none';
-        }
-      }
-    }
-
-    function closeInstallModal() {
-      const overlay = document.getElementById('installOverlay');
-      overlay.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-
-    function switchInstallTab(platform) {
-      document.querySelectorAll('.install-tab').forEach(t => t.classList.remove('active'));
-      document.querySelector(`.install-tab[data-platform="${platform}"]`).classList.add('active');
-      document.getElementById('installAndroid').style.display = platform === 'android' ? '' : 'none';
-      document.getElementById('installIOS').style.display = platform === 'ios' ? '' : 'none';
-    }
-
-    function triggerNativeInstall() {
-      if (!deferredInstallPrompt) return;
-      deferredInstallPrompt.prompt();
-      deferredInstallPrompt.userChoice.then((result) => {
-        if (result.outcome === 'accepted') {
-          document.getElementById('installAppBtn').style.display = 'none';
-        }
-        deferredInstallPrompt = null;
-        closeInstallModal();
-      });
-    }
-
-    // Hide button if installed after the fact
-    window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-      if (e.matches) {
-        const btn = document.getElementById('installAppBtn');
-        if (btn) btn.style.display = 'none';
-      }
-    });
-  </script>
 </body>
 </html>

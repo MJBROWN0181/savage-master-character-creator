@@ -14,11 +14,20 @@ const ASSETS_TO_CACHE = [
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
 ];
+const SHELL_PAGES = ['/', '/index.html', '/create.html', '/dnd.html', '/pathfinder.html', '/campaigns.html', '/profile.html', '/chronicles.html', '/builder.html', '/pricing.html', '/support.html', '/settings.html', '/install.html'];
+function shellPath(path) {
+  const normalized = path.replace(/\/$/, '') || '/';
+  if (SHELL_PAGES.includes(normalized)) return normalized === '/' ? '/index.html' : normalized;
+  return SHELL_PAGES.includes(normalized + '.html') ? normalized + '.html' : null;
+}
+function staticPath(path) {
+  return ASSETS_TO_CACHE.includes(path) || /^(?:\/assets\/|\/icons\/|\/fonts\/|\/images\/).+\.(?:js|css|woff2?|png|webp|jpe?g|svg)$/.test(path);
+}
 
 // Install — pre-cache app shell
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE))
+    caches.open(CACHE_NAME).then(cache => cache.addAll([...new Set(ASSETS_TO_CACHE)]))
   );
   self.skipWaiting();
 });
@@ -35,20 +44,23 @@ self.addEventListener('activate', event => {
 
 // Fetch — network first, fall back to cache
 self.addEventListener('fetch', event => {
-  // Skip non-GET and cross-origin
+  // Cache app shells and public static files, never API responses or shared posts.
   if (event.request.method !== 'GET') return;
-  if (new URL(event.request.url).origin !== self.location.origin) return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  const page = shellPath(url.pathname);
+  if (!page && !staticPath(url.pathname)) return;
+  const key = page || url.pathname;
 
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Cache successful responses
         if (response.ok) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(key, clone)).catch(() => {}));
         }
         return response;
       })
-      .catch(async () => (await caches.match(event.request)) || Response.error())
+      .catch(async () => (await caches.match(key)) || Response.error())
   );
 });

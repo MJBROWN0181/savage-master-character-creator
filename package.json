@@ -23,7 +23,7 @@
   },
   "scripts": {
     "test:vtt": "node scripts/verify-vtt.mjs",
-    "build": "vite build && node scripts/copy-static.mjs",
+    "build": "vite build && node scripts/copy-static.mjs && node scripts/verify-install-build.mjs",
     "dev": "vite --host 0.0.0.0",
     "check": "tsc -p convex/tsconfig.json --noEmit",
     "test": "vitest run convex tests/profile-entry.test.jsx tests/workspace-ui.test.jsx tests/bug-ui.test.jsx tests/community-ui.test.jsx tests/character-journey.test.jsx tests/character-interaction.test.jsx && node --test tests/*.test.mjs"

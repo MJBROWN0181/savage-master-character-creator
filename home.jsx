@@ -14,6 +14,7 @@ export function Home() {
         <a className="home-secondary" href="/profile?entry=signIn">Already On One</a>
       </div>
       <a className="home-create" href="/create">Create a character</a>
+      <a className="home-install" href="/install" data-install-app><span aria-hidden="true">↓</span> Install App</a>
       <p className="home-slogan">Your character. Your table. Your story.</p>
     </div>
   </main>;

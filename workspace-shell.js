@@ -18,7 +18,7 @@
       <a class="sm-brand" href="/" aria-label="Savage Master home"><span class="sm-emblem"><img src="/logo.png" width="48" height="48" alt=""></span><span>Savage Master<small>Your character. Your table. Your story.</small></span></a>
       <nav class="sm-desktop-nav" aria-label="Main workspace">${nav}</nav>
       <div class="sm-shell-controls"><details class="sm-settings"><summary>Settings</summary><div class="sm-settings-menu"><label class="sm-appearance"><span>Appearance</span><select aria-label="Appearance"><option value="auto">Follow device</option><option value="light">Light</option><option value="dark">Dark</option></select></label><a href="/settings#review">Profile review &amp; access</a><a href="/settings#security">Password &amp; account</a><a href="/settings#privacy">Privacy &amp; connections</a><a href="/settings#profile-data">Profile &amp; data</a><a href="/settings">All settings</a></div></details>
-      <details class="sm-explore"><summary>Explore <span aria-hidden="true">⌄</span></summary><nav aria-label="Explore workspaces">${nav}<a href="/pricing">Account & billing</a><a href="/support">Support & the Bug</a></nav></details></div>`;
+      <details class="sm-explore"><summary>Explore <span aria-hidden="true">⌄</span></summary><nav aria-label="Explore workspaces">${nav}<a href="/install" data-install-app>Install App</a><a href="/pricing">Account & billing</a><a href="/support">Support & the Bug</a></nav></details></div>`;
     document.body.prepend(shell);
     const select = shell.querySelector('select');
     select.value = window.smAppearance.getPreference();

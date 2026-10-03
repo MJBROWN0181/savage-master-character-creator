@@ -1,0 +1,27 @@
+@import "/typography.css";
+html[data-theme] .install-page { box-sizing:border-box; width:min(100%,760px); margin:auto; padding:44px 24px 64px; font-family:var(--font-body); }
+.install-hero { text-align:center; border:0; margin-bottom:30px; padding:0; }
+.install-hero::after { display:none; }
+.install-app-icon { position:relative; overflow:hidden; width:96px; height:96px; margin:0 auto 20px; border-radius:50%; box-shadow:var(--sm-shadow); }
+.install-app-icon img { position:absolute; width:263%; height:263%; max-width:none; left:-81.5%; top:-84.5%; clip-path:circle(18.7% at 50% 50.8%); }
+.install-eyebrow { color:var(--sm-gold); text-transform:uppercase; letter-spacing:1.4px; font-size:12px; }
+.install-hero h1 { font:600 clamp(30px,5vw,46px)/1.15 var(--font-heading); margin:14px 0; }
+.install-hero p { max-width:540px; margin:14px auto 22px; font-size:18px; }
+.install-hero small { display:block; margin-top:10px; }
+.install-primary,.install-copy { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:12px 26px; border:1px solid var(--sm-gold); border-radius:9px; color:var(--sm-text); background:var(--sm-raised); font:600 17px/1.4 var(--font-body); text-decoration:none; cursor:pointer; }
+.install-primary:hover,.install-copy:hover { background:var(--sm-highlight); }
+.install-primary:disabled { opacity:.65; cursor:wait; }
+.install-guide,.install-share { border:1px solid var(--sm-line); border-radius:14px; padding:24px; scroll-margin-top:108px; }
+.install-guide h2,.install-share h2 { margin:0 0 18px; font:600 25px/1.3 var(--font-heading); }
+.install-devices { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px; }
+.install-devices button { flex:1; min-width:110px; padding:10px 14px; border:1px solid var(--sm-line); background:transparent; color:var(--sm-muted); font:600 16px/1.3 var(--font-body); cursor:pointer; }
+.install-devices button[aria-pressed="true"] { border-color:var(--sm-gold); background:var(--sm-highlight); color:var(--sm-text); }
+.install-guide h3 { margin:0 0 12px; font-size:20px; }
+.install-guide ol { margin:0; padding-left:24px; }
+.install-guide li { padding:0 0 12px 6px; font-size:17px; }
+.install-guide p,.install-footnote p { color:var(--sm-muted); font-size:16px; }
+.install-footnote { margin:22px 0 32px; text-align:center; }
+.install-share label { display:block; }
+.install-share input { display:block; width:100%; box-sizing:border-box; margin:8px 0 14px; padding:12px; border:1px solid var(--sm-line); border-radius:8px; font:16px/1.4 var(--font-body); }
+.install-status { color:var(--sm-gold); }
+@media(max-width:480px) { html[data-theme] .install-page { padding:28px 18px 44px; } .install-guide,.install-share { padding:20px 18px; } .install-devices { gap:6px; } .install-devices button { min-width:0; padding:10px 8px; font-size:14px; } .install-hero p { font-size:17px; } .install-guide li { font-size:16px; } }

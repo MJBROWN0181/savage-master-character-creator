@@ -40,8 +40,10 @@ test('landing offers account entry and the separate character journey', async ()
   const { Home } = await import('../home.jsx');
   const html = renderToStaticMarkup(<Home />);
   expect(html).toContain('src="/logo.png"');
-  expect(html.match(/<a /g)).toHaveLength(3);
+  expect(html.match(/<a /g)).toHaveLength(4);
   expect(html).toContain('href="/create"');
+  expect(html).toContain('href="/install"');
+  expect(html).toContain('data-install-app');
   expect(html).toContain('href="/profile?entry=signUp"');
   expect(html).toContain('href="/profile?entry=signIn"');
   expect(html).toContain('Your character. Your table. Your story.');

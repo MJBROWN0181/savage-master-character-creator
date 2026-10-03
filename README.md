@@ -1,8 +1,12 @@
 # Savage Master - Character Creator
 
-A **Savage Worlds** character creator with four campaign settings, dice icons, character exports, and account saving through Convex.
+A tabletop companion with separate **Savage Worlds**, **Dungeons & Dragons 5e**, and **Pathfinder 2e** character creators, campaigns, community spaces, and account saving through Convex.
 
 ![Savage Master](logo.png)
+
+## Install the app
+
+Use [smsheets.com/install](https://smsheets.com/install), the home page’s **Install App** button, or **Explore → Install App** in a workspace. Supported browsers open their native install prompt; other devices get a short guide. The app opens in its own window. Core character tools work offline after the first online setup; account saving and community features need internet. See [installation details](design/APP-INSTALL.md).
 
 ## Features
 
@@ -24,7 +28,7 @@ A **Savage Worlds** character creator with four campaign settings, dice icons, c
   - **Rifts** - The Tomorrow Legion
   - **Pirates** - 50 Fathoms
   - **Pathfinder** - Savage Pathfinder
-- **9-Step Character Wizard**: Setting, Concept, Ancestry, Attributes, Skills, Hindrances, Edges, Gear, Review
+- **Separate game-specific character journeys**: one decision at a time, live character previews, checked timelines, choice limits, and game-specific equipment shops.
 - **Dice Icons**: SVG-based die shapes (d4, d6, d8, d10, d12) that visually represent each die type
 - **Point-Buy System**: 5 attribute points, 15 skill points, up to 4 hindrance points
 - **Derived Stats**: Auto-calculated Pace, Parry, Toughness, and Run Die
@@ -44,7 +48,7 @@ A **Savage Worlds** character creator with four campaign settings, dice icons, c
 2. Configure Convex using the steps below, then run `npm run dev`.
 3. Open the local URL printed by Vite.
 
-The character creator is plain JavaScript. The account panel uses React, Convex Auth, and a Vite build.
+Savage Worlds uses plain JavaScript; D&D, Pathfinder, and account workspaces use React and Convex Auth, built with Vite.
 
 ## Account saving setup
 

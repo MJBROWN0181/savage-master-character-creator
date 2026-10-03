@@ -280,3 +280,5 @@ html[data-theme] .sm-view-table .workspace-hero { grid-template-columns:1fr; pos
 html[data-theme] .sm-view-table .workspace-hero>div { max-width:600px; }
 html[data-theme] .sm-view-table .workspace-art { display:none; }
 @media(max-width:540px) { html[data-theme] .sm-view-table .workspace-hero { padding:28px 22px; min-height:220px; background:linear-gradient(90deg,color-mix(in srgb,var(--sm-surface) 96%,transparent),color-mix(in srgb,var(--sm-surface) 78%,transparent)),url('/images/art/chronicles-harbor.webp') center/cover; } }
+
+html[data-app-installed="true"] [data-install-app] { display:none!important; }
