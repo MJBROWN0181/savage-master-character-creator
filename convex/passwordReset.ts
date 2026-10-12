@@ -34,8 +34,14 @@ function emailCode(id: string, subject: string) {
             text: `Your Savage Master code is ${token}. If you did not request this, ignore this message.`,
           }),
         });
-      } catch {
-        console.error("Account email transport failed");
+      } catch (error) {
+        let reason = error instanceof Error ? error.message : "Unknown transport error";
+        for (const privateValue of [provider.apiKey, email, token, sender]) {
+          reason = reason.split(privateValue).join("[redacted]");
+          reason = reason.split(encodeURIComponent(privateValue)).join("[redacted]");
+        }
+        reason = reason.replace(/Bearer\s+[^\s"']+/gi, "Bearer [redacted]").replace(/\b\d{8}\b/g, "[redacted]");
+        console.error("Account email transport failed", { reason: reason.slice(0, 280) });
         throw new Error("Could not send account email.");
       }
       if (!response.ok) {

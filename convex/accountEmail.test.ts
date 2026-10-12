@@ -53,7 +53,7 @@ test('network failures retain the public service error without exposing transpor
   vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('Transport details re_private_test_key account-email-test@example.invalid'); }));
   const t = convexTest(schema, modules);
   await expect(t.action(ref<'action'>('auth:signIn'), { provider: 'password', params: { flow: 'signUp', email: 'account-email-test@example.invalid', password: 'synthetic-password-123', acceptedTerms: TERMS_VERSION } })).rejects.toMatchObject({ data: { code: 'ACCOUNT_EMAIL_UNAVAILABLE' } });
-  expect(logged).toHaveBeenCalledWith('Account email transport failed');
+  expect(logged).toHaveBeenCalledWith('Account email transport failed', { reason: 'Transport details [redacted] [redacted]' });
   expect(JSON.stringify(logged.mock.calls)).not.toContain('re_private_test_key');
   expect(JSON.stringify(logged.mock.calls)).not.toContain('account-email-test@example.invalid');
 });
