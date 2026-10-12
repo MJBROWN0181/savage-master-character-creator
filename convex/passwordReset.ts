@@ -1,5 +1,4 @@
 import ResendProvider from "@auth/core/providers/resend";
-import { Resend } from "resend";
 
 function emailCode(id: string, subject: string) {
   return ResendProvider({
@@ -18,17 +17,31 @@ function emailCode(id: string, subject: string) {
         });
         throw new Error("Account email is not configured.");
       }
-      const { error } = await new Resend(provider.apiKey).emails.send({
-        from: sender,
-        to: [email],
-        subject,
-        text: `Your Savage Master code is ${token}. If you did not request this, ignore this message.`,
-      });
-      if (error) {
-        // Provider messages can include private recipient data. Log only the category and status.
+      // Account providers run in Convex's default runtime. Use its native fetch
+      // instead of the Node SDK, which can hide transport failures as generic errors.
+      let response: Response;
+      try {
+        response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${provider.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: sender,
+            to: [email],
+            subject,
+            text: `Your Savage Master code is ${token}. If you did not request this, ignore this message.`,
+          }),
+        });
+      } catch {
+        console.error("Account email transport failed");
+        throw new Error("Could not send account email.");
+      }
+      if (!response.ok) {
+        // Do not log the provider body: it may include private recipient data.
         console.error("Account email provider rejected request", {
-          category: error.name,
-          status: error.statusCode ?? null,
+          status: response.status,
         });
         throw new Error("Could not send account email.");
       }

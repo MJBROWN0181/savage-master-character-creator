@@ -40,7 +40,20 @@ test('provider failures record safe diagnostics without recording recipients, co
   vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ name: 'validation_error', statusCode: 403, message: 'Private recipient account-email-test@example.invalid with re_private_test_key and code 12345678' }), { status: 403 })));
   const t = convexTest(schema, modules);
   await expect(t.action(ref<'action'>('auth:signIn'), { provider: 'password', params: { flow: 'signUp', email: 'account-email-test@example.invalid', password: 'synthetic-password-123', acceptedTerms: TERMS_VERSION } })).rejects.toMatchObject({ data: { code: 'ACCOUNT_EMAIL_UNAVAILABLE' } });
-  expect(logged).toHaveBeenCalledWith('Account email provider rejected request', { category: 'validation_error', status: 403 });
+  expect(logged).toHaveBeenCalledWith('Account email provider rejected request', { status: 403 });
   const output = JSON.stringify(logged.mock.calls);
   for (const privateValue of ['account-email-test@example.invalid', 're_private_test_key', '12345678']) expect(output).not.toContain(privateValue);
+});
+
+test('network failures retain the public service error without exposing transport details', async () => {
+  vi.stubEnv('AUTH_RESEND_KEY', 're_private_test_key');
+  vi.stubEnv('AUTH_EMAIL_FROM', 'Savage Master <noreply@example.invalid>');
+  vi.stubEnv('SITE_URL', 'https://example.invalid');
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('Transport details re_private_test_key account-email-test@example.invalid'); }));
+  const t = convexTest(schema, modules);
+  await expect(t.action(ref<'action'>('auth:signIn'), { provider: 'password', params: { flow: 'signUp', email: 'account-email-test@example.invalid', password: 'synthetic-password-123', acceptedTerms: TERMS_VERSION } })).rejects.toMatchObject({ data: { code: 'ACCOUNT_EMAIL_UNAVAILABLE' } });
+  expect(logged).toHaveBeenCalledWith('Account email transport failed');
+  expect(JSON.stringify(logged.mock.calls)).not.toContain('re_private_test_key');
+  expect(JSON.stringify(logged.mock.calls)).not.toContain('account-email-test@example.invalid');
 });
