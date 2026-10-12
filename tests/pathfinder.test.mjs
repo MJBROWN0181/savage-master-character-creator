@@ -1,5 +1,18 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {fresh,stats,validate,budget,issues} from '../pathfinder-model.mjs';import equipment from '../pathfinder-data/equipment.json' with {type:'json'};
 const hero=()=>({...fresh(),name:'Test fighter',background:'Warrior',boosts:{ancestry:['str','con'],background:['str','dex'],class:['str'],free:['str','dex','con','wis']}});
+import feats from '../pathfinder-data/feats.json' with {type:'json'};
+import spells from '../pathfinder-data/spells.json' with {type:'json'};
+
+test('Rule validation compares nested data independently of object field order',()=>{
+ const reorder=value=>Array.isArray(value)?value.map(reorder):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().reverse().map(key=>[key,reorder(value[key])])):value;
+ const c=reorder({...hero(),feats:[feats.find(row=>row.name==='Unconventional Weaponry')],spellbook:[spells[0]],inventory:[equipment.find(row=>row.name==='Longsword')]});
+ validate(c);
+ for(const field of ['feats','spellbook','inventory']){
+  const altered=structuredClone(c);altered[field][0].description+=' changed';assert.throws(()=>validate(altered));
+  const added=structuredClone(c);added[field][0].extra=true;assert.throws(()=>validate(added));
+  const removed=structuredClone(c);delete removed[field][0].description;assert.throws(()=>validate(removed));
+ }
+});
 test('Pathfinder initial proficiency and HP use their own rules',()=>{const c=hero(),s=stats(c);assert.equal(s.mods.str,4);assert.equal(s.hp,20);assert.equal(s.saves.fortitude,7);assert.equal(s.ac,15);assert.deepEqual(issues(c),[]);validate(c);});
 test('Pathfinder mundane loadout includes trained armor, damage, MAP and budget',()=>{const c=hero();c.weapon=equipment.find(r=>r.name==='Longsword');c.armor=equipment.find(r=>r.name==='Chain Mail');c.inventory=[c.weapon,c.armor];const s=stats(c);assert.equal(s.attack,9);assert.deepEqual(s.map,[0,-5,-10]);assert.equal(s.ac,18);assert.equal(s.speed,25);assert.equal(budget(c),800);validate(c);c.weapon={...c.weapon,data:{...c.weapon.data,damage:{dice:999,die:'d20'}}};assert.throws(()=>validate(c));});
 test('Pathfinder incomplete or invalid boosts cannot be treated as a finished character',()=>{const c=hero();c.boosts.class=['cha'];assert.ok(issues(c).length);c.boosts.free=['str','str'];assert.throws(()=>validate(c));});
