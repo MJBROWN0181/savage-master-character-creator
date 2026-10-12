@@ -7,9 +7,9 @@ import { TERMS_VERSION } from '../legal-terms.mjs';
 const modules = import.meta.glob('./**/*.ts');
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetModules(); });
 
-test('real signup and reset providers send eight-digit codes to the requested mailbox', async () => {
-  vi.stubEnv('AUTH_RESEND_KEY', 're_test_account_email_key');
-  vi.stubEnv('AUTH_EMAIL_FROM', 'Savage Master <noreply@example.invalid>');
+test('real signup and reset providers trim configured credentials and send eight-digit codes', async () => {
+  vi.stubEnv('AUTH_RESEND_KEY', '\nre_test_account_email_key\r\n');
+  vi.stubEnv('AUTH_EMAIL_FROM', '  Savage Master <noreply@example.invalid>\n');
   vi.stubEnv('SITE_URL', 'https://example.invalid');
   const requests: { headers: Headers; body: Record<string, unknown> }[] = [];
   vi.stubGlobal('fetch', vi.fn(async (_url: unknown, init: RequestInit) => {

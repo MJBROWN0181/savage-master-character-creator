@@ -9,11 +9,12 @@ function emailCode(id: string, subject: string) {
       return Array.from(bytes, byte => (byte % 10).toString()).join("");
     },
     async sendVerificationRequest({ identifier: email, provider, token }) {
-      const sender = process.env.AUTH_EMAIL_FROM;
-      if (!sender || !provider.apiKey) {
+      const sender = process.env.AUTH_EMAIL_FROM?.trim();
+      const apiKey = provider.apiKey?.trim();
+      if (!sender || !apiKey) {
         console.error("Account email configuration unavailable", {
           senderConfigured: Boolean(sender),
-          keyConfigured: Boolean(provider.apiKey),
+          keyConfigured: Boolean(apiKey),
         });
         throw new Error("Account email is not configured.");
       }
@@ -24,7 +25,7 @@ function emailCode(id: string, subject: string) {
         response = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${provider.apiKey}`,
+            Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -36,7 +37,8 @@ function emailCode(id: string, subject: string) {
         });
       } catch (error) {
         let reason = error instanceof Error ? error.message : "Unknown transport error";
-        for (const privateValue of [provider.apiKey, email, token, sender]) {
+        for (const privateValue of [provider.apiKey, apiKey, email, token, sender]) {
+          if (!privateValue) continue;
           reason = reason.split(privateValue).join("[redacted]");
           reason = reason.split(encodeURIComponent(privateValue)).join("[redacted]");
         }
