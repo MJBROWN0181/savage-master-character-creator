@@ -3,24 +3,25 @@ html[data-home=true] .app,
 html[data-home=true] .install-overlay { display: none !important; }
 html:not([data-home=true]) #homeRoot { display: none; }
 
-.sm-home {
-  --home-gold: #e4b96b;
+/* Keep the welcome crest clear of the shared header in both appearances. */
+html[data-theme] main.sm-home {
   display: grid;
   place-items: center;
+  max-width: none;
   min-height: 100vh;
   min-height: 100svh;
-  padding: max(32px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
-  background: radial-gradient(ellipse at 50% 42%, #59432338, transparent 60%), #171510;
+  padding: calc(var(--sm-shell-height) + max(24px, env(safe-area-inset-top))) max(24px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  background: radial-gradient(ellipse at 50% 42%, var(--sm-scene-glow), transparent 60%), var(--sm-bg);
   font-family: var(--font-body);
 }
 .home-welcome { width: min(100%, 560px); text-align: center; }
 .home-logo {
   position: relative;
   overflow: hidden;
-  width: min(74vw, 340px);
+  width: clamp(180px, 28vw, 280px);
   aspect-ratio: 1;
-  margin: 0 auto 36px;
-  filter: drop-shadow(0 12px 28px #0008);
+  margin: 0 auto 24px;
+  filter: drop-shadow(var(--sm-shadow));
 }
 .home-logo img {
   position: absolute;
@@ -31,28 +32,34 @@ html:not([data-home=true]) #homeRoot { display: none; }
   top: -84.5%;
   clip-path: circle(18.7% at 50% 50.8%);
 }
-.home-actions { display: flex; justify-content: center; gap: 14px; }
+.home-slogan { margin: 0; color: var(--sm-text); font: 600 clamp(26px, 3vw, 34px)/1.2 var(--font-heading); text-wrap: balance; }
+.home-intro { max-width: 44ch; margin: 14px auto 28px; color: var(--sm-muted); font-size: 17px; line-height: 1.6; text-wrap: pretty; }
+.home-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .home-actions a {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  min-height: 52px;
-  padding: 14px 22px;
-  border: 1px solid var(--home-gold);
+  gap: 3px;
+  min-height: 80px;
+  padding: 14px 12px;
+  border: 1px solid var(--sm-line);
   border-radius: 8px;
-  font: 600 14px/1.5 var(--font-body);
+  color: var(--sm-text);
+  background: transparent;
+  font: 600 18px/1.4 var(--font-body);
   text-decoration: none;
 }
-.home-primary { background: var(--home-gold); color: #171510; }
-.home-secondary { color: var(--home-gold); background: #e4b96b08; }
-.home-actions a:hover { box-shadow: 0 0 22px #e4b96b26; }
-.home-actions a:focus-visible { outline: 2px solid #fff1d5; outline-offset: 5px; }
-.home-slogan { margin: 25px 0 0; color: #bdb09a; font: 18px/1.6 var(--font-body); }
+.home-actions small { color: var(--sm-muted); font: 400 15px/1.4 var(--font-body); }
+.home-actions .home-primary { border-color: var(--sm-gold); background: var(--sm-gold-wash); }
+.home-actions a:hover { background: var(--sm-raised); border-color: var(--sm-gold); }
+.home-character-link { display: flex; align-items: center; justify-content: center; width: fit-content; min-height: 48px; margin: 16px auto 0; padding: 8px 16px; color: var(--sm-gold); font-size: 18px; text-underline-offset: 4px; }
+.home-character-link:hover { color: var(--sm-text); }
+.home-install { display: flex; align-items: center; justify-content: center; width: fit-content; min-height: 44px; margin: 12px auto 0; padding: 8px 20px; border: 1px solid var(--sm-line); border-radius: 8px; color: var(--sm-muted); background: transparent; font: 500 15px/1.5 var(--font-body); text-decoration: none; }
+.home-install:hover { color: var(--sm-text); border-color: var(--sm-muted); background: var(--sm-raised); }
 @media (max-width: 480px) {
-  .home-actions { flex-direction: column; }
-  .home-logo { margin-bottom: 28px; }
-  .home-slogan { font-size: 16px; }
+  html[data-theme] main.sm-home { padding-top: calc(var(--sm-shell-height) + 20px + env(safe-area-inset-top)); }
+  .home-logo { width: 180px; margin-bottom: 20px; }
+  .home-actions { grid-template-columns: 1fr; gap: 10px; }
+  .home-actions a { min-height: 70px; }
+  .home-intro { margin-bottom: 24px; font-size: 16px; }
 }
-
-.home-install { display:flex; align-items:center; justify-content:center; gap:9px; width:fit-content; min-height:44px; margin:22px auto 0; padding:8px 20px; border:1px solid var(--sm-line,#e4b96b66); border-radius:8px; color:var(--sm-gold,var(--home-gold)); background:var(--sm-surface,#e4b96b08); font:600 15px/1.5 var(--font-body); text-decoration:none; }
-.home-install:hover { border-color:var(--sm-gold,var(--home-gold)); background:var(--sm-highlight,#e4b96b15); }

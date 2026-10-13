@@ -44,7 +44,7 @@
     shell.addEventListener('keydown', event => { if (event.key === 'Escape') for (const menu of menus) if (menu.open) { menu.open = false; menu.querySelector('summary').focus(); } });
     document.addEventListener('click', event => { for (const menu of menus) if (!menu.contains(event.target)) menu.open = false; });
     function markMain() {
-      const main = document.querySelector('main:not([hidden])');
+      const main = document.querySelector(document.documentElement.dataset.home === 'true' ? '#homeRoot main' : 'main:not([hidden])');
       if (!main) return false;
       if (!main.id) main.id = 'workspace-content';
       shell.querySelector('.sm-skip').href = '#' + main.id;

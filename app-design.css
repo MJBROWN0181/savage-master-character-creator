@@ -87,11 +87,6 @@ html[data-theme] .official-products { background:transparent; box-shadow:none; f
 .sm-skip:focus { transform:none; }
 html[data-workspace="home"] .sm-desktop-nav,html[data-workspace="home"] .sm-explore { display:none; }
 html[data-workspace="home"] .sm-shell { position:absolute; width:100%; background:transparent; border-bottom:0; box-shadow:none; }
-html[data-theme] .sm-home { background:radial-gradient(ellipse at 50% 42%,var(--sm-scene-glow),transparent 60%),var(--sm-bg); --home-gold:var(--sm-action); }
-html[data-theme] .home-primary { color:var(--sm-text); background:transparent; border-color:var(--sm-line); }
-html[data-theme] .home-secondary { color:var(--sm-text); border-color:var(--sm-line); background:var(--sm-surface); }
-html[data-theme] .home-actions a:hover { background:var(--sm-raised); box-shadow:none; border-color:var(--sm-muted); }
-html[data-theme] .home-slogan { color:var(--sm-muted); }
 /* Journal: illustrated chapter headings, comfortable writing surfaces. */
 html[data-workspace="profile"] body { background:radial-gradient(ellipse at 5% 30%,var(--sm-gold-wash),transparent 55%),var(--sm-bg); }
 html[data-workspace="profile"] .profile-entry { position:relative; max-width:650px; padding:38px; margin:7vh auto; border-radius:18px; border-top:3px solid var(--sm-gold); }

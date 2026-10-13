@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "project": {
+    "name": "Savage Master",
+    "productType": "Tabletop character and campaign companion",
+    "stack": [
+      "react",
+      "vite",
+      "classic JavaScript"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "app-design.css",
+      "typography.css"
+    ],
+    "components": [
+      "home.jsx",
+      "create.jsx",
+      "character-cards.jsx",
+      "workspace-shell.js"
+    ],
+    "assets": [
+      "logo.png",
+      "images/art/"
+    ],
+    "instructions": [
+      "design/SAVAGE-MASTER-ART-STYLE.md",
+      "design/UI-DESIGN-RESEARCH.md"
+    ]
+  },
+  "design": {
+    "colorMode": "light, dark, and follow device",
+    "colors": {
+      "forest": "#111d20",
+      "parchment": "#f5f0e6",
+      "paper": "#fffdf8",
+      "ink": "#263d3e",
+      "antiqueGoldDark": "#e4be7b",
+      "antiqueGoldLight": "#825b24"
+    },
+    "typography": {
+      "heading": "Alegreya",
+      "body": "Alegreya",
+      "fallback": "Georgia, serif"
+    },
+    "spacing": {
+      "source": "existing route and shared CSS"
+    },
+    "radius": {
+      "welcomeControls": "8px"
+    },
+    "shadows": {
+      "principle": "Restrained; artwork can have depth, controls stay quiet"
+    },
+    "motion": {
+      "principle": "Respect reduced motion; no new ambient animation"
+    },
+    "density": "Calm welcome; compact tactical workspaces"
+  },
+  "components": {
+    "installed": [
+      "Home",
+      "CreateCharacter",
+      "CardArt",
+      "shared workspace shell",
+      "shared appearance system"
+    ],
+    "preferredPrimitives": [
+      "native links",
+      "native details",
+      "native form controls"
+    ],
+    "patterns": [
+      "Subtle outlined controls",
+      "Original Gilded Storybook artwork",
+      "Opaque readable surfaces"
+    ]
+  },
+  "constraints": {
+    "must": [
+      "Preserve the approved Gilded Storybook style",
+      "Improve one page at a time",
+      "Retain the existing logo and account-entry destinations",
+      "Check desktop, phone, keyboard, and both appearances"
+    ],
+    "avoid": [
+      "Generic SaaS cards",
+      "New font families",
+      "Heavy green-filled controls",
+      "Unsupported product claims",
+      "Changes to unrelated marketing work"
+    ]
+  },
+  "decisions": [
+    "Owner requested frontend-design refinements across the app, preserving its style and proceeding one page at a time; start with the homepage."
+  ],
+  "evidence": [
+    {
+      "fact": "Approved original ink-and-watercolor style",
+      "source": "design/SAVAGE-MASTER-ART-STYLE.md"
+    },
+    {
+      "fact": "Theme palette and responsive shell",
+      "source": "app-design.css"
+    },
+    {
+      "fact": "Self-hosted Alegreya typography",
+      "source": "typography.css"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+/* The original illustration deck stays central; phone rows keep every game in reach. */
+*, *::before, *::after { box-sizing: border-box; }
+html[data-theme] main.create-landing {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: 40px 32px 56px;
+  font-family: var(--font-body);
+}
+.create-landing .create-heading { max-width: 620px; margin: 0 auto 30px; text-align: center; }
+.create-landing h1 { margin: 0 0 12px; font-size: clamp(32px, 4vw, 44px); line-height: 1.2; text-wrap: balance; }
+.create-landing .create-heading p { margin: 0; color: var(--sm-muted); font-size: 18px; line-height: 1.6; text-wrap: balance; }
+.create-landing .game-deck { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin: 0; padding: 0; list-style: none; }
+.create-landing .game-deck > li { display: flex; min-width: 0; }
+html[data-theme] .create-landing .game-tarot { width: 100%; padding: 10px; border-color: var(--sm-line); box-shadow: none; transition: none; }
+html[data-theme] .create-landing .game-tarot:hover { transform: none; border-color: var(--sm-gold); background: var(--sm-raised); }
+.create-landing .game-tarot .tarot-art { aspect-ratio: 4 / 5; }
+.create-landing .game-tarot .tarot-art img { object-position: center; }
+.create-landing .tarot-caption { flex: 1; gap: 10px; padding: 22px 8px 10px; text-align: center; }
+.create-landing .tarot-caption h2 { margin: 0; color: var(--sm-text); font-size: clamp(22px, 2.2vw, 26px); line-height: 1.25; text-wrap: balance; }
+.create-landing .game-edition { min-height: 44px; margin: 0; color: var(--sm-muted); font-size: 16px; line-height: 1.4; }
+.create-landing .game-start { margin: 0; color: var(--sm-muted); font-size: 16px; line-height: 1.4; }
+.create-landing .game-entry { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; width: 100%; margin-top: auto; padding-top: 12px; }
+.create-landing .game-choose { color: var(--sm-gold); font-size: 17px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+.create-landing .game-preview { padding: 2px 8px; border: 1px solid var(--sm-line); border-radius: 5px; color: var(--sm-muted); font-size: 13px; line-height: 1.4; }
+@media (max-width: 760px) {
+  html[data-theme] main.create-landing { max-width: 620px; padding: 28px 20px 40px; }
+  .create-landing .create-heading { margin-bottom: 24px; text-align: left; }
+  .create-landing .create-heading p { font-size: 16px; text-wrap: pretty; }
+  .create-landing .game-deck { grid-template-columns: 1fr; gap: 14px; }
+  html[data-theme] .create-landing .game-tarot { display: grid; grid-template-columns: clamp(84px, 25vw, 132px) minmax(0, 1fr); align-items: center; gap: 14px; }
+  .create-landing .tarot-caption { align-items: flex-start; gap: 7px; padding: 4px 2px 4px 0; text-align: left; }
+  .create-landing .tarot-caption h2 { font-size: 21px; text-wrap: pretty; }
+  .create-landing .game-edition { min-height: 0; font-size: 14px; }
+  .create-landing .game-start { font-size: 14px; }
+  .create-landing .game-entry { justify-content: flex-start; gap: 8px; padding-top: 3px; }
+  .create-landing .game-choose { font-size: 16px; }
+}
+@media (max-width: 360px) {
+  html[data-theme] main.create-landing { padding-inline: 14px; }
+  html[data-theme] .create-landing .game-tarot { gap: 10px; }
+  .create-landing .tarot-caption h2 { font-size: 20px; }
+}
