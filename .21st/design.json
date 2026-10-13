@@ -18,7 +18,8 @@
       "home.jsx",
       "create.jsx",
       "character-cards.jsx",
-      "workspace-shell.js"
+      "workspace-shell.js",
+      "app.js"
     ],
     "assets": [
       "logo.png",
@@ -64,7 +65,8 @@
       "CreateCharacter",
       "CardArt",
       "shared workspace shell",
-      "shared appearance system"
+      "shared appearance system",
+      "Savage Worlds classic workshop"
     ],
     "preferredPrimitives": [
       "native links",

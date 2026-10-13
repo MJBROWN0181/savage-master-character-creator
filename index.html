@@ -41,18 +41,18 @@
 <body>
   <div id="homeRoot"></div>
   <script type="module" src="/home.jsx"></script>
-  <div class="app">
+  <div class="app savage-workshop" onkeydown="app.handleWorkshopKeydown(event)">
     <!-- Mobile Header (hidden on desktop) -->
     <header class="mobile-header" id="mobileHeader">
       <img src="logo.png" alt="" class="mobile-logo">
       <span class="mobile-title" id="mobileTitle">Character workshop</span>
-      <button class="mobile-summary-btn" aria-label="Open workspace and character menu" onclick="document.querySelector('.sidebar').classList.toggle('account-open')">Menu</button>
-      <button class="mobile-summary-btn" id="summaryToggle" onclick="app.toggleMobileSummary()">Summary</button>
+      <button class="mobile-summary-btn" data-draft-tools aria-controls="savageDraftTools" aria-expanded="false" onclick="app.toggleDraftTools(this)">Draft tools</button>
+      <button class="mobile-summary-btn" id="summaryToggle" aria-controls="summaryPanel" aria-expanded="false" onclick="app.toggleMobileSummary(this)">Summary</button>
     </header>
 
     <!-- Sidebar Navigation -->
-    <nav class="sidebar">
-      <button class="btn btn-sm account-close" onclick="this.closest('.sidebar').classList.remove('account-open')">Close</button>
+    <nav class="sidebar" id="savageDraftTools" aria-label="Character draft tools">
+      <button class="btn btn-sm account-close" onclick="app.closeDraftTools()">Close</button>
       <div class="sidebar-logo">
         <div class="logo-wrap">
           <img src="logo.png" alt="Savage Master Character Creation" class="logo-img">
@@ -84,14 +84,14 @@
     <main class="content" id="mainContent"></main>
 
     <!-- Summary Panel -->
-    <aside class="summary-panel" id="summaryPanel"></aside>
-    <aside class="sw-journey-rail" aria-label="Creation progress"><small>YOUR JOURNEY</small><nav id="savageJourney" aria-label="Character creation timeline"></nav></aside>
+    <aside class="summary-panel" id="summaryPanel" aria-label="Character summary"></aside>
+    <aside class="sw-journey-rail" aria-label="Creation progress"><small>Your journey</small><nav id="savageJourney" aria-label="Character creation timeline"></nav></aside>
 
     <!-- Mobile Bottom Nav (hidden on desktop) -->
     <nav class="mobile-nav" id="mobileNav"></nav>
 
     <!-- Summary Overlay (for mobile drawer) -->
-    <div class="summary-overlay" id="summaryOverlay" onclick="app.toggleMobileSummary()"></div>
+    <div class="summary-overlay" id="summaryOverlay" onclick="app.closeMobileSummary()"></div>
   </div>
 
   <script src="data.js"></script>
@@ -101,6 +101,7 @@
   <script src="app.js"></script>
   <link rel="stylesheet" href="/character-cards.css">
   <link rel="stylesheet" href="/creation-workshop.css">
+  <link rel="stylesheet" href="/savage-workshop.css">
   <script type="module" src="/account.jsx"></script>
 </body>
 </html>

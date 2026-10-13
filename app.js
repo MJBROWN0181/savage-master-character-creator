@@ -213,11 +213,55 @@ const app = {
     `).join('');
   },
 
-  toggleMobileSummary() {
+  toggleMobileSummary(trigger = document.getElementById('summaryToggle')) {
     const panel = document.getElementById('summaryPanel');
     const overlay = document.getElementById('summaryOverlay');
-    if (panel) panel.classList.toggle('open');
-    if (overlay) overlay.classList.toggle('open');
+    if (!panel) return;
+    if (panel.classList.contains('open')) { this.closeMobileSummary(); return; }
+    this.closeDraftTools(false);
+    this.summaryTrigger = trigger;
+    panel.classList.add('open');
+    overlay?.classList.add('open');
+    trigger?.setAttribute('aria-expanded', 'true');
+    panel.querySelector('.sw-summary-close')?.focus();
+  },
+
+  closeMobileSummary(restoreFocus = true) {
+    document.getElementById('summaryPanel')?.classList?.remove('open');
+    document.getElementById('summaryOverlay')?.classList?.remove('open');
+    document.getElementById('summaryToggle')?.setAttribute?.('aria-expanded', 'false');
+    if (restoreFocus) this.summaryTrigger?.focus();
+    this.summaryTrigger = null;
+  },
+
+  toggleDraftTools(trigger) {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    if (sidebar.classList.contains('account-open')) { this.closeDraftTools(); return; }
+    this.closeMobileSummary(false);
+    this.draftToolsTrigger = trigger;
+    sidebar.classList.add('account-open');
+    document.querySelectorAll('[data-draft-tools]').forEach(button => button.setAttribute('aria-expanded', 'true'));
+    sidebar.querySelector('.account-close')?.focus();
+  },
+
+  closeDraftTools(restoreFocus = true) {
+    document.querySelector('.sidebar')?.classList.remove('account-open');
+    document.querySelectorAll?.('[data-draft-tools]')?.forEach(button => button.setAttribute('aria-expanded', 'false'));
+    if (restoreFocus) this.draftToolsTrigger?.focus();
+    this.draftToolsTrigger = null;
+  },
+
+  handleWorkshopKeydown(event) {
+    if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return;
+    if (document.getElementById('summaryPanel')?.classList.contains('open')) {
+      event.preventDefault(); this.closeMobileSummary();
+    } else if (document.querySelector('.sidebar')?.classList.contains('account-open')) {
+      event.preventDefault(); this.closeDraftTools();
+    } else {
+      const journey = document.querySelector('.savage-workshop .creation-journey[open]');
+      if (journey) { event.preventDefault(); journey.open = false; journey.querySelector('summary')?.focus(); }
+    }
   },
 
   // ----------------------------------------------------------
@@ -395,7 +439,8 @@ const app = {
   },
 
   goToStep(i) {
-    document.querySelector('.sidebar')?.classList.remove('account-open');
+    this.closeDraftTools(false);
+    this.closeMobileSummary(false);
     // Allow backward navigation freely; validate on forward moves
     if (i > this.currentStep) {
       // Validate every step from current up to (but not including) target
@@ -737,7 +782,7 @@ const app = {
     const summary = document.getElementById('summaryPanel');
     if (summary) summary.style.display = '';
     const step = STEPS[this.currentStep].id;
-    main.innerHTML = `<div class="step-content"><div class="creation-quiet-nav"><a href="/create">&larr; Choose a game</a><div><details class="creation-journey"><summary>Your journey</summary><nav aria-label="Character creation steps">${STEPS.map((chapter,i)=>`<button aria-current="${i===this.currentStep?'step':'false'}" onclick="app.goToStep(${i})">${this.completedSteps.includes(i)&&this.validateStep(i).valid?'&#10003;':i+1}. ${this.escHtml(chapter.label)}</button>`).join('')}</nav></details><button class="btn btn-sm" onclick="app.showCreationBook()">Creation book</button><button class="btn btn-sm" onclick="document.querySelector('.sidebar').classList.toggle('account-open')">Draft tools</button></div></div><p class="step-progress">Step ${this.currentStep+1} of ${STEPS.length}</p>${this['render_'+step]()}${this.getTipHtml()?`<details class="sw-setting-guidance"><summary>Greater Detail: setting guidance</summary>${this.getTipHtml()}</details>`:''}</div>`;
+    main.innerHTML = `<div class="step-content"><div class="creation-quiet-nav sw-workshop-toolbar"><a href="/create">&larr; Choose a game</a><div><details class="creation-journey"><summary>Your journey</summary><nav aria-label="Character creation steps">${STEPS.map((chapter,i)=>`<button aria-current="${i===this.currentStep?'step':'false'}" onclick="app.goToStep(${i})">${this.completedSteps.includes(i)&&this.validateStep(i).valid?'&#10003;':i+1}. ${this.escHtml(chapter.label)}</button>`).join('')}</nav></details><button class="btn btn-sm" onclick="app.showCreationBook()">Creation book</button><button class="btn btn-sm sw-draft-tools" data-draft-tools aria-controls="savageDraftTools" aria-expanded="false" onclick="app.toggleDraftTools(this)">Draft tools</button></div></div><div class="sw-step-meta"><h1>Savage Worlds</h1><p class="step-progress">Step ${this.currentStep+1} of ${STEPS.length}</p></div>${this['render_'+step]()}${this.getTipHtml()?`<details class="sw-setting-guidance"><summary>Greater Detail: setting guidance</summary>${this.getTipHtml()}</details>`:''}</div>`;
     main.querySelectorAll('.card').forEach(card=>{
       const description=card.querySelector('.card-desc');if(!description)return;
       const full=description.textContent.trim();const details=document.createElement('details');details.className='sw-card-details';
@@ -852,8 +897,10 @@ const app = {
   classicCard(type,id,name,index,sigil='&#10022;') {
     if(type==='settings'&&id==='pathfinder')name='Pathfinder for Savage Worlds';
     const source=this.cardArt?.savage?.[type]?.[id];
+    const selected=type==='settings'?(id==='core'?!this.character.setting:this.character.setting===id):this.character.race===id;
+    const selectedId=`sw-choice-${type}-${id}`;
     const art=source?`<img src="${this.escHtml(source)}" alt="" onerror="this.remove()">`:`<span class="tarot-orbit"></span><span class="tarot-sigil">${sigil}</span><span class="tarot-star">&#10022;</span>`;
-    return `<article class="tarot-card"><button class="tarot-face" aria-label="Meet ${this.escHtml(name)}" onclick="app.previewChoice('${type}','${id}')"><div class="tarot-art" aria-hidden="true">${art}</div><span class="tarot-caption"><small>${String(index+1).padStart(2,'0')}</small><strong>${this.escHtml(name)}</strong></span></button><button class="tarot-detail-link" aria-label="Greater Detail about ${this.escHtml(name)}" onclick="app.previewChoice('${type}','${id}',true)">Greater Detail</button></article>`;
+    return `<article class="tarot-card${selected?' sw-choice-selected':''}"><button class="tarot-face" aria-label="Meet ${this.escHtml(name)}" aria-haspopup="dialog" ${selected?`aria-describedby="${selectedId}"`:''} onclick="app.previewChoice('${type}','${id}')"><div class="tarot-art" aria-hidden="true">${art}</div><span class="tarot-caption"><strong>${this.escHtml(name)}</strong>${selected?`<small class="sw-choice-state" id="${selectedId}">${type==='settings'?'Current setting':'Your choice'}</small>`:''}</span></button><button class="tarot-detail-link" aria-label="Greater Detail about ${this.escHtml(name)}" aria-haspopup="dialog" onclick="app.previewChoice('${type}','${id}',true)">Greater Detail</button></article>`;
   },
   previewChoice(type,id,expanded=false) {
     const setting=type==='settings'?(SETTINGS[id]||{name:'Core SWADE / Homebrew',description:'Use core Savage Worlds options for your own campaign.',subtitle:'Savage Worlds Adventure Edition'}):null;
@@ -1991,8 +2038,9 @@ const app = {
     const stats = this.getDerivedStats();
 
     panel.innerHTML = `
-      <small class="sw-game-label">SAVAGE WORLDS</small>
-      ${this.getSettingData() ? `<div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; color:${this.getSettingData().color}; font-weight:600; margin-bottom:0.3rem;">${this.getSettingData().icon} ${this.getSettingData().name}</div>` : ''}
+      <button class="sw-summary-close" onclick="app.closeMobileSummary()">Close summary</button>
+      <small class="sw-game-label">Savage Worlds</small>
+      ${this.getSettingData() ? `<div class="sw-summary-setting">${this.escHtml(this.getSettingData().name)}</div>` : ''}
       <div class="summary-name">${this.escHtml(c.name || 'Unnamed hero')}</div>
       <div class="summary-concept">${this.escHtml(c.concept?.slice(0,140)||'Your story takes shape with every choice.')}</div>
       ${race ? `<div class="summary-race">${race.name}</div>` : ''}
@@ -2007,12 +2055,12 @@ const app = {
       ` : ''}
 
       <div class="summary-section" style="margin-top:1rem;">
-        <h3>Derived Stats</h3>
+        <h3>Derived stats</h3>
         <div class="summary-row"><span class="s-label">Pace</span><span class="s-value">${stats.pace}</span></div>
         <div class="summary-row"><span class="s-label">Parry</span><span class="s-value">${stats.parry}</span></div>
         <div class="summary-row"><span class="s-label">Toughness</span><span class="s-value">${stats.toughness}${stats.armorBonus ? ' (' + stats.armorBonus + ')' : ''}</span></div>
         <div class="summary-row"><span class="s-label">Size</span><span class="s-value">${stats.size}</span></div>
-        <div class="summary-row"><span class="s-label">Run Die</span><span class="s-value">d${stats.runDie}</span></div>
+        <div class="summary-row"><span class="s-label">Run die</span><span class="s-value">d${stats.runDie}</span></div>
       </div>
 
       <div class="summary-section">
@@ -2101,7 +2149,7 @@ const app = {
   navButtons(isLast = false) {
     return `
       <div class="nav-buttons">
-        ${this.currentStep > 0 ? `<button class="btn" onclick="app.prevStep()">&#9664; ${STEPS[this.currentStep - 1].label}</button>` : '<span></span>'}
+        ${this.currentStep > 0 ? `<button class="btn" onclick="app.prevStep()"><span aria-hidden="true">&larr;</span> Back</button>` : '<span></span>'}
         ${!isLast ? `<button class="btn btn-primary" onclick="app.nextStep()">Next: ${STEPS[this.currentStep + 1].label} &#9654;</button>` : '<span></span>'}
       </div>
     `;
@@ -3011,17 +3059,17 @@ const app = {
         <h2>Choose Sheet Style</h2>
         <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:1.2rem;">Select a character sheet layout to print.</p>
         <div class="print-style-grid">
-          <div class="print-style-card" onclick="app.printSheet(1)">
+          <div class="print-style-card" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" onclick="app.printSheet(1)">
             <div class="print-style-icon">\u{1F4DC}</div>
             <h3>Classic Deadlands</h3>
             <p>Clean parchment layout with organized bordered sections. Two-column grid for attributes, skills, edges and hindrances.</p>
           </div>
-          <div class="print-style-card" onclick="app.printSheet(2)">
+          <div class="print-style-card" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" onclick="app.printSheet(2)">
             <div class="print-style-icon">\u{1F3A8}</div>
             <h3>Frontier Record</h3>
             <p>Ornate Western style with skills grouped by attribute, wound tracker, and detailed powers table.</p>
           </div>
-          <div class="print-style-card" onclick="app.printSheet(3)">
+          <div class="print-style-card" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}" onclick="app.printSheet(3)">
             <div class="print-style-icon">\u{1F575}</div>
             <h3>Marshal's Dossier</h3>
             <p>Dark gritty aesthetic with attribute bar, compact layout, poker chip bennies tracker.</p>

@@ -138,3 +138,31 @@ test('Savage Worlds setting and ancestry confirmation follow their own rules thr
  app.character.skills.fighting=8;app.character.skills.shooting=6;app.character.skills.survival=6;app.character.skills.athletics=6;app.character.skills.notice=6;app.character.skills.stealth=6;app.character.skills.persuasion=6;app.nextStep();expect(app.currentStep).toBe(7);app.nextStep();expect(app.currentStep).toBe(8);const item=app.getGearCategories().melee[0];app.previewGear('melee',item.id);expect(document.querySelector('#savageGearDetail').open).toBe(true);expect(document.querySelector('#savageGearDetail').textContent).toContain(item.name);document.querySelector('#savageGearDetail .choice-confirm').click();expect(app.character.gear[0].id).toBe(item.id);app.nextStep();expect(app.currentStep).toBe(9);expect(document.querySelector('#characterName')).not.toBeNull();
  app.nextStep();expect(app.currentStep).toBe(9);document.querySelector('#creationLimitNotice').close();app.character.name='Journey QA Savage';app.nextStep();expect(app.currentStep).toBe(10);expect(document.querySelector('#mainContent').textContent).toContain('Journey QA Savage');app.character.name='';app.renderSummary();expect([...document.querySelectorAll('#savageJourney button')].find(b=>b.textContent.includes('Name & story')).querySelector('span').textContent).toBe('10');
 });
+
+function mountSavageWorkshop() {
+ document.body.innerHTML='<div class="savage-workshop"><button id="draftToggle" data-draft-tools aria-expanded="false">Draft tools</button><button id="summaryToggle" aria-expanded="false">Summary</button><nav class="sidebar"><button class="account-close">Close</button><ul id="stepNav"></ul></nav><nav id="savageJourney"></nav><main id="mainContent"></main><aside id="summaryPanel"></aside><div id="summaryOverlay"></div></div>';
+ const context=vm.createContext({window,document,localStorage,console,URLSearchParams,location:{search:''},confirm:()=>true,fetch:()=>Promise.reject(Error('offline fixture'))});
+ for(const file of ['data.js','settings.js','creation-notice.js','app.js'])vm.runInContext(readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+ const app=vm.runInContext('app',context);app.init();return app;
+}
+
+test('Savage Worlds panels close on Escape, return focus, and never open together',()=>{
+ const app=mountSavageWorkshop(),tools=document.getElementById('draftToggle'),summary=document.getElementById('summaryToggle');
+ tools.focus();app.toggleDraftTools(tools);expect(tools.getAttribute('aria-expanded')).toBe('true');expect(document.activeElement).toBe(document.querySelector('.account-close'));
+ app.handleWorkshopKeydown(new KeyboardEvent('keydown',{key:'Escape',cancelable:true}));expect(document.querySelector('.sidebar').classList.contains('account-open')).toBe(false);expect(document.activeElement).toBe(tools);expect(tools.getAttribute('aria-expanded')).toBe('false');
+ app.toggleMobileSummary(summary);expect(document.activeElement).toBe(document.querySelector('.sw-summary-close'));expect(summary.getAttribute('aria-expanded')).toBe('true');
+ app.handleWorkshopKeydown(new KeyboardEvent('keydown',{key:'Escape',cancelable:true}));expect(document.activeElement).toBe(summary);expect(summary.getAttribute('aria-expanded')).toBe('false');
+ app.toggleMobileSummary(summary);app.toggleDraftTools(tools);expect(document.getElementById('summaryPanel').classList.contains('open')).toBe(false);expect(summary.getAttribute('aria-expanded')).toBe('false');
+ app.goToStep(1);expect(document.querySelector('.sidebar').classList.contains('account-open')).toBe(false);expect(tools.getAttribute('aria-expanded')).toBe('false');expect(document.activeElement.textContent).toBe('Bonus Rules');
+ const journey=document.querySelector('.creation-journey');journey.open=true;journey.querySelector('button').focus();app.handleWorkshopKeydown(new KeyboardEvent('keydown',{key:'Escape',cancelable:true}));expect(journey.open).toBe(false);expect(document.activeElement).toBe(journey.querySelector('summary'));
+});
+
+test('Savage Worlds identifies the current choice and opening a card never selects it',()=>{
+ const app=mountSavageWorkshop();
+ const core=document.querySelector('button[aria-label="Meet Core SWADE / Homebrew"]');expect(document.getElementById(core.getAttribute('aria-describedby')).textContent).toBe('Current setting');
+ app.previewChoice('settings','deadlands');expect(app.character.setting).toBeNull();expect(document.querySelector('#savageChoicePreview').open).toBe(true);document.querySelector('.choice-close').click();expect(app.character.setting).toBeNull();
+ app.selectSetting('deadlands');expect(document.querySelector('button[aria-label="Meet Core SWADE / Homebrew"]').hasAttribute('aria-describedby')).toBe(false);
+ const deadlands=document.querySelector('button[aria-label="Meet Deadlands"]');expect(document.getElementById(deadlands.getAttribute('aria-describedby')).textContent).toBe('Current setting');
+ app.selectSetting(null);app.selectRace('human');app.goToStep(2);
+ const human=document.querySelector('button[aria-label="Meet Human"]');expect(document.getElementById(human.getAttribute('aria-describedby')).textContent).toBe('Your choice');
+});

@@ -1,0 +1,70 @@
+/* Savage Worlds keeps its illustrated choices beside a quiet tactical preview. */
+.savage-workshop .sw-workshop-toolbar { gap: 12px; margin-bottom: 22px; font-size: 15px; }
+.savage-workshop .sw-workshop-toolbar > a { display: inline-flex; align-items: center; min-height: 44px; color: var(--sm-gold); }
+.savage-workshop .sw-workshop-toolbar > div { gap: 12px; }
+.savage-workshop .sw-workshop-toolbar button,
+.savage-workshop .sw-workshop-toolbar .creation-journey > summary { min-height: 44px; font-size: 15px; }
+.savage-workshop .sw-workshop-toolbar .creation-journey nav { width: min(300px, calc(100vw - 40px)); }
+.savage-workshop .sw-workshop-toolbar .creation-journey nav button { font-size: 15px; }
+.savage-workshop .sw-step-meta { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; margin-bottom: 16px; }
+.savage-workshop .sw-step-meta h1 { margin: 0; color: var(--sm-muted); font-size: 18px; font-weight: 500; line-height: 1.4; }
+html[data-theme] .savage-workshop .sw-step-meta .step-progress { margin: 0; font-size: 14px; }
+.savage-workshop .step-content > h2 { margin-top: 0; }
+.savage-workshop .step-content > h2::after { display: none; }
+.savage-workshop .choice-deck { gap: 18px; }
+html[data-theme] .savage-workshop .tarot-card { border-color: var(--sm-line); box-shadow: none; transition: none; }
+html[data-theme] .savage-workshop .tarot-card:hover { transform: none; border-color: var(--sm-gold); }
+html[data-theme] .savage-workshop .tarot-card.sw-choice-selected { border-color: var(--sm-gold); background: var(--sm-gold-wash); }
+.savage-workshop .tarot-card .tarot-face { flex: 1; justify-content: flex-start; }
+.savage-workshop .tarot-caption { padding-block: 16px 4px; gap: 8px; }
+.savage-workshop .tarot-caption > strong { font-size: 21px; }
+.savage-workshop .tarot-caption .sw-choice-state { color: var(--sm-gold); font-size: 14px; letter-spacing: 0; }
+html[data-theme] .savage-workshop .content .tarot-detail-link { min-height: 44px; font-size: 15px; padding: 10px 6px; }
+html[data-theme] .savage-workshop .content .die-btn { min-width: 44px; min-height: 44px; }
+html[data-theme] .savage-workshop .content .btn { text-transform: none; letter-spacing: 0; }
+html[data-theme] .savage-workshop .content .nav-buttons .btn { min-height: 48px; font-size: 16px; padding: 12px 18px; }
+.savage-workshop .sw-trait-detail > summary,
+.savage-workshop .sw-card-details > summary { display: flex; align-items: center; min-height: 44px; font-size: 14px; }
+.savage-workshop .point-tracker .pt-label { font-size: 14px; text-transform: none; letter-spacing: 0; }
+.savage-workshop .nav-buttons::before { display: none; }
+.savage-workshop .summary-panel .sw-game-label { margin-bottom: 12px; font-size: 15px; letter-spacing: 0; }
+.savage-workshop .sw-summary-setting { margin-bottom: 6px; color: var(--sm-muted); font-size: 15px; }
+.savage-workshop .summary-panel .summary-name { font-size: 23px; }
+.savage-workshop .summary-panel .summary-concept { font-size: 15px; line-height: 1.6; }
+.savage-workshop .summary-panel h3 { font-size: 17px; text-transform: none; letter-spacing: 0; }
+.savage-workshop .summary-row { font-size: 15px; }
+html[data-theme] .savage-workshop .sw-journey-rail > small { font-size: 15px; letter-spacing: 0; }
+html[data-theme] .savage-workshop .sw-journey-rail nav button { min-height: 44px; font-size: 15px; }
+.savage-workshop .sw-summary-close { display: none; }
+@media (min-width: 769px) {
+  html[data-theme] .savage-workshop .sidebar.account-open { z-index: 160; }
+}
+@media (max-width: 768px) {
+  html[data-theme] .savage-workshop .content { padding: 24px 18px 40px; }
+  .savage-workshop #mobileNav { display: none; }
+  .savage-workshop .sw-workshop-toolbar { flex-wrap: wrap; gap: 6px 12px; margin-bottom: 20px; }
+  .savage-workshop .sw-workshop-toolbar > div { flex: 1; justify-content: flex-end; gap: 12px; }
+  .savage-workshop .sw-workshop-toolbar .sw-draft-tools { display: none; }
+  .savage-workshop .sw-workshop-toolbar .creation-journey > summary,
+  .savage-workshop .sw-workshop-toolbar button { font-size: 14px; }
+  .savage-workshop .creation-journey nav { position: fixed; left: 18px; right: 18px; top: calc(var(--sm-shell-height) + 66px); width: auto; max-height: calc(100dvh - var(--sm-shell-height) - 90px); }
+  .savage-workshop .mobile-header { gap: 8px; }
+  .savage-workshop .mobile-title { flex: 1; font-size: 15px; }
+  .savage-workshop .mobile-summary-btn { min-height: 44px; border-radius: 8px; font-size: 14px; text-transform: none; letter-spacing: 0; }
+  .savage-workshop .summary-panel { padding-bottom: max(24px, env(safe-area-inset-bottom)); transition: none; }
+  .savage-workshop .summary-panel.open .sw-summary-close { display: flex; align-items: center; justify-content: center; min-height: 44px; margin: 0 0 16px auto; padding: 8px 14px; border: 1px solid var(--sm-line); background: transparent; color: var(--sm-text); font: inherit; }
+  .savage-workshop .sidebar.account-open { z-index: 160; }
+  .savage-workshop .choice-deck { gap: 12px; }
+  .savage-workshop .tarot-caption > strong { font-size: 19px; }
+}
+@media (max-width: 380px) {
+  html[data-theme] .savage-workshop .content { padding-inline: 14px; }
+  .savage-workshop .sw-workshop-toolbar { display: grid; grid-template-columns: 1fr; }
+  .savage-workshop .sw-workshop-toolbar > div { justify-content: flex-start; }
+  .savage-workshop .mobile-summary-btn { padding-inline: 8px; font-size: 13px; }
+}
+@media print {
+  .savage-workshop .sw-workshop-toolbar,
+  .savage-workshop .sw-step-meta,
+  .savage-workshop .sw-summary-close { display: none !important; }
+}
