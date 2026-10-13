@@ -22,6 +22,20 @@ test('offline clean routes and query-bearing game URLs use the correct cached wo
     assert.equal(r.handled, true); assert.equal(await r.response.text(), shell);
   }
 });
+
+test('first-use offline navigation can serve shells precached through production redirects', async () => {
+  const a = boot({ offline: true });
+  for (const [path, shell] of [['/', '/index.html'], ['/?game=savage&create=1', '/index.html'], ['/dnd?create=1', '/dnd.html'], ['/pathfinder?create=1', '/pathfinder.html'], ['/builder', '/builder.html']]) {
+    const redirected = new Response('<main>Offline character tools</main>', { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    Object.defineProperty(redirected, 'redirected', { value: true });
+    a.cached.set(shell, redirected);
+    const { response } = await a.request(path);
+    assert.equal(response.redirected, false, path + ': navigation must not carry redirect history');
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Content-Type'), 'text/html; charset=utf-8');
+    assert.equal(await response.text(), '<main>Offline character tools</main>');
+  }
+});
 test('API calls, private shared posts, cross-origin requests, and mutations bypass offline caching', async () => {
   const a = boot();
   for (const [path, method] of [['/api/share?post=private', 'GET'], ['/p/private', 'GET'], ['/api/post-card?post=private', 'GET'], ['https://example.com/assets/data.js', 'GET'], ['/dnd', 'POST']]) assert.equal((await a.request(path, method)).handled, false);

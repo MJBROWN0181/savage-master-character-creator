@@ -100,7 +100,10 @@ class SupportBoundary extends React.Component {
 const pageRoot = document.getElementById('supportPageRoot') || import.meta.hot?.data.pageRoot;
 if (import.meta.hot && pageRoot) import.meta.hot.data.pageRoot = pageRoot;
 const widgetRoot = document.getElementById('bugRoot') || document.createElement('div'); widgetRoot.id = 'bugRoot';
-if (!widgetRoot.isConnected) document.body.append(widgetRoot);
+if (!widgetRoot.isConnected) {
+  if (pageRoot?.isConnected) pageRoot.replaceWith(widgetRoot);
+  else document.body.append(widgetRoot);
+}
 const url = import.meta.env.VITE_CONVEX_URL;
 function Root() {
   // Mount the companion's auth provider when opened, after any same-page sign-in.
@@ -111,7 +114,6 @@ function Root() {
 }
 const pageClient = url && pageRoot ? new ConvexReactClient(url) : null;
 const widgetClient = url ? new ConvexReactClient(url) : null;
-if (pageRoot) pageRoot.remove();
 const root = import.meta.hot?.data.root || createRoot(widgetRoot);
 if (import.meta.hot) import.meta.hot.data.root = root;
 root.render(<Root />);

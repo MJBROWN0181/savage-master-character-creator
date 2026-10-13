@@ -61,6 +61,7 @@
 .bug-companion.bug-layout-adjust,html[data-bug-motion="paused"] .bug-companion{transition:none}
 .bug-companion.bug-invited,.bug-companion:focus-visible{pointer-events:auto}
 .bug-companion.bug-invited{filter:drop-shadow(0 0 5px #d7b16b66)}
+@media(hover:none),(pointer:coarse){.bug-companion{pointer-events:auto;touch-action:manipulation}}
 @media(prefers-reduced-motion:reduce){.bug-companion{transition:none}}
 
 /* Free flight stays click-through; approaching Bug brings him to a hover. */

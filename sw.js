@@ -61,6 +61,20 @@ self.addEventListener('fetch', event => {
         }
         return response;
       })
-      .catch(async () => (await caches.match(key)) || Response.error())
+      .catch(async () => {
+        const response = await caches.match(key);
+        if (!response) return Response.error();
+        // Clean-URL hosts redirect the precached .html requests. Browsers reject
+        // redirected responses for offline navigations, so return their body
+        // without the redirect history. This also repairs older cached shells.
+        if (page && response.redirected) {
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
+        }
+        return response;
+      })
   );
 });

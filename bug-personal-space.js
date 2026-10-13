@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { bugFlightPath } from './bug-flight.mjs';
 
-// Let native clicks reach the page until someone deliberately lingers on Bug.
+// Mouse clicks pass through until invited; touch devices can tap Bug directly.
 export function useBugPersonalSpace(button, onHold, roaming = true) {
   const roam = useRef(roaming), refresh = useRef(null);
   useEffect(() => { roam.current = roaming; refresh.current?.(); }, [roaming]);
@@ -121,7 +121,8 @@ export function useBugPersonalSpace(button, onHold, roaming = true) {
     }
     function up() {
       if (!touch) return;
-      if (touch && origin && !held) dodge();
+      // Keep the button under the finger so its normal compatibility click opens
+      // support. Native scrolling cancels that click and move() cancels the hold.
       clear(); touch = false; schedule();
       // Consume only the compatibility click from a deliberate long press.
       clearTimeout(release); release = setTimeout(() => { held = false; }, 500);

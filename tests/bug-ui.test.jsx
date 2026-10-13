@@ -192,6 +192,22 @@ test('a resting finger opens Bug, while a scrolling finger cancels the invitatio
   expect(click.defaultPrevented).toBe(true);
 });
 
+test('a short touch leaves Bug in place and its normal click opens support', async () => {
+  await mount();
+  const bug = host.querySelector('.bug-companion');
+  bug.getBoundingClientRect = () => ({left:0,right:98,top:0,bottom:108,width:98,height:108});
+  const touch = type => new PointerEvent(type,{bubbles:true,clientX:40,clientY:40,pointerType:'touch'});
+  const position = bug.style.getPropertyValue('--bug-step');
+  await act(() => bug.dispatchEvent(touch('pointerdown')));
+  await act(() => vi.advanceTimersByTime(80));
+  await act(() => bug.dispatchEvent(touch('pointerup')));
+  expect(bug.style.getPropertyValue('--bug-step')).toBe(position);
+  const click = new MouseEvent('click',{bubbles:true,cancelable:true});
+  await act(() => bug.dispatchEvent(click));
+  expect(click.defaultPrevented).toBe(false);
+  expect(host.querySelector('dialog').open).toBe(true);
+});
+
 
 test('free flight is interruptible by a report and releases its animations and timers', async () => {
   const flights = [];
