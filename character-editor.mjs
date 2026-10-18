@@ -32,7 +32,8 @@ export class CharacterEditor {
   try{const storage=this.config.storage,key=this.config.key+'-editor-v1';
    if(this.binding&&this.binding.ownerScope===this.owner){this.binding={...this.binding,draft:fingerprint(this.snapshot())};storage.setItem(key,JSON.stringify(this.binding));}
    else storage.removeItem(key);
-  }catch{this.binding=null;this.status='Browser storage is full. Your working draft is still here; download a backup.';}
+  // A cache failure does not invalidate the account record and revision we loaded.
+  }catch{this.status='Browser storage is full. Your working draft is still here; download a backup.';}
  }
  changed(){this.restore();this.persist();this.emit();}
  clear(){this.generation++;this.started=true;this.binding=null;this.bindingVerified=false;this.dialog=null;this.pending=false;this.conflict=false;this.status='Changes on this device';this.persist();this.emit();}

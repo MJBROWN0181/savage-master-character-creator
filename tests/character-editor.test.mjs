@@ -69,3 +69,31 @@ test('an old Save awaiting verification cannot save a different newly opened cha
  const f=fixture();f.editor.setOwner('owner');f.editor.apply(record('Device'));f.editor.bindingVerified=false;let resolve;f.config.load=()=>new Promise(r=>resolve=r);
  const saving=f.editor.save();f.editor.cancelOpen();f.editor.apply({...record('Different'),id:'different-record'});resolve(record('Device'));await saving;assert.equal(f.calls.length,0);assert.equal(f.editor.binding.id,'different-record');
 });
+
+for(const errorName of ['QuotaExceededError','SecurityError'])test(`${errorName} while caching cannot turn a recovered account character into a new copy`,async()=>{
+ const f=fixture();f.editor.setOwner('owner');f.editor.apply(record('Old'));f.editor.changed();f.set(snapshot('Unsaved'));
+ f.config.load=async()=>record('Latest',2);await f.editor.open({id:'record'});f.editor.acceptOpen();f.editor.changed();
+ const baseline=f.editor.binding.baseline;f.config.storage.setItem=()=>{throw new DOMException('Storage rejected the write',errorName);};
+ f.set(snapshot('Edited after recovery'));const before=structuredClone(f.get());f.editor.changed();
+ assert.equal(f.editor.binding?.id,'record');assert.equal(f.editor.binding.revision,2);assert.equal(f.editor.binding.baseline,baseline);assert.match(f.editor.message(),/Browser storage/);
+ f.config.save=async args=>{f.calls.push(args);return {id:'record',revision:3};};await f.editor.save();
+ assert.equal(f.editor.dialog,null);assert.equal(f.calls.length,1);assert.equal(f.calls[0].id,'record');assert.equal(f.calls[0].expectedRevision,2);assert.equal(f.calls[0].expectedOwnerScope,'owner');assert.deepEqual(f.calls[0].snapshot,before);
+ assert.equal(f.editor.binding.id,'record');assert.equal(f.editor.binding.revision,3);assert.match(f.editor.message(),/Browser storage/);
+});
+
+test('failed browser storage retains the stale revision and complete conflict backup',async()=>{
+ const f=fixture();f.editor.setOwner('owner');f.editor.apply(record('Old'));f.editor.changed();f.set(snapshot('My complete edits'));
+ f.config.storage.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};f.editor.changed();
+ f.config.save=async args=>{f.calls.push(args);throw {data:{code:'CHARACTER_CONFLICT'}};};await f.editor.save();
+ assert.equal(f.calls.length,1);assert.equal(f.calls[0].id,'record');assert.equal(f.calls[0].expectedRevision,1);assert.equal(f.editor.dialog?.kind,'conflict');assert.equal(f.editor.binding.revision,1);
+ f.editor.download();assert.deepEqual(f.downloads,[snapshot('My complete edits')]);f.editor.cancel();assert.deepEqual(f.get(),snapshot('My complete edits'));assert.equal(f.editor.binding.id,'record');
+});
+
+test('explicit new draft and owner change still detach when browser storage is failing',async()=>{
+ for(const action of ['new','owner']){
+  const f=fixture();f.editor.setOwner('owner');f.editor.apply(record('Device'));f.editor.changed();
+  f.config.storage.setItem=f.config.storage.removeItem=()=>{throw new DOMException('Blocked','SecurityError');};f.editor.changed();
+  if(action==='new')f.editor.clear();else f.editor.setOwner('other');
+  assert.equal(f.editor.binding,null);await f.editor.save();assert.equal(f.editor.dialog.kind,'create');assert.equal(f.calls.length,0);assert.deepEqual(f.get(),snapshot('Device'));
+ }
+});
