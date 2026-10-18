@@ -4,7 +4,7 @@ Implementation brief, October 17, 2026. Prepared in the Project Planner and Arch
 
 **Status at planning time:** planning complete; application implementation, deployment, and feature checks had not started. The user approved this feature direction and requested the brief and checks first.
 
-**Implementation update, October 17:** implemented and checked locally after the user's subsequent authorization. See the [execution record and remaining release/device gates](releases/2026-10-17-campaign-character-safe-open.md). The design below preserves the original planning brief.
+**Implementation update, October 17:** implemented, committed, and released backend first after the user's subsequent authorization. Campaign opening and protected saves passed live checks for all three engines. See the [execution record and remaining device gates](releases/2026-10-17-campaign-character-safe-open.md). The design below preserves the original planning brief.
 
 Companion document: [implementation and release checks](CAMPAIGN-CHARACTER-SAFE-OPEN-CHECKS.md).
 

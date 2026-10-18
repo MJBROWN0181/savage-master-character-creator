@@ -4,7 +4,7 @@ October 17, 2026. Companion to the [implementation brief](CAMPAIGN-CHARACTER-SAF
 
 **Status at planning time:** test plan only; no proposed-feature checks had been executed. Existing historical passes do not count as new feature evidence.
 
-**Execution update, October 17:** local implementation and checks are recorded in the [execution report](releases/2026-10-17-campaign-character-safe-open.md). This document remains the scenario inventory; installed-client, physical-device, and production cases must not be inferred as passing from the local results.
+**Execution update, October 17:** local checks and the authorized backend-first release are recorded in the [execution report](releases/2026-10-17-campaign-character-safe-open.md), including live campaign opening, competing saves, backups, reload, and guarded recovery for all three engines. This document remains the scenario inventory; installed-client, physical-device, and other unexecuted cases must not be inferred as passing.
 
 Use synthetic fixtures first. Local unit/DOM tests, local real-browser tests, production behavior, and physical-device results must be reported separately. Do not use real private sheets, credentials, or journal contents in screenshots/logs. Do not create production accounts or alter real records during this planning step.
 
