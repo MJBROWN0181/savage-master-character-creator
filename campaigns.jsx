@@ -6,6 +6,7 @@ import {ConvexAuthProvider} from '@convex-dev/auth/react';
 import {makeFunctionReference as ref} from 'convex/server';
 import {CharacterAccount} from './account.jsx';
 import './campaigns.css';
+import {campaignRoute} from './character-editor.mjs';
 
 const refs=Object.fromEntries(['list','workspace','addAdventure','saveScene','invite','join','setSystem'].map(n=>[n,ref('campaigns:'+n)]));
 const systems={
@@ -22,7 +23,7 @@ function CampaignRules({system}){
   return s&&<details className="campaign-rules"><summary>{s.name} rules & resources</summary><p>{s.tip}</p><nav aria-label={s.name+' resources'}><a href={s.href}>Open character workshop</a><a href={s.rules} target="_blank" rel="noopener noreferrer">{system==='dnd5e'?'Free SRD rules':system==='pathfinder2e'?'Pathfinder rules reference':'Official SWADE rulebook'}</a></nav><OfficialProducts system={system}/><p className="campaign-system-note">Adventures, party members, and private journals belong to this campaign.</p></details>;
 }
 function Party({data}){
-  return <section><span className="sm-kicker">Around your table</span><h2>Your party</h2>{data.party.length?data.party.map(p=><article key={p.userId}><h3>{p.characterName}</h3>{p.profileHandle&&<a href={'/profile?user='+encodeURIComponent(p.profileHandle)}>Visit player profile</a>}</article>):<p>No player characters have joined this campaign yet.</p>}{systems[data.system]&&<div className="sm-inline-actions"><a href={systems[data.system].href}>Open {systems[data.system].name} sheets</a></div>}</section>;
+  return <section><span className="sm-kicker">Around your table</span><h2>Your party</h2>{data.myCharacter?.state==='ready'?<a className="btn" href={campaignRoute(data.myCharacter.system,data.campaignId)}>Open my character</a>:data.myCharacter&&<p>{({NO_CHARACTER:'You have no character attached to this campaign.',CAMPAIGN_SYSTEM_REQUIRED:'Your GM needs to choose a game system first.',SYSTEM_MISMATCH:'Your attached character belongs to another game system.'})[data.myCharacter.state]||'Your attached character is unavailable.'}</p>}{data.party.length?data.party.map(p=><article key={p.userId}><h3>{p.characterName}</h3>{p.profileHandle&&<a href={'/profile?user='+encodeURIComponent(p.profileHandle)}>Visit player profile</a>}</article>):<p>No player characters have joined this campaign yet.</p>}{systems[data.system]&&<div className="sm-inline-actions"><a href={systems[data.system].href}>Open {systems[data.system].name} sheets</a></div>}</section>;
 }
 export function CampaignTable({data,adventure,sceneId,onAdventure,onScene,onPrepare}){
   const sceneRows=data.isGM?data.scenes.filter(s=>!adventure||s.adventureId===adventure):[];
@@ -54,7 +55,7 @@ function Workspace(){
   const create=useMutation(ref('privateWorkspaces:createCampaign')),add=useMutation(refs.addAdventure),save=useMutation(refs.saveScene),journal=useMutation(ref('privateWorkspaces:saveJournal')),invite=useMutation(refs.invite),join=useMutation(refs.join),chooseSystem=useMutation(refs.setSystem);
   const token=query.get('invite');
   useEffect(()=>{if(!isAuthenticated){setCampaign('');setAdventure('');setSceneId('');setLink('');setDrafts({});}},[isAuthenticated]);
-  useEffect(()=>{if(isAuthenticated&&list?.length&&!campaign){setCampaign(list.find(c=>c._id===requestedCampaign)?._id||list[0]._id);}},[isAuthenticated,list,campaign,requestedCampaign]);
+  useEffect(()=>{if(isAuthenticated&&list?.length&&!campaign){setCampaign(requestedCampaign?(list.find(c=>c._id===requestedCampaign)?._id||''):list[0]._id);}},[isAuthenticated,list,campaign,requestedCampaign]);
   useEffect(()=>{if(!Object.values(drafts).some(Boolean))return;const warn=e=>{e.preventDefault();e.returnValue="";};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);},[drafts]);
   useEffect(()=>{const url=new URL(location.href);if(view==='prepare')url.searchParams.delete('view');else url.searchParams.set('view',view);if(campaign)url.searchParams.set('campaign',campaign);else if(!isAuthenticated)url.searchParams.delete('campaign');history.replaceState({},'',url.pathname+url.search);document.documentElement.dataset.campaignView=view;window.dispatchEvent(new Event('sm:workspace-change'));},[view,campaign,isAuthenticated]);
   async function run(action,message='Saved to your account.'){
@@ -72,7 +73,7 @@ function Workspace(){
       {token&&<section><h2>Join a campaign</h2><p>Choose a character saved in your account for your GM's game system.</p><form onSubmit={form(async v=>{const id=await join({token,characterId:v.character});openCampaign(id);setView('table');const url=new URL(location.href);url.searchParams.delete('invite');history.replaceState({},'',url.pathname+url.search);})}><label>Your character<select name="character" required><option value="">Choose character</option>{characters?.map(c=><option key={c._id} value={c._id}>{c.name}</option>)}</select></label><button disabled={busy}>Join campaign</button></form></section>}
       <section><div className="sm-campaign-picker"><label>Open campaign<select value={campaign} onChange={e=>openCampaign(e.target.value)}><option value="">Choose a campaign</option>{list?.map(c=><option key={c._id} value={c._id}>{c.name} · {c.isGM?'Game Master':'Player'}</option>)}</select></label>{data&&<span className="builder-badge">{data.isGM?'Game Master':'Player'} · {systems[data.system]?.name||'Choose game system'}</span>}</div>
         <details className="sm-campaign-create" open={list?.length===0}><summary>Create a new campaign</summary><SystemPicker value={system} onChange={setSystem}/><form onSubmit={form(async v=>{openCampaign(await create({name:v.name,system}));setView('prepare');})}><label>Campaign name<input name="name" placeholder="Name your next adventure" maxLength={160} required/></label><button disabled={busy||!system}>Create campaign</button></form></details>
-        {list===undefined?<p>Loading your campaigns.</p>:list.length===0&&<p>Create your first campaign, or open an invitation from your GM.</p>}
+        {requestedCampaign&&list&&!list.some(c=>c._id===requestedCampaign)&&<p role="status">The requested campaign is unavailable. Choose a campaign you belong to.</p>}{list===undefined?<p>Loading your campaigns.</p>:list.length===0&&<p>Create your first campaign, or open an invitation from your GM.</p>}
       </section>
       {campaign&&!data&&<p role="status">Opening your campaign.</p>}
       {data&&<>

@@ -1,0 +1,13 @@
+.character-editor-panel { box-sizing: border-box; max-width: 1240px; margin: .75rem auto; padding-inline: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.character-editor-panel > .btn { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--sm-line); border-radius: 9px; background: var(--sm-surface); color: var(--sm-gold); text-decoration: none; font: inherit; }
+.savage-workshop .character-editor-panel { padding-inline: 0; }
+.character-editor-status { margin: 0; color: var(--sm-text, var(--text)); overflow-wrap: anywhere; }
+.character-editor-dialog { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; padding: 1.5rem; border: 1px solid var(--sm-gold, #bca985); border-radius: .5rem; background: var(--sm-surface, #faf5e8); color: var(--sm-text, #26372f); font-family: inherit; }
+.character-editor-dialog::backdrop { background: #0009; }
+.character-editor-dialog h2 { font-family: inherit; color: var(--sm-gold, #bca985); overflow-wrap: anywhere; }
+.character-editor-actions { display: flex; gap: .65rem; flex-wrap: wrap; }
+.character-editor-actions button { white-space: normal; min-height: 44px; }
+.character-editor-dialog .character-editor-actions button { padding: 10px 14px; border: 1px solid var(--sm-line); border-radius: 9px; background: transparent; color: var(--sm-text); font: inherit; }
+.character-editor-dialog .character-editor-actions button:hover { border-color: var(--sm-gold); background: var(--sm-gold-wash); }
+.character-editor-actions button:focus-visible { outline: 2px solid var(--sm-gold, #bca985); outline-offset: 3px; }
+@media(max-width: 420px) { .character-editor-actions { flex-direction: column; } .character-editor-actions button { width: 100%; } }

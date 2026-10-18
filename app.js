@@ -184,6 +184,8 @@ const app = {
     fetch('/character-art.json').then(r=>r.ok?r.json():{}).then(art=>{this.cardArt=art;this.renderContent();}).catch(()=>{});
     this.renderNav();
     this.goToStep(this.currentStep);
+    window.savageMasterBridge.ready=true;
+    notifyCharacterChange(true);
   },
 
   // ----------------------------------------------------------
@@ -779,6 +781,8 @@ const app = {
 
   renderContent() {
     const main = document.getElementById('mainContent');
+    const controls=window.savageMasterBridge?.controls||(typeof document.createElement==='function'?document.createElement('div'):null);
+    if(controls){controls.id='savageCharacterControls';window.savageMasterBridge.controls=controls;}
     const summary = document.getElementById('summaryPanel');
     if (summary) summary.style.display = '';
     const step = STEPS[this.currentStep].id;
@@ -800,6 +804,7 @@ const app = {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); card.click(); }
       };
     });
+    if(controls)main.prepend(controls);
   },
 
   // ----------------------------------------------------------
@@ -2379,7 +2384,9 @@ const app = {
       localStorage.setItem('savage-master-character-v1', JSON.stringify({ version: 1, character: this.character, step: this.currentStep, stepVersion: 2, completedSteps: this.completedSteps }));
     } catch (error) {
       console.warn('Could not save character:', error);
+      notifyCharacterChange(false);return;
     }
+    notifyCharacterChange(true);
   },
 
   parseCharacterBackup(backup) {
@@ -2423,6 +2430,7 @@ const app = {
       if (file.size > 1024 * 1024) throw new Error('Backup file is too large.');
       const restored = this.parseCharacterBackup(JSON.parse(await file.text()));
       if (!confirm('Load this backup and replace the current character?')) return;
+      window.characterCloud?.clearSelection();
       this.character = restored;
       this.currentStep = 0;
       this.completedSteps = [];
@@ -4387,15 +4395,23 @@ ${data.languages.length > 0 ? `
   },
 };
 
+function notifyCharacterChange(persisted){
+  if(typeof window.CustomEvent==='function'&&typeof window.dispatchEvent==='function')window.dispatchEvent(new window.CustomEvent('sm:character-change',{detail:{persisted}}));
+}
 window.savageMasterBridge = {
+  ready:false,
+  parseSnapshot:backup=>app.parseCharacterBackup(backup),
+  meaningful:()=>JSON.stringify(app.character)!==JSON.stringify(createDefaultCharacter())||app.completedSteps.length>0||app.currentStep>0,
   getCharacter: () => app.character,
-  loadBackup: backup => {
+  loadBackup: (backup,options={}) => {
     app.character = app.parseCharacterBackup(backup);
     app.completedSteps = [];
-    app.currentStep = 0;
+    app.currentStep = options.campaign?STEPS.findIndex(s=>s.id==='summary'):0;
     app.renderNav();
     app.renderContent();
     app.renderSummary();
+    app.saveCharacter();
+    if(options.campaign){const heading=document.querySelector('#mainContent h2');heading?.setAttribute('tabindex','-1');heading?.focus();}
   },
   newCharacter: () => app.resetCharacter(),
 };

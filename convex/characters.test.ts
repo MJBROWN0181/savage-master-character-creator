@@ -9,8 +9,8 @@ test('5e cloud languages retain included grants and reject excess or rare choice
  const t=convexTest(schema,modules),owner=await t.run(ctx=>ctx.db.insert('users',{email:'languages@example.test'})),client=t.withIdentity({subject:owner});
  const character={...newDndCharacter(),name:'Mira',species:'Dwarf',languageChoices:['Elvish'],languages:'Common, Dwarvish, Elvish'},snapshot={version:1,system:'dnd5e',character};
  const id=await client.mutation(api.characters.save,{snapshot});expect((await client.query(api.characters.load,{id})).character).toEqual(character);
- for(const choices of [['Elvish','Giant'],['Celestial']])await expect(client.mutation(api.characters.save,{id,snapshot:{...snapshot,character:{...character,languageChoices:choices,languages:['Common','Dwarvish',...choices].join(', ')}}})).rejects.toThrow('Invalid 5e character');
- await expect(client.mutation(api.characters.save,{id,snapshot:{...snapshot,character:{...character,languages:'Common'}}})).rejects.toThrow('Invalid 5e character');
+ for(const choices of [['Elvish','Giant'],['Celestial']])await expect(client.mutation(api.characters.saveForEdit,{id,expectedOwnerScope:owner,expectedRevision:1,snapshot:{...snapshot,character:{...character,languageChoices:choices,languages:['Common','Dwarvish',...choices].join(', ')}}})).rejects.toThrow('Invalid 5e character');
+ await expect(client.mutation(api.characters.saveForEdit,{id,expectedOwnerScope:owner,expectedRevision:1,snapshot:{...snapshot,character:{...character,languages:'Common'}}})).rejects.toThrow('Invalid 5e character');
  expect((await client.query(api.characters.load,{id})).character).toEqual(character);
 });
 test('5e cloud saves reject skill, Expertise, and spell choices over their actual grants',async()=>{
@@ -25,17 +25,17 @@ test('combat loadout and personal spell book persist with slot use and reject ma
  const character=newDndCharacter();character.name='Keeper';character.starting={mode:'gm',gmGold:50};character.inventory=[{name:'Longsword',page:91,quantity:1,paidCp:1500}];character.armor='Chain Mail';character.shield=true;character.weapons=[{name:'Longsword',ability:'auto',proficient:true,twoHanded:false,attackBonus:1,damageBonus:1}];character.spellbook=[{name:'Magic Missile',prepared:true}];character.slotsUsed=[1,0,0,0,0,0,0,0,0];
  character.className='Wizard';
  const snapshot={version:1,system:'dnd5e',character},id=await client.mutation(api.characters.save,{snapshot});expect(await client.query(api.characters.load,{id})).toEqual(snapshot);
- character.slotsUsed[0]=-1;await expect(client.mutation(api.characters.save,{id,snapshot})).rejects.toThrow('Invalid 5e character');expect((await client.query(api.characters.load,{id})).character.slotsUsed[0]).toBe(1);
- character.slotsUsed[0]=1;character.inventory[0].quantity=4;await expect(client.mutation(api.characters.save,{id,snapshot})).rejects.toThrow('Invalid 5e character');expect((await client.query(api.characters.load,{id})).character.inventory[0].quantity).toBe(1);
+ character.slotsUsed[0]=-1;await expect(client.mutation(api.characters.saveForEdit,{id,expectedOwnerScope:owner,expectedRevision:1,snapshot})).rejects.toThrow('Invalid 5e character');expect((await client.query(api.characters.load,{id})).character.slotsUsed[0]).toBe(1);
+ character.slotsUsed[0]=1;character.inventory[0].quantity=4;await expect(client.mutation(api.characters.saveForEdit,{id,expectedOwnerScope:owner,expectedRevision:1,snapshot})).rejects.toThrow('Invalid 5e character');expect((await client.query(api.characters.load,{id})).character.inventory[0].quantity).toBe(1);
 });
-test('5e sheets share owner permissions and reject invalid ability allocations',async()=>{const t=convexTest(schema,modules);const owner=await t.run(ctx=>ctx.db.insert('users',{email:'dnd@example.test'}));const other=await t.run(ctx=>ctx.db.insert('users',{email:'other@example.test'}));const client=t.withIdentity({subject:owner});const character=newDndCharacter();character.name='Aster';const snap={version:1,system:'dnd5e',character};const id=await client.mutation(api.characters.save,{snapshot:snap});expect((await client.query(api.characters.list,{}))[0].setting).toBe('dnd5e');expect(await client.query(api.characters.load,{id})).toEqual(snap);await expect(t.withIdentity({subject:other}).query(api.characters.load,{id})).rejects.toThrow('Character not found');character.boosts=[2,2,2,2,2,2];await expect(client.mutation(api.characters.save,{id,snapshot:snap})).rejects.toThrow('Invalid 5e character');});
+test('5e sheets share owner permissions and reject invalid ability allocations',async()=>{const t=convexTest(schema,modules);const owner=await t.run(ctx=>ctx.db.insert('users',{email:'dnd@example.test'}));const other=await t.run(ctx=>ctx.db.insert('users',{email:'other@example.test'}));const client=t.withIdentity({subject:owner});const character=newDndCharacter();character.name='Aster';const snap={version:1,system:'dnd5e',character};const id=await client.mutation(api.characters.save,{snapshot:snap});expect((await client.query(api.characters.list,{}))[0].setting).toBe('dnd5e');expect(await client.query(api.characters.load,{id})).toEqual(snap);await expect(t.withIdentity({subject:other}).query(api.characters.load,{id})).rejects.toThrow('Character not found');character.boosts=[2,2,2,2,2,2];await expect(client.mutation(api.characters.saveForEdit,{id,expectedOwnerScope:owner,expectedRevision:1,snapshot:snap})).rejects.toThrow('Invalid 5e character');});
 
 test('multiclass backups keep class spell sources and reject invalid class levels or spell access',async()=>{
  const t=convexTest(schema,modules),owner=await t.run(ctx=>ctx.db.insert('users',{email:'multiclass@example.test'})),client=t.withIdentity({subject:owner});
  const character={...newDndCharacter(),name:'Mira',species:'Dwarf',method:'physical',scores:[13,13,13,13,13,13],level:2,hp:20,multiclass:[{className:'Wizard',level:1,subclass:'',order:''}],spellbook:[{name:'Magic Missile',prepared:true,grants:{'class:Wizard':{prepared:true}}}]};
  const snapshot={version:1,system:'dnd5e',character},id=await client.mutation(api.characters.save,{snapshot});expect((await client.query(api.characters.load,{id})).character).toEqual(character);
- await expect(client.mutation(api.characters.save,{id,snapshot:{...snapshot,character:{...character,level:1}}})).rejects.toThrow('Invalid 5e character');
- await expect(client.mutation(api.characters.save,{id,snapshot:{...snapshot,character:{...character,spellbook:[{name:'Fireball',prepared:true,grants:{'class:Wizard':{prepared:true}}}]}}})).rejects.toThrow('Invalid 5e character');expect((await client.query(api.characters.load,{id})).character).toEqual(character);
+ await expect(client.mutation(api.characters.saveForEdit,{id,expectedOwnerScope:owner,expectedRevision:1,snapshot:{...snapshot,character:{...character,level:1}}})).rejects.toThrow('Invalid 5e character');
+ await expect(client.mutation(api.characters.saveForEdit,{id,expectedOwnerScope:owner,expectedRevision:1,snapshot:{...snapshot,character:{...character,spellbook:[{name:'Fireball',prepared:true,grants:{'class:Wizard':{prepared:true}}}]}}})).rejects.toThrow('Invalid 5e character');expect((await client.query(api.characters.load,{id})).character).toEqual(character);
 });
 
 function snapshot(name: string) {
@@ -56,7 +56,7 @@ test("players can only list, load, and update their own characters", async () =>
   await expect(bob.query(api.characters.load, { id })).rejects.toThrow("Character not found");
   await expect(bob.mutation(api.characters.save, { id, snapshot: snapshot("Stolen") })).rejects.toThrow("Character not found");
   expect((await alice.query(api.characters.load, { id })).character.name).toBe("Scout");
-  await alice.mutation(api.characters.save, { id, snapshot: snapshot("Ranger") });
+  await alice.mutation(api.characters.saveForEdit, { id, expectedOwnerScope:aliceId, expectedRevision:1, snapshot: snapshot("Ranger") });
   expect((await alice.query(api.characters.load, { id })).character.name).toBe("Ranger");
 });
 

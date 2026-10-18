@@ -68,6 +68,7 @@ export default defineSchema({
   privateJournals: defineTable({ownerId:v.id('users'),campaignId:v.optional(v.id('campaigns')),kind:v.union(v.literal('gm'),v.literal('player')),text:v.string(),updatedAt:v.number()}).index('by_owner',['ownerId']),
   characters: defineTable({
     ownerId: v.id("users"),
+    revision: v.optional(v.number()),
     name: v.string(),
     setting: v.optional(v.string()),
     snapshot: v.any(),

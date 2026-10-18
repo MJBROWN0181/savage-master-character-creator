@@ -1,28 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ConvexReactClient, useConvexAuth, useMutation, useQuery, useConvex } from 'convex/react';
+import { ConvexReactClient, useConvexAuth, useQuery } from 'convex/react';
 import { ConvexAuthProvider, useAuthActions } from '@convex-dev/auth/react';
 import { makeFunctionReference } from 'convex/server';
 import { needsEmailVerification, normalizeEmailCode, accountErrorMessage } from './account-auth.mjs';
 import { TERMS_VERSION } from './legal-terms.mjs';
+import {useCharacterEditor,CharacterEditorPanel} from './character-editor.jsx';
 
 const url = import.meta.env.VITE_CONVEX_URL;
 const listRef = makeFunctionReference('characters:list');
-const loadRef = makeFunctionReference('characters:load');
-const saveRef = makeFunctionReference('characters:save');
 
 export function CharacterAccount({accountOnly = false, initialMode = 'signIn', onModeChange}) {
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { signIn, signOut } = useAuthActions();
-  const convex = useConvex();
-  const save = useMutation(saveRef);
   const characters = useQuery(listRef, isAuthenticated ? {} : 'skip');
   const [mode, setMode] = useState(initialMode);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
   const [resetEmail, setResetEmail] = useState('');
 
+  const [,bridgeChanged]=useState(0);
+  const bridge=()=>typeof window==='undefined'?null:window.savageMasterBridge;
+  const editor=useCharacterEditor({system:'savageWorlds',key:'savage-master-character-v1',active:!accountOnly,ready:()=>!!bridge()?.ready,snapshot:()=>({version:1,character:bridge()?.getCharacter()}),normalize:snap=>({version:1,character:bridge().parseSnapshot(snap)}),validateSave:snap=>{bridge().parseSnapshot(snap);if(!snap.character.name.trim())throw Error('Give your character a name first.');},meaningful:()=>bridge()?.meaningful()??false,apply:snap=>bridge().loadBackup(snap,{campaign:!!new URLSearchParams(location.search).get('campaign')})});
+  useEffect(()=>{if(accountOnly)return;const changed=e=>{bridgeChanged(n=>n+1);if(e.detail?.persisted)queueMicrotask(()=>editor.changed());else if(e.detail?.persisted===false)editor.mark('Could not save on this device. Download a backup to keep your work.');};window.addEventListener('sm:character-change',changed);return()=>window.removeEventListener('sm:character-change',changed);},[accountOnly,editor]);
   useEffect(() => {
     if (mode === 'signUp' || mode === 'signIn') onModeChange?.(mode);
   }, [mode, onModeChange]);
@@ -30,22 +30,11 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
   useEffect(() => {
     if (accountOnly) return;
     window.characterCloud = {
-      clearSelection: () => setSelectedId(null),
-      save: async () => {
-        if (!isAuthenticated) { setStatus('Sign in to save this character to your account.'); return; }
-        const backup = { version: 1, character: window.savageMasterBridge.getCharacter() };
-        if (!backup.character.name.trim()) { setStatus('Give your character a name first.'); return; }
-        setBusy(true);
-        try {
-          const id = await save({ id: selectedId || undefined, snapshot: backup });
-          setSelectedId(id);
-          setStatus('Character saved to your account.');
-        } catch (error) { window.smBugCapture?.record('Character save error', error); setStatus(error.message); }
-        finally { setBusy(false); }
-      },
+      clearSelection: () => editor.clear(),
+      save: () => editor.save(),
     };
     return () => { delete window.characterCloud; };
-  }, [isAuthenticated, save, selectedId, accountOnly]);
+  }, [isAuthenticated, editor, accountOnly]);
 
   async function submit(event) {
     event.preventDefault();
@@ -75,31 +64,21 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
     finally { setBusy(false); }
   }
 
-  async function loadCharacter(id) {
-    if (!confirm('Load this character? Your current unsaved edits will be replaced.')) return;
-    setBusy(true);
-    try {
-      const backup = await convex.query(loadRef, { id });
-      window.savageMasterBridge.loadBackup(backup);
-      setSelectedId(id);
-      setStatus('Character loaded.');
-    } catch (error) { window.smBugCapture?.record('Character load error', error); setStatus(error.message); }
-    finally { setBusy(false); }
-  }
+  function loadCharacter(id) { return editor.open({id}); }
 
   return <section className="account-panel" aria-label="Character account">
     <h3>{accountOnly ? 'Your Account' : 'My Characters'}</h3>
     {isLoading ? <p>Checking account…</p> : isAuthenticated ? <>
       {!accountOnly && <>
-      <button className="btn btn-sm" disabled={busy} onClick={() => window.characterCloud.save()}>Save Character</button>
-      <button className="btn btn-sm" onClick={() => { if (window.savageMasterBridge.newCharacter()) setSelectedId(null); }}>New Character</button>
+      <button className="btn btn-sm" disabled={busy||editor.pending} onClick={() => window.characterCloud.save()}>Save Character</button>
+      <button className="btn btn-sm" onClick={() => { window.savageMasterBridge.newCharacter(); }}>New Character</button>
       <div className="account-list">
-        {characters?.filter(c=>c.setting!=='dnd5e').length ? characters.filter(c=>c.setting!=='dnd5e').map(c => <button key={c._id} className="account-item" disabled={busy} onClick={() => loadCharacter(c._id)}>
-          {c.name}{c._id === selectedId ? ' (open)' : ''}
+        {characters?.filter(c=>!['dnd5e','pathfinder2e'].includes(c.setting)).length ? characters.filter(c=>!['dnd5e','pathfinder2e'].includes(c.setting)).map(c => <button key={c._id} className="account-item" disabled={busy||editor.pending} onClick={() => loadCharacter(c._id)}>
+          {c.name}{c._id === editor.binding?.id ? ' (open)' : ''}
         </button>) : <p>No saved characters yet.</p>}
       </div>
       </>}
-      <button className="btn btn-sm" onClick={() => { setSelectedId(null); signOut(); }}>Sign Out</button>
+      <button className="btn btn-sm" onClick={() => { editor.clear(); signOut(); }}>Sign Out</button>
     </> : <>
       <p>{mode === 'signUp' ? 'Create an account to keep your characters and adventures together.' : 'Sign in to save and load characters across devices.'}</p>
       <form onSubmit={submit}>
@@ -121,6 +100,7 @@ export function CharacterAccount({accountOnly = false, initialMode = 'signIn', o
         {mode === 'reset' || mode === 'reset-verification' || mode === 'email-verification' ? 'Back to sign in' : 'Forgot password?'}
       </button>
     </>}
+    {!accountOnly&&<CharacterEditorPanel editor={editor} target={typeof document==='undefined'?null:document.getElementById('savageCharacterControls')}/>}
     <a className="account-switch" href="/pricing">Billing &amp; Account</a>
     {status && <p className="account-status" role="status">{status}</p>}
   </section>;
